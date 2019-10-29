@@ -50,7 +50,7 @@ for match in fuzzy_searcher.find_candidates(text1):
     print(match)
 ```
 
-```json
+```js
 {'match_keyword': 'Veneris', 'match_term': 'Veneris', 'match_string': 'Veucris', 'match_offset': 3, 'char_match': 0.7142857142857143, 'ngram_match': 0.625, 'levenshtein_distance': 0.7142857142857143}
 {'match_keyword': 'den .. Januarii 1725', 'match_term': 'den .. Januarii 1725', 'match_string': 'den 5. Januaris 1725', 'match_offset': 11, 'char_match': 0.9, 'ngram_match': 0.8095238095238095, 'levenshtein_distance': 0.9}
 {'match_keyword': 'PRAESIDE', 'match_term': 'PRAESIDE', 'match_string': 'PR&ASIDE', 'match_offset': 33, 'char_match': 0.875, 'ngram_match': 0.6666666666666666, 'levenshtein_distance': 0.75}
@@ -64,7 +64,7 @@ for match in fuzzy_searcher.find_candidates(text2):
 ```
 
 
-```json
+```js
 {'match_keyword': 'Mercuri', 'match_term': 'Mercuri', 'match_string': 'Mercuri', 'match_offset': 0, 'char_match': 1.0, 'ngram_match': 1.0, 'levenshtein_distance': 1.0}
 {'match_keyword': 'den .. Januarii 1725', 'match_term': 'den .. Januarii 1725', 'match_string': 'den 10. Jangarii, 1725', 'match_offset': 9, 'char_match': 0.9, 'ngram_match': 0.7619047619047619, 'levenshtein_distance': 0.8181818181818181}
 {'match_keyword': 'PRAESIDE', 'match_term': 'PRAESIDE', 'match_string': 'PRESIDE', 'match_offset': 36, 'char_match': 0.875, 'ngram_match': 0.7777777777777778, 'levenshtein_distance': 0.875}
