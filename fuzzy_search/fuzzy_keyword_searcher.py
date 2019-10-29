@@ -561,7 +561,7 @@ class FuzzyKeywordSearcher(object):
         self.found = defaultdict(dict)
         self.open_candidates = defaultdict(dict)
         self.closed_candidates = []
-        if ignorecase or (ignorecase == None and self.ignorecase):
+        if ignorecase or (ignorecase is None and self.ignorecase):
             text = text.lower()
         for ngram_string, ngram_offset in text2skipgrams(text, ngram_size=self.ngram_size, skip_size=self.skip_size):
             self.find_ngram_matches_new(ngram_string, ngram_offset, text)
@@ -599,7 +599,7 @@ class FuzzyKeywordSearcher(object):
                 remove_offsets += [start_offset]
             else:
                 best_keyword_offset = get_best_keyword_offset(keyword_string, keyword_ngram_offsets, matches)
-                if best_keyword_offset != None and best_keyword_offset >= matches[-1][2]:
+                if best_keyword_offset is not None and best_keyword_offset >= matches[-1][2]:
                     # if best offset closely follows last match, add current
                     # as next match
                     matches += [(ngram_string, ngram_offset, best_keyword_offset)]
@@ -638,7 +638,7 @@ class FuzzyKeywordSearcher(object):
     def find_ngram_candidates(self, text, ignorecase=None):
         candidates = []
         self.found = defaultdict(dict)
-        if ignorecase or (ignorecase == None and self.ignorecase):
+        if ignorecase or (ignorecase is None and self.ignorecase):
             text = text.lower()
         for ngram_string, ngram_offset in text2skipgrams(text, ngram_size=self.ngram_size, skip_size=self.skip_size):
             for match in self.find_ngram_matches(ngram_string, ngram_offset, text):
