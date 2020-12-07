@@ -1,7 +1,7 @@
 import fuzzy_search.fuzzy_patterns as fuzzy_patterns
 import re
 from fuzzy_search.fuzzy_context_searcher import FuzzyContextSearcher, find_patterns_in_context
-from fuzzy_search.fuzzy_keyword_searcher import score_levenshtein_distance
+from fuzzy_search.fuzzy_phrase_searcher import score_levenshtein_distance
 
 
 #######################################

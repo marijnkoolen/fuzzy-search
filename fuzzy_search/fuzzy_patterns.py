@@ -1,3 +1,5 @@
+from typing import Union
+
 dutch_person_name_patterns = {
     "name_suffixes": r"( de jonge| de oude| junior| senior)",
     "name_pattern": r"(([A-Z](\w|-)+)( [A-Z](\w|-)+)*( van| de| der| den)*( [A-Z](\w|-)+)+( de jonge| de oude| junior| senior)?)",
@@ -128,13 +130,13 @@ def get_search_patterns(pattern_type=None):
         return pattern_definitions
 
 
-def get_context_patterns(context_type=None):
+def get_context_patterns(context_type: Union[None, str] = None) -> dict:
     if not context_type:
         context_type = "all"
     if context_type not in context_pattern:
         print("ERROR - Unknown context type. Pick from:")
         for context_type in context_pattern:
-            print("\t{t}".format(context_type))
+            print(f"\t{context_type}")
         raise KeyError("Unknown context type")
     return context_pattern[context_type]
 

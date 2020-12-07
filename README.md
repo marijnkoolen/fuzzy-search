@@ -4,7 +4,8 @@ Fuzzy search modules for searching lists of words in low quality OCR and HTR tex
 ## Usage
 
 ```python
-from fuzzy_search.fuzzy_keyword_searcher import FuzzyKeywordSearcher
+```python
+from fuzzy_search.fuzzy_phrase_searcher import FuzzyKeywordSearcher
 
 # highger matching thresholds for higher quality OCR/HTR (higher precision, recall should be good anyway)
 # lower matching thresholds for lower quality OCR/HTR (higher recall, as that's the main problem)

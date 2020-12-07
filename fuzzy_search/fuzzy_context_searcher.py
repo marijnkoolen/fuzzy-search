@@ -1,106 +1,77 @@
-import re
-import fuzzy_search.fuzzy_patterns as fuzzy_patterns
-from fuzzy_search.fuzzy_keyword_searcher import FuzzyKeywordSearcher
+from typing import List, Union
+
+from fuzzy_search.fuzzy_match import Match, MatchInContext
+from fuzzy_search.fuzzy_phrase_searcher import FuzzyPhraseSearcher
 
 
-#######################################
-# Functions for person name searching #
-#######################################
+class FuzzyContextSearcher(FuzzyPhraseSearcher):
 
-
-def make_search_context_patterns(context_string, person_name_patterns, context_patterns):
-    return fuzzy_patterns.make_search_context_patterns(context_string, person_name_patterns, context_patterns)
-
-
-def find_patterns_in_context(context, patterns, context_patterns=None):
-    for search_context in make_search_context_patterns(context["match_string"], patterns, context_patterns):
-        # print("search_context:", search_context)
-        for pattern_re_match in re.finditer(search_context["pattern"], context["match_term_in_context"]):
-            yield pattern_re_match, search_context
-
-
-def get_term_context(text, term_match, context_size=20, before_context=True, after_context=True):
-    context = make_base_context(term_match)
-    adjust_context_offset(context, context_size, before_context, after_context)
-    add_context_text(context, text)
-    return context
-
-
-class FuzzyContextSearcher(FuzzyKeywordSearcher):
-
-    def __init__(self, config):
+    def __init__(self, config: Union[dict, None] = None):
         super().__init__(config)
-        self.pattern_names = fuzzy_patterns.list_pattern_names(pattern_type=None)
-        self.context_patterns = fuzzy_patterns.get_context_patterns(None)
         self.context_size = 100
-        self.configure_context(config)
+        if config is not None:
+            self.configure_context(config)
 
-    def configure_context(self, config):
-        if "pattern_type" in config:
-            self.pattern_names = fuzzy_patterns.list_pattern_names(config["pattern_type"])
-        if "context_type" in config:
-            self.pattern_names = fuzzy_patterns.get_context_patterns(config["context_type"])
+    def configure_context(self, config: dict) -> None:
+        """Configure the context searcher.
+
+        :param config: a dictionary with configuration parameters to override the defaults
+        :type config: dict
+        """
+        super().configure(config)
         if "context_size" in config:
             self.context_size = config["context_size"]
 
-    def set_pattern_names_by_type(self, pattern_type):
-        self.pattern_names = fuzzy_patterns.list_pattern_names(pattern_type)
+    def add_match_context(self, match: Match, text: Union[str, dict], context_size: Union[None, int] = None,
+                          use_prefix: bool = True, use_suffix: bool = True) -> MatchInContext:
+        """Add context to a given match and its corresponding text document.
 
-    def set_pattern_names(self, pattern_names):
-        for pattern_name in pattern_names:
-            if pattern_name not in fuzzy_patterns.pattern_definitions.keys():
-                raise KeyError("Pattern name does not exist")
-        self.pattern_names = pattern_names
+        :param match: a phrase match object
+        :type match: Match
+        :param text: the text that the match was taken from
+        :type text: Union[str, dict]
+        :param context_size: the size of the pre- and post context window
+        :type context_size: int
+        :param use_prefix: boolean to include prefix context or not
+        :type use_prefix: bool
+        :param use_suffix: boolean to include suffix context or not
+        :type use_suffix: bool
+        :return: the phrase match object with context
+        :rtype: MatchInContext
+        """
+        if context_size is None:
+            context_size = self.context_size
+        prefix_size = context_size if use_prefix else 0
+        suffix_size = context_size if use_suffix else 0
+        return MatchInContext(match, text, prefix_size=prefix_size, suffix_size=suffix_size)
 
-    def set_context_pattern_types(self, context_pattern_types):
-        for context_pattern_type in context_pattern_types:
-            if context_pattern_type not in fuzzy_patterns.context_pattern.keys():
-                raise KeyError("Context pattern type does not exist")
-        self.context_pattern_types = context_pattern_types
+    def find_matches_in_context(self, match_in_context: MatchInContext,
+                                use_word_boundaries=False, include_variants=False,
+                                filter_distractors=False) -> List[Match]:
+        """Use a MatchInContext object to find other phrases in the context of that match.
 
-    def find_candidates_in_context(self, context_match, keyword=None, ngram_size=2,
-                                   use_word_boundaries=None, match_initial_char=False,
-                                   include_variants=False, filter_distractors=False):
-        text = context_match["match_term_in_context"]
-        self.find_candidates(text, keyword=keyword, ngram_size=ngram_size,
-                             use_word_boundaries=use_word_boundaries,
-                             match_initial_char=match_initial_char,
-                             include_variants=include_variants,
-                             filter_distractors=filter_distractors)
-        self.update_candidate_offsets(context_match)
-        return self.candidates["accept"]
-
-    def update_candidate_offsets(self, context_match):
-        for candidate in self.candidates["accept"]:
-            candidate["match_offset"] += context_match["start_offset"]
-
-
-def add_context_text(context, text):
-    if context["end_offset"] > len(text):
-        context["end_offset"] = len(text)
-    context_text = text[context["start_offset"]:context["end_offset"]]
-    context["match_term_in_context"] = context_text
-
-
-def make_base_context(term_match):
-    return {
-        "match_keyword": term_match["match_keyword"],
-        "match_term": term_match["match_term"],
-        "match_string": term_match["match_string"],
-        "match_offset": term_match["match_offset"],
-        "start_offset": term_match["match_offset"],
-        "end_offset": term_match["match_offset"] + len(term_match["match_string"]),
-    }
-
-
-def adjust_context_offset(context, context_size, before_context, after_context):
-    if before_context:
-        context["start_offset"] = context["match_offset"] - context_size
-    if after_context:
-        context["end_offset"] = context["match_offset"] + len(context["match_string"]) + context_size + 1
-    if context["match_offset"] < context_size:
-        context["start_offset"] = 0
+        :param match_in_context: a match phrase with context from the text that the match was taken from
+        :type match_in_context: MatchInContext
+        :param use_word_boundaries: boolean whether to adjust match strings to word boundaries
+        :type use_word_boundaries: bool
+        :param include_variants: boolean whether to include variants of phrases in matching
+        :type include_variants: bool
+        :param filter_distractors: boolean whether to remove matches that are closer to distractors than to their
+        match phrases
+        :type filter_distractors: bool
+        :return: a list of match objects
+        :rtype: List[Match]
+        """
+        context_matches = self.find_matches(match_in_context.context, use_word_boundaries=use_word_boundaries,
+                                            include_variants=include_variants,
+                                            filter_distractors=filter_distractors)
+        # recalculate the match offset with respect to the original text
+        for match in context_matches:
+            match.offset += match_in_context.context_start
+            match.end += match_in_context.context_start
+        return context_matches
 
 
 if __name__ == "__main__":
-    sample_text = "A'nthony van der Truyn en Adriaen Bosman, Makelaers tot Rotterdam, prefenteren, uyt de Hint te verkopen etfn curieufc Party opreckw ?al somfl'e Schalyen of Leyen."
+    sample_text = "A'nthony van der Truyn en Adriaen Bosman, Makelaers tot Rotterdam, prefenteren," + \
+                  "uyt de Hint te verkopen etfn curieufc Party opreckw ?al somfl'e Schalyen of Leyen."
