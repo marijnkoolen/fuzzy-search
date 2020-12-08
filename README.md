@@ -33,8 +33,11 @@ domain_phrases = [
     "den .. Januarii 1725"
 ]
 
-# register the keywords with the searcher
-fuzzy_searcher.index_keywords(domain_phrases)
+# create a PhraseModel object from the domain phrases
+phrase_model = PhraseModel(phrases=domain_phrases)
+
+# register the phrase model with the searcher
+fuzzy_searcher.index_phrase_model(phrase_model)
 
 # take some example texts: meetings of the Dutch States General in January 1725
 text1 = "ie Veucris den 5. Januaris 1725. PR&ASIDE, Den Heere Bentinck. PRASENTIEBUS, De Heeren Jan Welderen , van Dam, Torck , met een extraordinaris Gedeputeerde uyt de Provincie van Gelderlandt. Van Maasdam , vanden Boeizelaar , Raadtpenfionaris van Hoornbeeck , met een extraordinaris Gedeputeerde uyt de Provincie van Hollandt ende Welt-Vrieslandt. Velters, Ockere , Noey; van Hoorn , met een extraordinaris Gedeputeerde uyt de Provincie van Zeelandt. Van Renswoude , van Voor{t. Van Schwartzenbergh, vander Waayen, Vegilin Van I{elmuden. Van Iddekinge ‚ van Tamminga."
