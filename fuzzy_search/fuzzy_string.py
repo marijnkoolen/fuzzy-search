@@ -22,7 +22,7 @@ def make_ngrams(text: str, n: int) -> List[str]:
     if n < 1:
         raise ValueError('n must be a positive integer')
     if n > len(text):
-        []
+        return []
     text = "#{t}#".format(t=text)
     max_start = len(text) - n + 1
     return [text[start:start + n] for start in range(0, max_start)]
