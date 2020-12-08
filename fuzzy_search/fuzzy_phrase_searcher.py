@@ -5,7 +5,7 @@ from collections import defaultdict
 from fuzzy_search.fuzzy_phrase_model import PhraseModel
 from fuzzy_search.fuzzy_match import Match, Candidate, adjust_match_offsets
 from fuzzy_search.fuzzy_phrase import Phrase
-from fuzzy_search.fuzzy_string import text2skipgrams, SkipGram
+from fuzzy_search.fuzzy_string import text2skipgrams, SkipGram, score_levenshtein_similarity_ratio
 
 
 class SkipMatches:
@@ -66,17 +66,30 @@ def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate]) -> 
     if len(phrase_candidates) < 2:
         return phrase_candidates
     prev_candidate = phrase_candidates[0]
+    prev_score = score_levenshtein_similarity_ratio(prev_candidate.phrase.phrase_string, prev_candidate.match_string)
     for ci, curr_candidate in enumerate(phrase_candidates[1:]):
+        # print("prev_candidate:", prev_candidate)
+        # print("curr_candidate:", curr_candidate)
         if curr_candidate.match_end_offset > prev_candidate.match_start_offset:
             if curr_candidate.match_start_offset < prev_candidate.match_end_offset:
+                # print("CONSIDERING CURR")
                 # this candidate overlaps with the previous one, pick the best
-                if curr_candidate.get_skip_count_overlap() > prev_candidate.get_skip_count_overlap():
+                # print(prev_candidate.get_skip_count_overlap(), curr_candidate.get_skip_count_overlap())
+                curr_score = score_levenshtein_similarity_ratio(curr_candidate.phrase.phrase_string,
+                                                                curr_candidate.match_string)
+                # if curr_candidate.get_skip_count_overlap() > prev_candidate.get_skip_count_overlap():
+                if curr_score > prev_score:
+                    # print("SELECTING CURR")
                     # this candidate is better, so skip the previous candidate
                     prev_candidate = curr_candidate
+                    prev_score = curr_score
             else:
                 # the previous candidate does not overlap with the current, so add it to filtered
+                # print("APPENDING")
                 filtered.append(prev_candidate)
                 prev_candidate = curr_candidate
+                prev_score = score_levenshtein_similarity_ratio(curr_candidate.phrase.phrase_string,
+                                                                curr_candidate.match_string)
 
     if len(filtered) == 0 or prev_candidate != filtered[-1]:
         filtered.append(prev_candidate)
@@ -84,7 +97,7 @@ def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate]) -> 
 
 
 def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_matches: SkipMatches,
-                                    skipgram_threshold: float) -> List[Candidate]:
+                                    skipgram_threshold: float, max_length_variance: int = 1) -> List[Candidate]:
     """Find all candidate matches for a given phrase and SkipMatches object.
 
     :param text: the text object to match with phrases
@@ -95,36 +108,50 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
     :type skip_matches: SkipMatches
     :param skipgram_threshold: a threshold for how many skipgrams should match between a phrase and a candidate
     :type skipgram_threshold: float
+    :param max_length_variance: the maximum difference in length between candidate and phrase
+    :type max_length_variance: int
     :return: a list of candidate matches
     :rtype: List[Candidate]
     """
     candidates: List[Candidate] = []
-    candidate = Candidate(phrase)
+    candidate = Candidate(phrase, max_length_variance=max_length_variance)
+    # print("generating candidate:", candidate.match_string)
     last_index = len(skip_matches.match_offsets[phrase]) - 1
     for ci, curr_offset in enumerate(skip_matches.match_offsets[phrase]):
         next_offset = None if ci == last_index else skip_matches.match_offsets[phrase][ci + 1]
         # add current skipgram to the candidate
+        skip = skip_matches.match_skipgrams[phrase][ci]
+        skip_list = [skip.string for skip in candidate.skipgram_list]
+        # print("\t", skip.string, skip.offset, candidate.get_match_string(text), skip_list, candidate.get_skip_set_overlap())
         candidate.add_skip_match(skip_matches.match_skipgrams[phrase][ci])
         if candidate.is_match(skipgram_threshold):
             candidate.match_string = candidate.get_match_string(text)
             # if this candidate has enough skipgram overlap, yield it as a candidate match
             if len(candidates) == 0 or not candidate.same_candidate(candidates[-1]):
                 candidates.append(copy.deepcopy(candidate))
+                # print(ci, "appending:", candidate.match_string)
+            if candidate.skip_match_length() > len(phrase.phrase_string):
+                if candidate.shift_start_skip():
+                    candidate.match_string = candidate.get_match_string(text)
+                    candidates.append(copy.deepcopy(candidate))
+                    # print(ci, "appending better start:", candidate.match_string)
         if next_offset and next_offset - curr_offset > skip_matches.ngram_size + skip_matches.skip_size:
             # if the gap between the current skipgram and the next is larger than an entire skipgram
             # the next skipgram does not belong to this candidate
             # start a new candidate for the next skipgram
+            # print("GAP")
             candidate = Candidate(phrase)
+            # print("generating candidate:", candidate.match_string)
     # end of skipgrams reached, check if remaining candidate is a match
     if candidate.is_match(skipgram_threshold):
         if len(candidates) == 0 or not candidate.same_candidate(candidates[-1]):
-            candidates.append(copy.deepcopy(candidate))
             candidate.match_string = candidate.get_match_string(text)
+            candidates.append(copy.deepcopy(candidate))
     return candidates
 
 
 def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
-                             skipgram_threshold: float) -> List[Candidate]:
+                             skipgram_threshold: float, max_length_variance: int = 1) -> List[Candidate]:
     """Find all candidate matches for the phrases in a SkipMatches object.
 
     :param text: the text object to match with phrases
@@ -133,15 +160,21 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
     :type skip_matches: SkipMatches
     :param skipgram_threshold: a threshold for how many skipgrams should match between a phrase and a candidate
     :type skipgram_threshold: float
+    :param max_length_variance: the maximum difference in length between candidate and phrase
+    :type max_length_variance: int
     :return: a list of candidate matches
     :rtype: List[Candidate]
     """
     candidates: List[Candidate] = []
     for phrase in skip_matches.phrases:
+        # print("get_skipmatch_candidates - phrase:", phrase.phrase_string)
         if get_skipset_overlap(phrase, skip_matches) < skipgram_threshold:
             continue
-        phrase_candidates = get_skipmatch_phrase_candidates(text, phrase, skip_matches, skipgram_threshold)
+        phrase_candidates = get_skipmatch_phrase_candidates(text, phrase, skip_matches, skipgram_threshold,
+                                                            max_length_variance=max_length_variance)
+        # print(phrase_candidates)
         phrase_candidates = filter_overlapping_phrase_candidates(phrase_candidates)
+        # print(phrase_candidates)
         candidates += phrase_candidates
     return candidates
 
@@ -187,7 +220,7 @@ class FuzzyPhraseSearcher(object):
         # default configuration
         self.char_match_threshold = 0.5
         self.ngram_threshold = 0.5
-        self.skipgram_threshold = 0.5
+        self.skipgram_threshold = 0.3
         self.levenshtein_threshold = 0.5
         self.perform_strip_suffix = True
         self.max_length_variance = 1
@@ -209,6 +242,7 @@ class FuzzyPhraseSearcher(object):
         self.variant_early_skipgram_index = defaultdict(list)
         self.variant_late_skipgram_index = defaultdict(list)
         self.include_variants = False
+        self.filter_distractors = False
         self.phrases: Set[Phrase] = set()
         self.variants: Set[Phrase] = set()
         self.phrase_model: Union[None, PhraseModel] = None
@@ -374,16 +408,35 @@ class FuzzyPhraseSearcher(object):
         :rtype: List[Candidate]
         """
         skip_matches = self.find_skipgram_matches(text, include_variants=include_variants)
-        candidates = get_skipmatch_candidates(text, skip_matches, self.skipgram_threshold)
+        candidates = get_skipmatch_candidates(text, skip_matches, self.skipgram_threshold,
+                                              max_length_variance=self.max_length_variance)
+        filtered = []
         for candidate in candidates:
             if use_word_boundaries:
                 adjusted_match = adjust_match_offsets(candidate.phrase.phrase_string, candidate.match_string,
                                                       text, candidate.match_start_offset, candidate.match_end_offset)
+                # print("adjusting for word boundaries:", adjusted_match, candidate.match_string)
                 if adjusted_match:
                     candidate.match_start_offset = adjusted_match["match_start_offset"]
                     candidate.match_end_offset = adjusted_match["match_end_offset"]
                     candidate.match_string = adjusted_match["match_string"]
-        return candidates
+                    filtered.append(candidate)
+                else:
+                    continue
+        return filtered
+
+    def filter_matches_by_threshold(self, matches: List[Match]) -> List[Match]:
+        filtered: List[Match] = []
+        for match in matches:
+            # print(match.phrase.phrase_string, "\t", match.string, match.character_overlap, match.ngram_overlap, match.levenshtein_similarity)
+            if match.character_overlap < self.char_match_threshold:
+                continue
+            if match.ngram_overlap < self.ngram_threshold:
+                continue
+            if match.levenshtein_similarity < self.levenshtein_threshold:
+                continue
+            filtered.append(match)
+        return filtered
 
     def find_matches(self, text: Union[str, Dict[str, str]],
                      use_word_boundaries: Union[None, bool] = None,
@@ -411,4 +464,5 @@ class FuzzyPhraseSearcher(object):
         candidates = self.find_candidates(text, use_word_boundaries=use_word_boundaries,
                                           include_variants=include_variants)
         matches = candidates_to_matches(candidates, text, self.phrase_model)
-        return sorted(matches, key=lambda x: x.offset)
+        filtered_matches = self.filter_matches_by_threshold(matches)
+        return sorted(filtered_matches, key=lambda x: x.offset)

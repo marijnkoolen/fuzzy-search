@@ -164,3 +164,86 @@ class TestFuzzyPhraseSearcher(TestCase):
         matches = searcher.find_matches(text, include_variants=True)
         self.assertEqual(matches[1].phrase.phrase_string, phrase["phrase"])
         self.assertEqual(matches[1].variant.phrase_string, phrase["variants"][0])
+
+
+class TestSearcherRealData(TestCase):
+
+    def setUp(self) -> None:
+        self.text1 = "ie Veucris den 5. Januaris 1725. PR&ASIDE, Den Heere Bentinck. PRASENTIEBUS, " + \
+                     "De Heeren Jan Welderen , van Dam, Torck , met een extraordinaris Gedeputeerde" + \
+                     " uyt de Provincie van Gelderlandt. Van Maasdam , vanden Boeizelaar , Raadtpen" + \
+                     "fionaris van Hoornbeeck , met een extraordinaris Gedeputeerde uyt de Provinci" + \
+                     "e van Hollandt ende Welt-Vrieslandt. Velters, Ockere , Noey; van Hoorn , met " + \
+                     "een extraordinaris Gedeputeerde uyt de Provincie van Zeelandt. Van Renswoude " + \
+                     ", van Voor{t. Van Schwartzenbergh, vander Waayen, Vegilin Van I{elmuden. Van " + \
+                     "Iddekinge ‚ van Tamminga."
+        self.text2 = "Mercuri: den 10. Jangarii, 1725. ia PRESIDE, Den Heere an Iddekinge. PRA&SENT" + \
+                     "IBUS, De Heeren /an Welderen , van Dam, van Wynbergen, Torck, met een extraor" + \
+                     "dinaris Gedeputeerde uyt de Provincie van Gelderland. Van Maasdam , Raadtpenf" + \
+                     "ionaris van Hoorn=beeck. Velters, Ockerfe, Noey. Taats van Amerongen, van Ren" + \
+                     "swoude. Vander Waasen , Vegilin, ’ Bentinck, van I(elmaden. Van Tamminga."
+        self.config = {
+            "char_match_threshold": 0.6,
+            "ngram_threshold": 0.5,
+            "levenshtein_threshold": 0.6,
+            "ignorecase": False,
+            "max_length_variance": 3,
+            "ngram_size": 2,
+            "skip_size": 2,
+        }
+        self.searcher = FuzzyPhraseSearcher(self.config)
+        # create a list of domain phrases
+        self.domain_phrases = [
+            # terms for the chair and attendants of a meeting
+            "PRAESIDE",
+            "PRAESENTIBUS",
+            # some weekdays in Latin
+            "Veneris",
+            "Mercurii",
+            # some date phrase where any date in January 1725 should match
+            "den .. Januarii 1725"
+        ]
+        self.phrase_model = PhraseModel(phrases=self.domain_phrases)
+        # register the keywords with the searcher
+        self.searcher.index_phrase_model(self.phrase_model)
+
+    def test_fuzzy_search_text1_finds_four_matches(self):
+        matches = self.searcher.find_matches(self.text1)
+        self.assertEqual(len(matches), 4)
+
+    def test_fuzzy_search_text1_finds_friday(self):
+        matches = self.searcher.find_matches(self.text1)
+        self.assertEqual(matches[0].string, "Veucris")
+
+    def test_fuzzy_search_text1_finds_date(self):
+        matches = self.searcher.find_matches(self.text1)
+        self.assertEqual(matches[1].string, "den 5. Januaris 1725.")
+
+    def test_fuzzy_search_text1_finds_president(self):
+        matches = self.searcher.find_matches(self.text1)
+        self.assertEqual(matches[2].string, "PR&ASIDE,")
+
+    def test_fuzzy_search_text1_finds_attendants(self):
+        matches = self.searcher.find_matches(self.text1)
+        self.assertEqual(matches[3].string, "PRASENTIEBUS,")
+
+    def test_fuzzy_search_text2_finds_four_matches(self):
+        matches = self.searcher.find_matches(self.text2)
+        self.assertEqual(len(matches), 4)
+
+    def test_fuzzy_search_text2_finds_friday(self):
+        matches = self.searcher.find_matches(self.text2)
+        self.assertEqual(matches[0].string, "Mercuri:")
+
+    def test_fuzzy_search_text2_finds_date(self):
+        matches = self.searcher.find_matches(self.text2)
+        self.assertEqual(matches[1].string, "den 10. Jangarii, 1725.")
+
+    def test_fuzzy_search_text2_finds_president(self):
+        matches = self.searcher.find_matches(self.text2)
+        self.assertEqual(matches[2].string, "PRESIDE,")
+
+    def test_fuzzy_search_text2_finds_attendants(self):
+        matches = self.searcher.find_matches(self.text2)
+        self.assertEqual(matches[3].string, "PRA&SENTIBUS,")
+

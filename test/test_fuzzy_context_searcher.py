@@ -31,5 +31,6 @@ class TestFuzzyContextSearcher(TestCase):
         phrase_model = PhraseModel(model=[{"phrase": "contains"}])
         context_searcher = FuzzyContextSearcher()
         context_searcher.index_phrase_model(phrase_model)
+        print(match_in_context.context)
         matches = context_searcher.find_matches_in_context(match_in_context)
         self.assertEqual(len(matches), 1)

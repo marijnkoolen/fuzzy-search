@@ -297,7 +297,7 @@ def calculate_end_shift(phrase_end: str, match_end: str, text_suffix: str, end_o
 
 class Candidate:
 
-    def __init__(self, phrase: Phrase):
+    def __init__(self, phrase: Phrase, max_length_variance: int = 1):
         """Create a Candidate instance for a given Phrase object.
 
         :param phrase: a phrase object
@@ -307,10 +307,17 @@ class Candidate:
         self.skipgram_list: List[SkipGram] = []
         self.skipgram_count = Counter()
         self.phrase = phrase
+        self.max_length_variance = max_length_variance
+        self.max_length = len(self.phrase.phrase_string) + self.max_length_variance
         self.match_start_offset: int = -1
         self.match_end_offset: int = -1
         self.match_string: Union[None, str] = None
         self.skipgram_overlap: float = 0.0
+
+    def __repr__(self):
+        return f'Candidate(' + \
+               f'phrase: "{self.phrase.phrase_string}", match_string: "{self.match_string}",' + \
+               f'match_start_offset: {self.match_start_offset}, match_end_offset: {self.match_end_offset})'
 
     def add_skip_match(self, skipgram: SkipGram) -> None:
         """Add a skipgram match between a text and a phrase ot the candidate.
@@ -318,18 +325,56 @@ class Candidate:
         :param skipgram: a matching skipgram
         :type skipgram: SkipGram
         """
+        if len(self.skipgram_list) == 0 and skipgram.string not in self.phrase.early_skipgram_index:
+            # print("skipping skipgram as first for candidate:", skipgram.string)
+            return None
         self.skipgram_set.add(skipgram.string)
         self.skipgram_list.append(skipgram)
-        if self.match_start_offset < 0:
+        if self.match_start_offset is None or self.match_start_offset < 0:
             self.match_start_offset = self.get_match_start_offset()
         if skipgram.offset + skipgram.length > self.match_end_offset:
             self.match_end_offset = skipgram.offset + skipgram.length
         self.skipgram_count.update([skipgram.string])
+        # print("\tadd - skipgram:", skipgram.string, skipgram.offset)
+        # print("\tadd - match length:", self.skip_match_length())
+        # print("\tadd - list:", [skip.string for skip in self.skipgram_list])
         # check if the candidate string is too long to match the phrase
         # if too long, remove the first skipgrams until the string is short enough
-        while self.skip_match_length() > len(self.phrase.phrase_string) + 3:
+        while self.skip_match_length() > self.max_length and len(self.skipgram_list) > 0:
             self.remove_first_skip()
             self.match_start_offset = self.get_match_start_offset()
+            # print("\tremove - too long - length:", self.skip_match_length())
+            # print("\tremove - too long - list:", [skip.string for skip in self.skipgram_list])
+            # print("\tremove - too long - start:", self.match_start_offset, "\tend:", self.match_end_offset)
+        while len(self.skipgram_list) > 0 and self.skipgram_list[0].string not in self.phrase.early_skipgram_index:
+            self.remove_first_skip()
+            self.match_start_offset = self.get_match_start_offset()
+            # print("\tremove - no start - length:", self.skip_match_length())
+            # print("\tremove - no start - list:", [skip.string for skip in self.skipgram_list])
+            # print("\tremove - no start - start:", self.match_start_offset, "\tend:", self.match_end_offset)
+
+    def shift_start_skip(self):
+        """Check if there is a later skip that is a better start."""
+        start_skip = self.skipgram_list[0]
+        start_phrase_offset = self.phrase.skipgram_index[start_skip.string][0].offset
+        best_start_phrase_offset = start_phrase_offset
+        best_start_index = 0
+        best_start_skip = start_skip
+        for si, skip in enumerate(self.skipgram_list):
+            skip_phrase_offset = self.phrase.skipgram_index[skip.string][0].offset
+            if skip.offset - start_skip.offset > self.skip_match_length() - len(self.phrase.phrase_string):
+                # stop looking for better start when remaining skips result in too short match length
+                break
+            if skip.offset > best_start_skip.offset and skip_phrase_offset <= best_start_phrase_offset:
+                best_start_index = si
+                best_start_skip = skip
+                best_start_phrase_offset = skip_phrase_offset
+            if skip.string not in self.phrase.early_skipgram_index:
+                break
+        for _ in range(0, best_start_index):
+            self.remove_first_skip()
+        self.match_start_offset = self.get_match_start_offset()
+        return best_start_index > 0
 
     def remove_first_skip(self) -> None:
         """Remove the first matching skipgram from the list and update the count and set."""
@@ -346,6 +391,8 @@ class Candidate:
         :return: difference between start and end offset
         :rtype: int
         """
+        if self.match_start_offset is None:
+            return 0
         return self.match_end_offset - self.match_start_offset
 
     def is_match(self, skipgram_threshold: float):
@@ -384,16 +431,20 @@ class Candidate:
         :rtype: float
         """
         diff = 0
+        total = 0
         for skipgram_string, count in self.skipgram_count.items():
             diff += abs(count - self.phrase.skipgram_freq[skipgram_string])
-        return (self.phrase.num_skipgrams - diff) / self.phrase.num_skipgrams
+            total += count
+        return (total - diff) / self.phrase.num_skipgrams
 
-    def get_match_start_offset(self) -> int:
+    def get_match_start_offset(self) -> Union[None, int]:
         """Calculate the start offset of the match.
 
         :return: the start offset of the match
         :rtype: int
         """
+        if len(self.skipgram_list) == 0:
+            return None
         first_skip = self.skipgram_list[0]
         first_skip_in_phrase = self.phrase.skipgram_index[first_skip.string][0]
         match_start_offset = self.skipgram_list[0].offset - first_skip_in_phrase.offset
@@ -415,7 +466,7 @@ class Candidate:
     def same_candidate(self, other: Candidate):
         """Check if this candidate has the same start and end offsets as another candidate.
 
-        :param other: another caniddate for the same phrase and text.
+        :param other: another candidate for the same phrase and text.
         :type other: Candidate
         :return: this candidate match has the same offsets as the other candidate
         :rtype: bool
@@ -450,6 +501,24 @@ class Match:
         self.skipgram_overlap: Union[None, float] = None
         self.levenshtein_similarity: Union[None, float] = None
         self.created = datetime.now()
+
+    def __repr__(self):
+        return f'Match(' + \
+            f'phrase: "{self.phrase.phrase_string}", variant: "{self.variant.phrase_string}",' + \
+            f'string: "{self.string}", offset: {self.offset})'
+
+    def json(self):
+        return {
+            "phrase": self.phrase.phrase_string,
+            "variant": self.variant.phrase_string,
+            "string": self.string,
+            "offset": self.offset,
+            "match_scores": {
+                "char_match": self.character_overlap,
+                "ngram_match": self.ngram_overlap,
+                "levenshtein_similarity": self.levenshtein_similarity
+            }
+        }
 
     def add_scores(self, skipgram_overlap: Union[None, float] = None) -> None:
         """Compute overlap and similarity scores between the match variant and the match string

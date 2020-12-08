@@ -46,8 +46,9 @@ class FuzzyContextSearcher(FuzzyPhraseSearcher):
         return MatchInContext(match, text, prefix_size=prefix_size, suffix_size=suffix_size)
 
     def find_matches_in_context(self, match_in_context: MatchInContext,
-                                use_word_boundaries=False, include_variants=False,
-                                filter_distractors=False) -> List[Match]:
+                                use_word_boundaries: Union[None, bool] = None,
+                                include_variants: Union[None, bool] = None,
+                                filter_distractors: Union[None, bool] = None) -> List[Match]:
         """Use a MatchInContext object to find other phrases in the context of that match.
 
         :param match_in_context: a match phrase with context from the text that the match was taken from
@@ -62,6 +63,11 @@ class FuzzyContextSearcher(FuzzyPhraseSearcher):
         :return: a list of match objects
         :rtype: List[Match]
         """
+        # override searcher configuration if a boolean is passed
+        use_word_boundaries = self.use_word_boundaries if use_word_boundaries is None else use_word_boundaries
+        include_variants = self.include_variants if include_variants is None else include_variants
+        filter_distractors = self.filter_distractors if filter_distractors is None else filter_distractors
+        # search the context of the original match
         context_matches = self.find_matches(match_in_context.context, use_word_boundaries=use_word_boundaries,
                                             include_variants=include_variants,
                                             filter_distractors=filter_distractors)
