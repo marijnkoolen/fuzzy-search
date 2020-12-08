@@ -1,5 +1,5 @@
 # Always prefer setuptools over distutils
-from setuptools import setup
+from setuptools import setup, find_packages
 # To use a consistent encoding
 from codecs import open
 from os import path
@@ -59,8 +59,8 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    # packages=find_packages(exclude=['docs']),
-    packages=['fuzzy_search'],
+    packages=find_packages(exclude=['docs']),
+    # packages=['fuzzy_search'],
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
