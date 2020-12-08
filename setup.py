@@ -20,7 +20,7 @@ setup(
 
     description='Tool for fuzzy searching in texts with historical language use and OCR/HTR errors',
     long_description=long_description,
-    # long_description_content_type='text/plain',
+    long_description_content_type='text/markdown',
 
     # The project's main homepage.
     url='https://github.com/marijnkoolen/fuzzy-search',
