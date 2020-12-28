@@ -77,20 +77,20 @@ class TestFuzzyPhraseSearcher(TestCase):
 
     def test_can_get_candidates(self):
         searcher = FuzzyPhraseSearcher()
-        phrase = Phrase("test")
-        searcher.index_phrases(phrases=[phrase])
+        phrase_model = PhraseModel(phrases=["test"])
+        searcher.index_phrase_model(phrase_model=phrase_model)
         text = {"text": "this is a test"}
         skip_matches = searcher.find_skipgram_matches(text)
-        phrases = get_skipmatch_candidates(text, skip_matches, 0.5)
+        phrases = get_skipmatch_candidates(text, skip_matches, 0.5, phrase_model=phrase_model)
         self.assertEqual(len(phrases), 1)
 
     def test_finds_multiple_candidates(self):
         searcher = FuzzyPhraseSearcher()
-        phrase = Phrase("test")
-        searcher.index_phrases(phrases=[phrase])
+        phrase_model = PhraseModel(phrases=["test"])
+        searcher.index_phrase_model(phrase_model=phrase_model)
         text = {"text": "a test is a test is a test"}
         skip_matches = searcher.find_skipgram_matches(text)
-        phrases = get_skipmatch_candidates(text, skip_matches, 0.5)
+        phrases = get_skipmatch_candidates(text, skip_matches, 0.5, phrase_model=phrase_model)
         self.assertEqual(len(phrases), 3)
 
     def test_searcher_finds_near_match(self):
@@ -165,6 +165,82 @@ class TestFuzzyPhraseSearcher(TestCase):
         self.assertEqual(matches[1].phrase.phrase_string, phrase["phrase"])
         self.assertEqual(matches[1].variant.phrase_string, phrase["variants"][0])
 
+    def test_searcher_can_toggle_distractors(self):
+        searcher = FuzzyPhraseSearcher({"filter_distractors": True})
+        self.assertEqual(searcher.filter_distractors, True)
+
+    def test_searcher_can_register_distractors(self):
+        searcher = FuzzyPhraseSearcher({"filter_distractors": True})
+        phrase = {"phrase": "okay", "distractors": ["OK"]}
+        searcher.index_phrase_model(phrase_model=PhraseModel([phrase]))
+        self.assertEqual(len(searcher.distractors), 1)
+        distractor = searcher.distractors.pop()
+        self.assertEqual(distractor.phrase_string, "OK")
+
+    def test_searcher_can_match_distractors(self):
+        searcher = FuzzyPhraseSearcher({"filter_distractors": True})
+        phrase = {"phrase": "baking", "distractors": ["braking"]}
+        searcher.index_phrase_model(phrase_model=PhraseModel([phrase]))
+        text = "This text is about baking and not about braking."
+        matches = searcher.find_matches(text, filter_distractors=True)
+        self.assertEqual(len(matches), 1)
+
+
+class TestFuzzySearchExactMatch(TestCase):
+
+    def setUp(self) -> None:
+        self.searcher = FuzzyPhraseSearcher()
+        self.phrase = {"phrase": "baking", "distractors": ["braking"]}
+        self.searcher.index_phrase_model(phrase_model=PhraseModel([self.phrase]))
+
+    def test_fuzzy_search_can_search_exact_match(self):
+        text = "This text is about baking and not about braking."
+        matches = self.searcher.find_exact_matches(text)
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0].string, "baking")
+
+    def test_fuzzy_search_can_search_exact_match_with_word_boundaries(self):
+        text = "This text is about baking and not about rebaking."
+        matches = self.searcher.find_exact_matches(text, use_word_boundaries=True)
+        self.assertEqual(len(matches), 1)
+
+    def test_fuzzy_search_can_search_exact_match_without_word_boundaries(self):
+        text = "This text is about baking and not about rebaking."
+        matches = self.searcher.find_exact_matches(text, use_word_boundaries=False)
+        self.assertEqual(len(matches), 2)
+        self.assertEqual(matches[1].string, "baking")
+
+    def test_fuzzy_search_can_search_exact_match_with_special_characters(self):
+        searcher = FuzzyPhraseSearcher()
+        phrase = {"phrase": "[baking]", "distractors": ["braking"]}
+        searcher.index_phrase_model(phrase_model=PhraseModel([phrase]))
+        text = "This text is about [baking] and not about braking."
+        matches = searcher.find_exact_matches(text, use_word_boundaries=False)
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0].string, "[baking]")
+
+    def test_text_split(self):
+        text = {
+            "text": "Ntfangen een Missive van den Gouverneur Generaal van het eiland Amoras, "
+                    + "verfoekende, dat dit beter getest moet worden.",
+            "id": "urn:republic/inv=3825/meeting=1775-01-28/para=2"
+        }
+        phrases = [
+            {"phrase": "ONtfangen een Missive van"},
+            {"phrase": "Missive"},
+            {"phrase": "Gouverneur Generaal"},
+            {"phrase": "Gouverneur"},
+            {"phrase": "Generaal van de"},
+            {"phrase": "versoekende"}
+        ]
+        phrase_model = PhraseModel(model=phrases)
+        searcher = FuzzyPhraseSearcher()
+        searcher.index_phrase_model(phrase_model)
+        exact_matches = searcher.find_exact_matches(text)
+        for exact_match in exact_matches:
+            print("exact match:", exact_match)
+        self.assertEqual(len(exact_matches), 3)
+
 
 class TestSearcherRealData(TestCase):
 
@@ -217,15 +293,15 @@ class TestSearcherRealData(TestCase):
 
     def test_fuzzy_search_text1_finds_date(self):
         matches = self.searcher.find_matches(self.text1)
-        self.assertEqual(matches[1].string, "den 5. Januaris 1725.")
+        self.assertEqual(matches[1].string, "den 5. Januaris 1725")
 
     def test_fuzzy_search_text1_finds_president(self):
         matches = self.searcher.find_matches(self.text1)
-        self.assertEqual(matches[2].string, "PR&ASIDE,")
+        self.assertEqual(matches[2].string, "PR&ASIDE")
 
     def test_fuzzy_search_text1_finds_attendants(self):
         matches = self.searcher.find_matches(self.text1)
-        self.assertEqual(matches[3].string, "PRASENTIEBUS,")
+        self.assertEqual(matches[3].string, "PRASENTIEBUS")
 
     def test_fuzzy_search_text2_finds_four_matches(self):
         matches = self.searcher.find_matches(self.text2)
@@ -233,17 +309,16 @@ class TestSearcherRealData(TestCase):
 
     def test_fuzzy_search_text2_finds_friday(self):
         matches = self.searcher.find_matches(self.text2)
-        self.assertEqual(matches[0].string, "Mercuri:")
+        self.assertEqual(matches[0].string, "Mercuri")
 
     def test_fuzzy_search_text2_finds_date(self):
         matches = self.searcher.find_matches(self.text2)
-        self.assertEqual(matches[1].string, "den 10. Jangarii, 1725.")
+        self.assertEqual(matches[1].string, "den 10. Jangarii, 1725")
 
     def test_fuzzy_search_text2_finds_president(self):
         matches = self.searcher.find_matches(self.text2)
-        self.assertEqual(matches[2].string, "PRESIDE,")
+        self.assertEqual(matches[2].string, "PRESIDE")
 
     def test_fuzzy_search_text2_finds_attendants(self):
         matches = self.searcher.find_matches(self.text2)
-        self.assertEqual(matches[3].string, "PRA&SENTIBUS,")
-
+        self.assertEqual(matches[3].string, "PRA&SENTIBUS")

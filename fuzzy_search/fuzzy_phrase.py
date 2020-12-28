@@ -1,7 +1,24 @@
-from typing import Dict, List, Union
+from typing import Dict, List, Set, Union
 from collections import defaultdict, Counter
+import re
 
 from fuzzy_search.fuzzy_string import SkipGram, text2skipgrams
+
+
+def is_valid_label(label: Union[str, List[str]]) -> bool:
+    """Test whether label has a valid value.
+
+    :param label: a phrase label (either a string or a list of strings)
+    :type label: Union[str, List[str]]
+    :return: whether the label is valid
+    :rtype: bool
+    """
+    if isinstance(label, list):
+        for item in label:
+            if not isinstance(item, str):
+                return False
+        return True
+    return isinstance(label, str)
 
 
 class Phrase(object):
@@ -13,6 +30,13 @@ class Phrase(object):
             phrase = {"phrase": phrase}
         self.name = phrase["phrase"]
         self.phrase_string = self.name if not ignore_case else self.name.lower()
+        self.exact_string = re.escape(self.phrase_string)
+        self.extact_word_boundary_string = re.compile(rf"\b{self.exact_string}\b")
+        self.label = None
+        self.max_offset: int = -1
+        self.max_end: int = -1
+        self.label_set: Set[str] = set()
+        self.label_list: List[str] = []
         self.properties = phrase
         self.ngram_size = ngram_size
         self.skip_size = skip_size
@@ -41,8 +65,20 @@ class Phrase(object):
         self.num_skipgrams = len(self.skipgrams)
         self.skipgram_distance = {}
         self.metadata: dict = phrase
+        self.words: List[str] = [word for word in re.split(r"\W+", self.phrase_string) if word != ""]
+        self.word_set: Set[str] = set(self.words)
+        self.first_word = None if len(self.words) == 0 else self.words[0]
+        self.last_word = None if len(self.words) == 0 else self.words[-1]
+        self.num_words = len(self.words)
+        if "label" in phrase:
+            self.set_label(phrase["label"])
+        if len(phrase.keys()) > 1:
+            self.add_metadata(phrase)
         self._index_skipgrams()
         self._set_within_range()
+
+    def __repr__(self):
+        return f"Phrase({self.phrase_string}, {self.label})"
 
     # internal methods
 
@@ -68,6 +104,35 @@ class Phrase(object):
 
     # external methods
 
+    def set_label(self, label: Union[str, List[str]]) -> None:
+        """Set the label(s) of a phrase. Labels must be string and can be a single string or a list.
+
+        :param label: the label(s) of a phrase
+        :type label: Union[str, List[str]]
+        """
+        if not is_valid_label(label):
+            raise ValueError("phrase label must be a single string or a list of strings:", label)
+        self.label = label
+        if isinstance(label, str):
+            self.label_set = {label}
+            self.label_list = [label]
+        else:
+            self.label_set = set(label)
+            self.label_list = label
+
+    def has_label(self, label_string: str) -> bool:
+        """Check if a given label belongs to at least one phrase in the phrase model.
+
+        :param label_string: a label string
+        :type label_string: str
+        :return: a boolean whether the label is part of the phrase model
+        :rtype: bool
+        """
+        if isinstance(self.label, list):
+            return label_string in self.label
+        else:
+            return label_string == self.label
+
     def add_metadata(self, metadata_dict: Dict[str, any]) -> None:
         """Add key/value pairs as metadata for this phrase.
 
@@ -78,6 +143,23 @@ class Phrase(object):
         """
         for key in metadata_dict:
             self.metadata[key] = metadata_dict[key]
+            if key == "label":
+                self.set_label(metadata_dict[key])
+            elif key == "max_offset":
+                self.add_max_offset(metadata_dict["max_offset"])
+
+    def add_max_offset(self, max_offset: int) -> None:
+        """Add a maximum offset for matching a phrase in a text.
+
+        :param max_offset: the maximum offset to allow a phrase to match
+        :type max_offset: int
+        """
+        if not isinstance(max_offset, int):
+            raise TypeError("max_offset must be a positive integer")
+        if max_offset < 0:
+            raise ValueError("max_offset must be positive")
+        self.max_offset = max_offset
+        self.max_end = self.max_offset + len(self.phrase_string)
 
     def has_skipgram(self, skipgram: str) -> bool:
         """For a given skipgram, return boolean whether it is in the index

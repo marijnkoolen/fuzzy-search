@@ -1,6 +1,14 @@
 # fuzzy-search
 Fuzzy search module for searching lists of words in low quality OCR and HTR text.
 
+Project page on PyPI: [https://pypi.org/project/fuzzy-search/](https://pypi.org/project/fuzzy-search/)
+
+## Installing
+
+```commandline
+pip install -u fuzzy-search
+```
+
 ## Usage
 
 ```python

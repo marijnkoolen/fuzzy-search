@@ -1,5 +1,6 @@
 from unittest import TestCase
-from fuzzy_search.fuzzy_match import Match, MatchInContext, adjust_match_offsets
+import string
+from fuzzy_search.fuzzy_match import PhraseMatch, PhraseMatchInContext, adjust_match_offsets
 from fuzzy_search.fuzzy_phrase import Phrase
 from fuzzy_search.fuzzy_match import adjust_match_start_offset, adjust_match_end_offset
 from fuzzy_search.fuzzy_match import map_string
@@ -8,18 +9,18 @@ from fuzzy_search.fuzzy_match import map_string
 class TestFuzzyMatch(TestCase):
 
     def test_map_string_maps_word_string(self):
-        string = "test"
-        mapped_string = map_string(string)
+        affix_string = "test"
+        mapped_string = map_string(affix_string, string.punctuation)
         self.assertEqual(mapped_string, "wwww")
 
     def test_map_string_maps_space_string(self):
-        string = "     "
-        mapped_string = map_string(string)
+        affix_string = "     "
+        mapped_string = map_string(affix_string, string.punctuation)
         self.assertEqual(mapped_string, "sssss")
 
     def test_map_string_maps_mixed_string(self):
-        string = "a test"
-        mapped_string = map_string(string)
+        affix_string = "a test"
+        mapped_string = map_string(affix_string, string.punctuation)
         self.assertEqual(mapped_string, "wswwww")
 
     def test_adjust_start(self):
@@ -69,7 +70,7 @@ class TestFuzzyMatch(TestCase):
         phrase_string = "contains"
         match_string = "contains"
         end = text["text"].index(match_string) + len(match_string)
-        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end)
+        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end, string.punctuation)
         self.assertEqual(adjusted_end, end)
 
     def test_adjust_end_shifts_back_one_when_ending_with_whitespace(self):
@@ -77,7 +78,7 @@ class TestFuzzyMatch(TestCase):
         phrase_string = "contains"
         match_string = "contains "
         end = text["text"].index(match_string) + len(match_string)
-        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end)
+        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end, string.punctuation)
         self.assertEqual(adjusted_end, end-1)
 
     def test_adjust_end_shifts_back_two_when_ending_with_whitespace_and_char(self):
@@ -85,7 +86,7 @@ class TestFuzzyMatch(TestCase):
         phrase_string = "contains"
         match_string = "contains s"
         end = text["text"].index(match_string) + len(match_string)
-        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end)
+        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end, string.punctuation)
         self.assertEqual(adjusted_end, end-2)
 
     def test_adjust_end_shifts_back_one_when_phrase_ends_with_whitespace(self):
@@ -93,7 +94,7 @@ class TestFuzzyMatch(TestCase):
         phrase_string = "contains "
         match_string = "contains s"
         end = text["text"].index(match_string) + len(match_string)
-        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end)
+        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end, string.punctuation)
         self.assertEqual(adjusted_end, end-1)
 
     def test_adjust_end_does_not_shift_when_end_middle_of_next_word(self):
@@ -101,7 +102,7 @@ class TestFuzzyMatch(TestCase):
         phrase_string = "contains"
         match_string = "contains so"
         end = text["text"].index(match_string) + len(match_string)
-        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end)
+        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end, string.punctuation)
         self.assertEqual(adjusted_end, None)
 
     def test_adjust_end_shifts_to_end_of_next_word(self):
@@ -109,7 +110,7 @@ class TestFuzzyMatch(TestCase):
         phrase_string = "contains som"
         match_string = "contains som"
         end = text["text"].index(match_string) + len(match_string)
-        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end)
+        adjusted_end = adjust_match_end_offset(phrase_string, match_string, text, end, string.punctuation)
         self.assertEqual(adjusted_end, end+1)
 
     def test_adjust_boundaries_removes_surrounding_whitespace(self):
@@ -137,17 +138,16 @@ class TestMatchInContext(TestCase):
     def setUp(self) -> None:
         self.text = "This string contains test text."
         self.phrase = Phrase("test")
-        self.match = Match(self.phrase, self.phrase, "test", 21)
+        self.match = PhraseMatch(self.phrase, self.phrase, "test", 21)
 
     def test_make_match_in_context(self):
-        match_in_context = MatchInContext(self.match, self.text)
+        match_in_context = PhraseMatchInContext(self.match, self.text)
         self.assertEqual(match_in_context.context_start, 1)
 
     def test_context_is_adjustable(self):
-        match_in_context = MatchInContext(self.match, self.text, prefix_size=10)
+        match_in_context = PhraseMatchInContext(self.match, self.text, prefix_size=10)
         self.assertEqual(match_in_context.context_start, 11)
 
     def test_context_contains_text_from_doc(self):
-        match_in_context = MatchInContext(self.match, self.text, prefix_size=30)
+        match_in_context = PhraseMatchInContext(self.match, self.text, prefix_size=30)
         self.assertEqual(match_in_context.context, self.text)
-

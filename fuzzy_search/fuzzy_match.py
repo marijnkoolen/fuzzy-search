@@ -3,6 +3,7 @@ from typing import Dict, List, Union
 from datetime import datetime
 from collections import Counter
 import uuid
+import string
 
 import fuzzy_search.fuzzy_string as fuzzy_string
 from fuzzy_search.fuzzy_string import SkipGram
@@ -25,6 +26,8 @@ def validate_match_props(match_phrase: Phrase, match_variant: Phrase,
     :rtype: None
     """
     if not isinstance(match_phrase, Phrase):
+        print(match_phrase)
+        print(type(match_phrase))
         raise TypeError('match_phrase MUST be of class Phrase')
     if not isinstance(match_variant, Phrase):
         raise TypeError('match_variant MUST be of class Phrase')
@@ -63,11 +66,11 @@ def adjust_match_start_offset(text: Dict[str, any], match_string: str,
         if text["text"][match_offset-1:match_offset] in fuzzy_string.non_word_affixes_1:
             return match_offset
         # if penultimate character before match is a word boundary, move offset by -1
-        elif text["text"][match_offset-2:match_offset-1] in fuzzy_string.non_word_affixes_1:
+        elif match_offset > 1 and text["text"][match_offset-2:match_offset-1] in fuzzy_string.non_word_affixes_1:
             # move match_offset back by 1 to start at word boundary
             return match_offset-1
         # if two characters before match is a word boundary, move offset by -2
-        elif text["text"][match_offset-3:match_offset-2] in fuzzy_string.non_word_affixes_1:
+        elif match_offset > 2 and text["text"][match_offset-3:match_offset-2] in fuzzy_string.non_word_affixes_1:
             # move match_offset back by 1 to start at word boundary
             return match_offset-2
         # if the three characters preceding match are word characters, the start is wrong
@@ -79,7 +82,7 @@ def adjust_match_start_offset(text: Dict[str, any], match_string: str,
 
 
 def adjust_match_end_offset(phrase_string: str, candidate_string: str,
-                            text: Dict[str, any], end_offset: int) -> Union[int, None]:
+                            text: Dict[str, any], end_offset: int, punctuation: str) -> Union[int, None]:
     """Adjust the end offset if it is not at a word boundary.
 
     :param phrase_string: the phrase string
@@ -90,18 +93,25 @@ def adjust_match_end_offset(phrase_string: str, candidate_string: str,
     :type text: Dict[str, any]
     :param end_offset: the text offset of the candidate match string
     :type end_offset: int
+    :param punctuation: the set of characters to treat as punctuation
+    :type punctuation: str
     :return: the adjusted offset or None if the required adjustment is too big
     :rtype: Union[int, None]
     """
-    phrase_end = map_string(phrase_string[-3:])
-    match_end = map_string(candidate_string[-3:])
-    text_suffix = map_string(text["text"][end_offset:end_offset+3])
+    # ugly hack: if phrase string ends with punctuation, use only whitespace as word end boundary
+    whitespace_only = True if phrase_string[-1] in punctuation else False
+    phrase_end = map_string(phrase_string[-3:], punctuation)
+    match_end = map_string(candidate_string[-3:], punctuation, whitespace_only=whitespace_only)
+    text_suffix = map_string(text["text"][end_offset:end_offset+3], punctuation, whitespace_only=whitespace_only)
+    # print(f"match_end: {candidate_string[-3:]: <4}\ttext_suffix: {text['text'][end_offset:end_offset+3]: >4}")
+    # print(f"mapped suffixes - match_end: #{match_end}#\ttext_suffix: #{text_suffix}#")
     return calculate_end_shift(phrase_end, match_end, text_suffix, end_offset)
 
 
 def adjust_match_offsets(phrase_string: str, candidate_string: str,
                          text: Dict[str, any], candidate_start_offset: int,
-                         candidate_end_offset: int) -> Union[Dict[str, Union[str, int]], None]:
+                         candidate_end_offset: int,
+                         punctuation: str = string.punctuation) -> Union[Dict[str, Union[str, int]], None]:
     """Adjust the end offset if it is not at a word boundary.
 
     :param phrase_string: the phrase string
@@ -114,14 +124,22 @@ def adjust_match_offsets(phrase_string: str, candidate_string: str,
     :type candidate_start_offset: int
     :param candidate_end_offset: the text offset of the end of the candidate match string
     :type candidate_end_offset: int
+    :param punctuation: the set of characters to treat as punctuation (defaults to string.punctuation)
+    :type punctuation: str
     :return: the adjusted offset or None if the required adjustment is too big
     :rtype: Union[int, None]
     """
+    # print("phrase string:", phrase_string)
+    # print("adjusting candidate string:", candidate_string)
+    if punctuation is None:
+        punctuation = string.punctuation
+    # print("candidate_start_offset:", candidate_start_offset)
     match_start_offset = adjust_match_start_offset(text, candidate_string, candidate_start_offset)
+    # print("match_start_offset:", match_start_offset)
     if match_start_offset is None:
         return None
     match_end_offset = adjust_match_end_offset(phrase_string, candidate_string,
-                                               text, candidate_end_offset)
+                                               text, candidate_end_offset, punctuation)
     if match_end_offset is None:
         return None
     return {
@@ -131,16 +149,23 @@ def adjust_match_offsets(phrase_string: str, candidate_string: str,
     }
 
 
-def map_string(string: str) -> str:
-    """Turn string into type char representation. Types are 'w' for non-whitespace char,
+def map_string(affix_string: str, punctuation: str, whitespace_only: bool = False) -> str:
+    """Turn affix string into type char representation. Types are 'w' for non-whitespace char,
     and 's' for whitespace char.
 
-    :param string: a string
+    :param affix_string: a string
     :type: str
+    :param punctuation: the set of characters to treat as punctuation
+    :type punctuation: str
+    :param whitespace_only: whether to treat only whitespace as word boundary or also include (some) punctuation
+    :type whitespace_only: bool
     :return: the type char representation
     :rtype: str
     """
-    return "".join(["s" if char == " " else "w" for char in string])
+    if whitespace_only:
+        return "".join(["s" if char == " " else "w" for char in affix_string])
+    else:
+        return "".join(["s" if char == " " or char in punctuation else "w" for char in affix_string])
 
 
 def calculate_end_shift(phrase_end: str, match_end: str, text_suffix: str, end_offset: int):
@@ -316,7 +341,7 @@ class Candidate:
 
     def __repr__(self):
         return f'Candidate(' + \
-               f'phrase: "{self.phrase.phrase_string}", match_string: "{self.match_string}",' + \
+               f'phrase: "{self.phrase.phrase_string}", match_string: "{self.match_string}", ' + \
                f'match_start_offset: {self.match_start_offset}, match_end_offset: {self.match_end_offset})'
 
     def add_skip_match(self, skipgram: SkipGram) -> None:
@@ -353,8 +378,10 @@ class Candidate:
             # print("\tremove - no start - list:", [skip.string for skip in self.skipgram_list])
             # print("\tremove - no start - start:", self.match_start_offset, "\tend:", self.match_end_offset)
 
-    def shift_start_skip(self):
+    def shift_start_skip(self) -> bool:
         """Check if there is a later skip that is a better start."""
+        if self.skip_match_length() <= len(self.phrase.phrase_string):
+            return False
         start_skip = self.skipgram_list[0]
         start_phrase_offset = self.phrase.skipgram_index[start_skip.string][0].offset
         best_start_phrase_offset = start_phrase_offset
@@ -404,15 +431,22 @@ class Candidate:
         :rtype: bool
         """
         if len(self.skipgram_list) == 0:
+            # there are no matching skipgrams, so no matching string
             return False
         if self.skipgram_list[0].string not in self.phrase.early_skipgram_index:
+            # the first skipgram of candidate is not in the early skipgrams of phrase
             return False
+        if abs(self.skip_match_length() - len(self.phrase.phrase_string)) > self.max_length_variance:
+            return False
+        # print(self.get_skip_set_overlap())
         if self.skipgram_list[-1].string not in self.phrase.late_skipgram_index:
+            # print("last skip not in late index")
+            # the last skipgram of candidate is not in the late skipgrams of phrase
             return False
         if self.get_skip_set_overlap() < skipgram_threshold:
+            # print("below skipgram threshold:", self.get_skip_set_overlap(), skipgram_threshold)
             return False
         else:
-            self.phrase = self.phrase
             return True
 
     def get_skip_set_overlap(self) -> float:
@@ -448,6 +482,9 @@ class Candidate:
         first_skip = self.skipgram_list[0]
         first_skip_in_phrase = self.phrase.skipgram_index[first_skip.string][0]
         match_start_offset = self.skipgram_list[0].offset - first_skip_in_phrase.offset
+        # print("in match:", first_skip.string, first_skip.offset)
+        # print("in phrase:", first_skip_in_phrase.string, first_skip_in_phrase.offset)
+        # print("match_start_offset:", match_start_offset)
         return 0 if match_start_offset < 0 else match_start_offset
 
     def get_match_string(self, text: Dict[str, any]) -> Union[str, None]:
@@ -458,6 +495,10 @@ class Candidate:
         :return: the matching string
         :rtype: str
         """
+        if self.match_start_offset == self.match_end_offset:
+            raise ValueError('start and end offset cannot be the same')
+        if self.match_start_offset > self.match_end_offset:
+            raise ValueError('start offset cannot be bigger than end offset')
         return text["text"][self.match_start_offset:self.match_end_offset]
     # TODO: check if first to last offset is too long
     # if not, the match string is probably fine
@@ -483,14 +524,16 @@ class Candidate:
 # Match class #
 ###############
 
-class Match:
+class PhraseMatch:
 
     def __init__(self, match_phrase: Phrase, match_variant: Phrase,
                  match_string: str, match_offset: int,
                  text_id: Union[None, str] = None):
+        # print("Match class match_phrase:", match_phrase)
         validate_match_props(match_phrase, match_variant, match_string, match_offset)
         self.id = str(uuid.uuid4())
         self.phrase = match_phrase
+        self.label = match_phrase.label
         self.variant = match_variant
         self.string = match_string
         self.offset = match_offset
@@ -503,22 +546,26 @@ class Match:
         self.created = datetime.now()
 
     def __repr__(self):
-        return f'Match(' + \
+        return f'PhraseMatch(' + \
             f'phrase: "{self.phrase.phrase_string}", variant: "{self.variant.phrase_string}",' + \
             f'string: "{self.string}", offset: {self.offset})'
 
-    def json(self):
-        return {
+    def json(self) -> dict:
+        data = {
             "phrase": self.phrase.phrase_string,
             "variant": self.variant.phrase_string,
             "string": self.string,
             "offset": self.offset,
+            "label": self.label,
             "match_scores": {
                 "char_match": self.character_overlap,
                 "ngram_match": self.ngram_overlap,
                 "levenshtein_similarity": self.levenshtein_similarity
             }
         }
+        if "label" in self.phrase.metadata:
+            data["label"] = self.phrase.metadata["label"]
+        return data
 
     def add_scores(self, skipgram_overlap: Union[None, float] = None) -> None:
         """Compute overlap and similarity scores between the match variant and the match string
@@ -567,11 +614,11 @@ class Match:
                                                                                           self.string)
         return self.levenshtein_similarity
 
-    def overlaps(self, other: Match) -> bool:
+    def overlaps(self, other: PhraseMatch) -> bool:
         """Check if the match string of this match object overlaps with the match string of another match object.
 
         :param other: another match object
-        :type other: Match
+        :type other: PhraseMatch
         :return: a boolean indicating whether the match_strings of the two objects overlap in the source text
         :rtype: bool"""
         if self.text_id is not None and self.text_id != other.text_id:
@@ -596,7 +643,7 @@ class Match:
             "generator": {
                 "id": "https://github.com/marijnkoolen/fuzzy-search",
                 "type": "Software",
-                "name": f"FuzzySearcher"
+                "name": f"fuzzy-search"
             },
             "target": {
                 "source": self.text_id,
@@ -618,9 +665,9 @@ class Match:
         }
 
 
-class MatchInContext(Match):
+class PhraseMatchInContext(PhraseMatch):
 
-    def __init__(self, match: Match, text: Union[str, dict], prefix_size: int = 20, suffix_size: int = 20):
+    def __init__(self, match: PhraseMatch, text: Union[str, dict], prefix_size: int = 20, suffix_size: int = 20):
         super().__init__(match_phrase=match.phrase, match_variant=match.variant, match_string=match.string,
                          match_offset=match.offset, text_id=match.text_id)
         """MatchInContext extends a Match object with surrounding context from the text document that the match
@@ -636,6 +683,9 @@ class MatchInContext(Match):
         :param suffix_size: the size of the suffix window
         :type suffix_size: int 
         """
+        self.character_overlap = match.character_overlap
+        self.ngram_overlap = match.ngram_overlap
+        self.levenshtein_similarity = match.levenshtein_similarity
         if isinstance(text, str):
             text = {"text": text, "id": match.text_id}
         self.prefix_size = prefix_size
@@ -645,3 +695,15 @@ class MatchInContext(Match):
         self.context = text["text"][self.context_start:self.context_end]
         self.prefix = text["text"][self.context_start:match.offset]
         self.suffix = text["text"][match.end:self.context_end]
+
+    def __repr__(self):
+        return f'PhraseMatchInContext(' + \
+               f'phrase: "{self.phrase.phrase_string}", variant: "{self.variant.phrase_string}",' + \
+               f'string: "{self.string}", offset: {self.offset}), context: "{self.context}"'
+
+    def json(self):
+        json_data = super().json()
+        json_data["context_start"] = self.context_start
+        json_data["context_end"] = self.context_end
+        json_data["context"] = self.context
+        return json_data
