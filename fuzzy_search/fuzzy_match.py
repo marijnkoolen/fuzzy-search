@@ -526,14 +526,16 @@ class Candidate:
 
 class PhraseMatch:
 
-    def __init__(self, match_phrase: Phrase, match_variant: Phrase,
-                 match_string: str, match_offset: int,
-                 text_id: Union[None, str] = None):
+    def __init__(self, match_phrase: Phrase, match_variant: Phrase, match_string: str,
+                 match_offset: int, text_id: Union[None, str] = None,
+                 match_scores: dict = None, match_label: Union[str, List[str]] = None):
         # print("Match class match_phrase:", match_phrase)
         validate_match_props(match_phrase, match_variant, match_string, match_offset)
         self.id = str(uuid.uuid4())
         self.phrase = match_phrase
         self.label = match_phrase.label
+        if match_label:
+            self.label = match_label
         self.variant = match_variant
         self.string = match_string
         self.offset = match_offset
@@ -543,6 +545,10 @@ class PhraseMatch:
         self.ngram_overlap: Union[None, float] = None
         self.skipgram_overlap: Union[None, float] = None
         self.levenshtein_similarity: Union[None, float] = None
+        if match_scores:
+            self.character_overlap = match_scores['char_match']
+            self.ngram_overlap = match_scores['ngram_match']
+            self.levenshtein_similarity = match_scores['levenshtein_similarity']
         self.created = datetime.now()
 
     def __repr__(self):
@@ -557,6 +563,7 @@ class PhraseMatch:
             "string": self.string,
             "offset": self.offset,
             "label": self.label,
+            "text_id": self.text_id,
             "match_scores": {
                 "char_match": self.character_overlap,
                 "ngram_match": self.ngram_overlap,
@@ -667,17 +674,24 @@ class PhraseMatch:
 
 class PhraseMatchInContext(PhraseMatch):
 
-    def __init__(self, match: PhraseMatch, text: Union[str, dict], prefix_size: int = 20, suffix_size: int = 20):
+    def __init__(self, match: PhraseMatch, text: Union[str, dict] = None, context: str = None,
+                 context_start: int = None, context_end: int = None,
+                 prefix_size: int = 20, suffix_size: int = 20):
         super().__init__(match_phrase=match.phrase, match_variant=match.variant, match_string=match.string,
                          match_offset=match.offset, text_id=match.text_id)
         """MatchInContext extends a Match object with surrounding context from the text document that the match
-        phrase was taken from.
+        phrase was taken from. Alternatively, the context can be submitted.
 
-        :param text: the text (string or dictionary with 'text' and 'id' properties) that 
-        the match phrase was taken from
+        :param text: the text (string or dictionary with 'text' and 'id' properties) that the match phrase was taken from
         :type text: Union[str, dict]
+        :param context: the context string around the match phrase 
+        :type context: Union[str, dict]
         :param match: the match phrase object
         :type match: Match
+        :param context_start: the start offset of the context in the original text
+        :type context_start: int
+        :param context_end: the end offset of the context in the original text
+        :type context_end: int
         :param prefix_size: the size of the prefix window
         :type prefix_size: int
         :param suffix_size: the size of the suffix window
@@ -686,13 +700,18 @@ class PhraseMatchInContext(PhraseMatch):
         self.character_overlap = match.character_overlap
         self.ngram_overlap = match.ngram_overlap
         self.levenshtein_similarity = match.levenshtein_similarity
-        if isinstance(text, str):
-            text = {"text": text, "id": match.text_id}
         self.prefix_size = prefix_size
         self.suffix_size = suffix_size
-        self.context_start = match.offset - prefix_size if match.offset >= prefix_size else 0
-        self.context_end = match.end + suffix_size if len(text["text"]) > match.end + suffix_size else len(text["text"])
-        self.context = text["text"][self.context_start:self.context_end]
+        if text:
+            if isinstance(text, str):
+                text = {"text": text, "id": match.text_id}
+            self.context_start = match.offset - prefix_size if match.offset >= prefix_size else 0
+            self.context_end = match.end + suffix_size if len(text["text"]) > match.end + suffix_size else len(text["text"])
+            self.context = text["text"][self.context_start:self.context_end]
+        elif context:
+            self.context = context
+            self.context_start = context_start
+            self.context_end = context_end
         self.prefix = text["text"][self.context_start:match.offset]
         self.suffix = text["text"][match.end:self.context_end]
 
@@ -706,4 +725,24 @@ class PhraseMatchInContext(PhraseMatch):
         json_data["context_start"] = self.context_start
         json_data["context_end"] = self.context_end
         json_data["context"] = self.context
+        json_data['prefix_size'] = self.prefix_size
+        json_data['suffix_size'] = self.suffix_size
+        json_data['prefix'] = self.prefix
+        json_data['suffix'] = self.suffix
         return json_data
+
+
+def phrase_match_from_json(match_json: dict) -> PhraseMatch:
+    match_phrase = Phrase(match_json['phrase'])
+    match_variant = Phrase(match_json['variant'])
+    phrase_match = PhraseMatch(match_phrase, match_variant, match_json['string'],
+                               match_offset=match_json['offset'],
+                               match_scores=match_json['match_scores'],
+                               match_label=match_json['label'])
+    if 'context' in match_json:
+        phrase_match = PhraseMatchInContext(phrase_match, context=match_json['context'],
+                                            prefix_size=match_json['prefix_size'],
+                                            suffix_size=match_json['suffix_size'],
+                                            context_start=match_json['context_start'],
+                                            context_end=match_json['context_end'])
+    return phrase_match
