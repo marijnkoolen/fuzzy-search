@@ -528,10 +528,11 @@ class PhraseMatch:
 
     def __init__(self, match_phrase: Phrase, match_variant: Phrase, match_string: str,
                  match_offset: int, text_id: Union[None, str] = None,
-                 match_scores: dict = None, match_label: Union[str, List[str]] = None):
+                 match_scores: dict = None, match_label: Union[str, List[str]] = None,
+                 match_id: str = None):
         # print("Match class match_phrase:", match_phrase)
         validate_match_props(match_phrase, match_variant, match_string, match_offset)
-        self.id = str(uuid.uuid4())
+        self.id = match_id if match_id else str(uuid.uuid4())
         self.phrase = match_phrase
         self.label = match_phrase.label
         if match_label:
@@ -556,8 +557,21 @@ class PhraseMatch:
             f'phrase: "{self.phrase.phrase_string}", variant: "{self.variant.phrase_string}",' + \
             f'string: "{self.string}", offset: {self.offset})'
 
+    def label_list(self):
+        if isinstance(self.label, str):
+            return [self.label]
+        else:
+            return self.label
+
+    def has_label(self, label: str):
+        if isinstance(self.label, str):
+            return label == self.label
+        else:
+            return label in self.label
+
     def json(self) -> dict:
         data = {
+            "type": "PhraseMatch",
             "phrase": self.phrase.phrase_string,
             "variant": self.variant.phrase_string,
             "string": self.string,
@@ -641,6 +655,36 @@ class PhraseMatch:
         """Turn match object into a W3C Web Annotation representation"""
         if not self.text_id:
             raise ValueError('Cannot make target: match object has no text_id')
+        body_match = [
+            {
+                'type': 'TextualBody',
+                'purpose': 'tagging',
+                'format': 'text',
+                'value': self.phrase.phrase_string
+            },
+            {
+                'type': 'TextualBody',
+                'purpose': 'highlighting',
+                'format': 'text',
+                'value': self.string
+            }
+        ]
+        if self.variant.phrase_string != self.string:
+            correction = {
+                'type': 'TextualBody',
+                'purpose': 'correcting',
+                'format': 'text',
+                'value': self.variant.phrase_string
+            }
+            body_match.append(correction)
+        if self.label:
+            classification = {
+                'type': 'TextualBody',
+                'purpose': 'classifying',
+                'format': 'text',
+                'value': self.label
+            }
+            body_match.append(classification)
         return {
             "@context": "http://www.w3.org/ns/anno.jsonld",
             "id": self.id,
@@ -660,15 +704,7 @@ class PhraseMatch:
                     "end": self.end
                 }
             },
-            "body": {
-                "type": "Dataset",
-                "value": {
-                    "match_phrase": self.phrase.phrase_string,
-                    "match_variant": self.variant.phrase_string,
-                    "match_string": self.string,
-                    "phrase_metadata": self.phrase.metadata
-                }
-            }
+            "body": body_match
         }
 
 
@@ -730,6 +766,18 @@ class PhraseMatchInContext(PhraseMatch):
         json_data['prefix'] = self.prefix
         json_data['suffix'] = self.suffix
         return json_data
+
+    def as_web_anno(self) -> Dict[str, any]:
+        match_anno = super().as_web_anno()
+        position_selector = match_anno['target']['selector']
+        quote_selector = {
+            'type': 'TextQuoteSelector',
+            'prefix': self.prefix,
+            'exact': self.string,
+            'suffix': self.suffix
+        }
+        match_anno['target']['selector'] = [position_selector, quote_selector]
+        return match_anno
 
 
 def phrase_match_from_json(match_json: dict) -> PhraseMatch:

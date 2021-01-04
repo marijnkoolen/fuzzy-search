@@ -151,3 +151,49 @@ class TestMatchInContext(TestCase):
     def test_context_contains_text_from_doc(self):
         match_in_context = PhraseMatchInContext(self.match, self.text, prefix_size=30)
         self.assertEqual(match_in_context.context, self.text)
+
+
+class TestMatchAnnotation(TestCase):
+
+    def setUp(self) -> None:
+        self.text = "This string contains test text."
+        self.phrase = Phrase("test")
+        self.match = PhraseMatch(self.phrase, self.phrase, match_string="test", match_offset=21,
+                                 text_id='test_id', match_label='test_label')
+
+    def test_match_as_web_anno_has_multiple_bodies(self):
+        match_anno = self.match.as_web_anno()
+        self.assertEqual(len(match_anno['body']), 3)
+
+    def test_match_as_web_anno_skips_correction_with_exact_match(self):
+        match_anno = self.match.as_web_anno()
+        label_body = None
+        for body in match_anno['body']:
+            if body['purpose'] == 'correcting':
+                label_body = body
+        self.assertEqual(label_body, None)
+
+    def test_match_as_web_anno_has_label(self):
+        match_anno = self.match.as_web_anno()
+        label_body = None
+        for body in match_anno['body']:
+            if body['purpose'] == 'classifying':
+                label_body = body
+        self.assertNotEqual(label_body, None)
+        self.assertEqual(label_body['value'], self.match.label)
+
+    def test_match_in_context_as_web_anno_has_multiple_selectors(self):
+        match_in_context = PhraseMatchInContext(self.match, self.text, prefix_size=10)
+        match_anno = match_in_context.as_web_anno()
+        self.assertEqual(isinstance(match_anno['target']['selector'], list), True)
+        self.assertEqual(len(match_anno['target']['selector']), 2)
+
+    def test_match_in_context_as_web_anno_has_text_quote_selector(self):
+        match_in_context = PhraseMatchInContext(self.match, self.text, prefix_size=10)
+        match_anno = match_in_context.as_web_anno()
+        quote_selector = None
+        for selector in match_anno['target']['selector']:
+            if selector['type'] == 'TextQuoteSelector':
+                quote_selector = selector
+        self.assertNotEqual(quote_selector, None)
+        self.assertEqual(quote_selector['prefix'], self.text[self.match.offset-10:self.match.offset])

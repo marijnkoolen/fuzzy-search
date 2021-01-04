@@ -706,6 +706,13 @@ def search_exact_phrases(phrase_model: PhraseModel, text: Dict[str, str],
                                                             include_variants=include_variants)
 
 
+def add_exact_match_score(match: PhraseMatch) -> PhraseMatch:
+    match.character_overlap = 1.0
+    match.ngram_overlap = 1.0
+    match.levenshtein_similarity = 1.0
+    return match
+
+
 def search_exact_phrases_with_word_boundaries(phrase_model: PhraseModel, text: Dict[str, str],
                                               ignorecase: bool = False, include_variants: bool = False):
     for word in re.finditer(r"\w+", text["text"]):
@@ -719,13 +726,15 @@ def search_exact_phrases_with_word_boundaries(phrase_model: PhraseModel, text: D
             if text["text"][phrase_start:phrase_end] == phrase_string:
                 if "phrase" in phrase_model.phrase_type[phrase_string]:
                     phrase = phrase_model.phrase_index[phrase_string]
-                    yield PhraseMatch(phrase, phrase, phrase_string, phrase_start, text_id=text["id"])
+                    match = PhraseMatch(phrase, phrase, phrase_string, phrase_start, text_id=text["id"])
+                    yield add_exact_match_score(match)
                     # print("the matching phrase:", phrase)
                 elif "variant" in phrase_model.phrase_type[phrase_string] and include_variants:
                     variant_phrase = phrase_model.variant_index[phrase_string]
                     main_phrase_string = phrase_model.is_variant_of[phrase_string]
                     main_phrase = phrase_model.phrase_index[main_phrase_string]
-                    yield PhraseMatch(main_phrase, variant_phrase, phrase_string, phrase_start, text_id=text["id"])
+                    match = PhraseMatch(main_phrase, variant_phrase, phrase_string, phrase_start, text_id=text["id"])
+                    yield add_exact_match_score(match)
 
 
 def search_exact_phrases_without_word_boundaries(phrase_model: PhraseModel, text: Dict[str, str],
@@ -735,7 +744,8 @@ def search_exact_phrases_without_word_boundaries(phrase_model: PhraseModel, text
         phrase = phrase_model.phrase_index[phrase_string]
         for match in re.finditer(phrase.exact_string, text["text"]):
             phrase = phrase_model.phrase_index[phrase_string]
-            yield PhraseMatch(phrase, phrase, phrase_string, match.start(), text_id=text["id"])
+            match = PhraseMatch(phrase, phrase, phrase_string, match.start(), text_id=text["id"])
+            yield add_exact_match_score(match)
     if include_variants:
         for phrase_string in phrase_model.variant_index:
             variant_phrase = phrase_model.variant_index[phrase_string]
@@ -743,7 +753,8 @@ def search_exact_phrases_without_word_boundaries(phrase_model: PhraseModel, text
                 variant_phrase = phrase_model.variant_index[phrase_string]
                 main_phrase_string = phrase_model.is_variant_of[phrase_string]
                 main_phrase = phrase_model.phrase_index[main_phrase_string]
-                yield PhraseMatch(main_phrase, variant_phrase, phrase_string, match.start(), text_id=text["id"])
+                match = PhraseMatch(main_phrase, variant_phrase, phrase_string, match.start(), text_id=text["id"])
+                yield add_exact_match_score(match)
 
 
 def search_exact(phrase: Phrase, text: Dict[str, str], ignorecase: bool = False, use_word_boundaries: bool = True):
