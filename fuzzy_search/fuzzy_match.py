@@ -560,8 +560,10 @@ class PhraseMatch:
     def label_list(self):
         if isinstance(self.label, str):
             return [self.label]
-        else:
+        elif isinstance(self.label, list):
             return self.label
+        else:
+            return []
 
     def has_label(self, label: str):
         if isinstance(self.label, str):
