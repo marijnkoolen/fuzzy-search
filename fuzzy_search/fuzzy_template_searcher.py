@@ -6,6 +6,9 @@ from fuzzy_search.fuzzy_template import FuzzyTemplate, FuzzyTemplateElement, Fuz
 from fuzzy_search.fuzzy_context_searcher import FuzzyContextSearcher
 
 
+DEBUG = False
+
+
 def share_label(object1: Union[PhraseMatch, FuzzyTemplateElement],
                 object2: Union[PhraseMatch, FuzzyTemplateElement]) -> bool:
     """Check if two fuzzy objects (phrase matches of template elements) share at least one label.
@@ -65,6 +68,7 @@ class TemplateMatch:
         :param phrase_matches: the phrase matches that correspond to the template elements
         :type phrase_matches: List[PhraseMatch]
         :param template_sequence: a template sequence mapping each phrase match to the corresponding template labels
+        :type template_sequence: Dict[str, any]
         """
         self.template = template
         self.phrase_matches = phrase_matches
@@ -183,79 +187,109 @@ def find_next_ordered_group_match_sequence(phrase_matches: List[PhraseMatch],
     # find first phrase match that belongs to first element of group
     group_sequence = initialize_sequence(template_group, template_start_index, template_start_index)
     element_sequences = []
-    # print("ordered template group label:", template_group.label, "start index:", template_start_index)
+    if DEBUG:
+        print("ordered template group label:", template_group.label, "start index:", template_start_index)
     for group_element in template_group.elements:
-        # print("ordered group element label:", group_element.label)
+        if DEBUG:
+            print("ordered group element label:", group_element.label)
         if isinstance(group_element, FuzzyTemplateGroupElement):
             element_sequence = find_next_group_match_sequence(phrase_matches, group_element, group_sequence["end"])
-            # print("returned sequence within ordered template:", group_element.label, sequence)
-            # if element_sequence:
-            #     group_sequence["element_sequences"].append(element_sequence)
+            if DEBUG:
+                print("returned sequence within ordered template:", group_element.label, element_sequence)
+                if element_sequence:
+                    group_sequence["element_sequences"].append(element_sequence)
         else:
             element_start_index = find_next_element_start_index(phrase_matches,
                                                                 group_element, group_sequence["start"])
             element_end_index = find_next_element_end_index(phrase_matches,
                                                             group_element, element_start_index)
-            # print(group_element.label, "element_start_index:", element_start_index,
-            # "element_end_index:", element_end_index)
+            if DEBUG:
+                print(group_element.label, "element_start_index:", element_start_index,
+                      "element_end_index:", element_end_index)
             element_sequence = initialize_sequence(group_element, element_start_index, element_end_index)
             element_sequence["phrase_matches"] = phrase_matches[element_start_index:element_end_index]
         element_sequences.append(element_sequence)
         if element_sequence:
-            group_sequence["element_sequences"].append(element_sequence)
-            # print(f"ordered group element {group_element.label} indexes:", element_sequence["start"], element_sequence["end"])
-            # print("\tgroup start,end:", group_sequence["start"], group_sequence["end"])
+            if DEBUG:
+                print(f"ordered group element {group_element.label} indexes:", element_sequence["start"], element_sequence["end"])
+                print("\tgroup start,end:", group_sequence["start"], group_sequence["end"])
         if (not element_sequence or element_sequence["start"] == -1) and not group_element.required:
-            # print(template_group.label, "\tnot found, not required")
+            if DEBUG:
+                print(template_group.label, "\tnot found, not required")
             # this element has no matches in the remaining match phrases but is not required so can be skipped
             continue
         elif (not element_sequence or element_sequence["start"] == -1) and group_element.required:
-            # print(template_group.label, "\tnot found, but required, returning None", group_element.label)
+            if DEBUG:
+                print(template_group.label, "\tnot found, but required, returning None", group_element.label)
             # this element is required but has no matches, so the phrase matches do not fit the group template
             return None
         elif group_sequence["start"] == group_sequence["end"]:
-            # print(template_group.label, "\tfirst found", group_element.label, element_sequence["start"],
-            #       element_sequence["end"])
-            # print(template_group.label, "\tcurrent group sequence:", group_sequence["start"], group_sequence["end"])
+            # The group is still empty and this element has matches, so set its start and end
+            # as the groups start and end sequence
+            group_sequence["element_sequences"].append(element_sequence)
+            if DEBUG:
+                print('adding element sequence:', element_sequence)
+                print(template_group.label, "\tfirst found", group_element.label, element_sequence["start"],
+                      element_sequence["end"])
+                print(template_group.label, "\tcurrent group sequence:", group_sequence["start"], group_sequence["end"])
             group_sequence["start"] = element_sequence["start"]
             group_sequence["end"] = element_sequence["end"]
-            # print(template_group.label, "\tupdated group sequence:", group_sequence["start"], group_sequence["end"])
+            if DEBUG:
+                print(template_group.label, "\tupdated group sequence:", group_sequence["start"], group_sequence["end"])
             if group_element.required:
                 group_sequence["contains_required"] = True
         elif element_sequence["start"] <= group_sequence["end"]:
-            # print(template_group.label, "\tnext found", group_element.label, element_sequence["start"],
-            #       element_sequence["end"])
-            # print(template_group.label, "\tcurrent group sequence:", group_sequence["start"], group_sequence["end"])
+            # there is no gap between this element's phrase matches and
+            # those of the previous elements in the group so update end
+            # if this element's matches extend the group end
+            group_sequence["element_sequences"].append(element_sequence)
+            if DEBUG:
+                print('adding element sequence:', element_sequence)
+                print(template_group.label, "\tnext found", group_element.label, element_sequence["start"],
+                      element_sequence["end"])
+                print(template_group.label, "\tcurrent group sequence:", group_sequence["start"], group_sequence["end"])
             if element_sequence["end"] > group_sequence["end"]:
                 group_sequence["end"] = element_sequence["end"]
-            # print(template_group.label, "\tnext sequence:", group_sequence["start"], group_sequence["end"])
+            if DEBUG:
+                print(template_group.label, "\tnext sequence:", group_sequence["start"], group_sequence["end"])
         elif group_element.required and element_sequence["start"] > group_sequence["end"]:
             # there is a gap between this element's matches and the previous sequence, but this element is
             # required. Check if parts of the previous sequence are required. If so, the phrase matches do
             # not fit the template group. If not, the previous sequence can be ignored and this required
             # element is the start of the sequence
             if group_sequence["contains_required"]:
-                # print(template_group.label, "next required disconnected from previous required")
+                if DEBUG:
+                    print(template_group.label, "next required disconnected from previous required")
                 return None
             else:
+                if DEBUG:
+                    print('replacing previous element sequences with current element sequence:', element_sequence)
+                group_sequence["element_sequences"] = [element_sequence]
                 group_sequence["start"] = element_sequence["start"]
                 group_sequence["end"] = element_sequence["end"]
                 group_sequence["contains_required"] = True
-                # print(template_group.label, "\treset first found", group_element.label, element_sequence["start"],
-                #       element_sequence["end"])
-                # print(template_group.label, "\treset first sequence:", group_sequence["start"], group_sequence["end"])
+                if DEBUG:
+                    print(template_group.label, "\treset first found", group_element.label, element_sequence["start"],
+                          element_sequence["end"])
+                    print(template_group.label, "\treset first sequence:", group_sequence["start"], group_sequence["end"])
         else:
             # there are phrase matches in between this element and the previous elements,
             # and this element is not required, so skip this element
-            # print(template_group.label, "gap between this non-required element and previous sequence. " +
-            #       "Skipping this element:", group_element.label, element_sequence["start"], element_sequence["end"])
+            if DEBUG:
+                print(template_group.label, "gap between this non-required element and previous sequence. " +
+                      "Skipping this element:", group_element.label, element_sequence["start"], element_sequence["end"])
+                print('remove element sequence:', element_sequence)
+                group_sequence['element_sequences'].pop(-1)
+                print('group sequence:', group_sequence['element_sequences'])
             pass
             # return None
     if group_sequence["start"] == -1:
         # none of the group's elements has a phrase match sequence, so the template has no matches
-        # print(template_group.label, "returning no ordered sequence")
+        if DEBUG:
+            print(template_group.label, "returning no ordered sequence")
         return None
-    # print(template_group.label, "returning ordered sequence:", group_sequence["start"], group_sequence["end"])
+    if DEBUG:
+        print(template_group.label, "returning ordered sequence:", group_sequence["start"], group_sequence["end"])
     return group_sequence
 
 
@@ -380,42 +414,50 @@ def find_next_group_match_sequence(phrase_matches: List[PhraseMatch],
     :rtype: Union[None, Dict[str, any]]
     """
     if template_group.ordered:
-        # print(template_group.label, "CHECKING FOR FIRST ORDERED SEQUENCE")
+        if DEBUG:
+            print(template_group.label, "CHECKING FOR FIRST ORDERED SEQUENCE")
         sequence = find_next_ordered_group_match_sequence(phrase_matches, template_group, template_start_index)
-        # print("returned ordered sequence")
-        # if sequence:
-        #     print(template_group.label, "\treceived ordered start,end:", sequence["start"], sequence["end"])
-        # else:
-        #     print(template_group.label, "\treceived no ordered sequence")
+        if DEBUG:
+            print("returned ordered sequence")
+            if sequence:
+                print(template_group.label, "\treceived ordered start,end:", sequence["start"], sequence["end"])
+            else:
+                print(template_group.label, "\treceived no ordered sequence")
         return sequence
     else:
-        # print(template_group.label, "CHECKING FOR FIRST UNORDERED SEQUENCE")
+        if DEBUG:
+            print(template_group.label, "CHECKING FOR FIRST UNORDERED SEQUENCE")
         sequence = find_next_unordered_group_match_sequence(phrase_matches, template_group, template_start_index)
-        # if sequence:
-        #     print(template_group.label, "\treceived first start,end:", sequence["start"], sequence["end"])
-        #     print(template_group.label, "CHECKING FOR ADDITIONAL UNORDERED SEQUENCE")
-        # else:
-        #     print(template_group.label, "no first sequence for")
+        if DEBUG:
+            if sequence:
+                print(template_group.label, "\treceived first start,end:", sequence["start"], sequence["end"])
+                print(template_group.label, "CHECKING FOR ADDITIONAL UNORDERED SEQUENCE")
+            else:
+                print(template_group.label, "no first sequence for")
         while True and sequence:
             next_sequence = find_next_unordered_group_match_sequence(phrase_matches, template_group, sequence["end"])
             if not next_sequence:
-                # print(template_group.label, "\treceived no next sequence")
+                if DEBUG:
+                    print(template_group.label, "\treceived no next sequence")
                 break
             if next_sequence["start"] != sequence["end"]:
-                # print(template_group.label, "\treceived sequence with gap next start,end:", next_sequence["start"], next_sequence["end"])
+                if DEBUG:
+                    print(template_group.label, "\treceived sequence with gap next start,end:", next_sequence["start"], next_sequence["end"])
                 break
             elif next_sequence["end"] > sequence["end"]:
-                # print(template_group.label, "\treceived sequence with no gap next start,end:", next_sequence["start"], next_sequence["end"])
+                if DEBUG:
+                    print(template_group.label, "\treceived sequence with no gap next start,end:", next_sequence["start"], next_sequence["end"])
                 sequence["end"] = next_sequence["end"]
                 sequence["element_sequences"] += next_sequence["element_sequences"]
             else:
-                # print(template_group.label, "\treceived something strange:", next_sequence["start"], next_sequence["end"])
+                if DEBUG:
+                    print(template_group.label, "\treceived something strange:", next_sequence["start"], next_sequence["end"])
                 break
-        # return find_next_unordered_group_match_sequence(phrase_matches, template_group, template_start_index)
-        # if sequence:
-        #     print(template_group.label, "RETURN find_next_group_match_sequence:", sequence["start"], sequence["end"])
-        # else:
-        #     print(template_group.label, "RETURN find_next_group_match_sequence:", sequence)
+        if DEBUG:
+            if sequence:
+                print(template_group.label, "RETURN find_next_group_match_sequence:", sequence["start"], sequence["end"])
+            else:
+                print(template_group.label, "RETURN find_next_group_match_sequence:", sequence)
         return sequence
 
 
@@ -493,24 +535,27 @@ class FuzzyTemplateSearcher(FuzzyContextSearcher):
         :rtype: List[TemplateMatch]
         """
         template_matches: List[TemplateMatch] = []
-        template_phrase_matches = self.filter_phrase_matches(phrase_matches)
-        template_start_index = 0
+        # make sure the matches are sorted in order of occurrence in the text
+        template_phrase_matches = self.filter_phrase_matches(sorted(phrase_matches, key=lambda x: x.offset))
+        sequence_start_index = 0
         # print("num matches:", len(template_phrase_matches))
         # for phrase_match in template_phrase_matches:
         #     print("\t", phrase_match.label, phrase_match.phrase.phrase_string, "\t", phrase_match.string)
-        while template_start_index < len(template_phrase_matches):
-            # print("template_start_index:", template_start_index)
+        while sequence_start_index < len(template_phrase_matches):
+            if DEBUG:
+                print("sequence_start_index:", sequence_start_index)
             template_sequence = find_next_group_match_sequence(template_phrase_matches, self.template.root_element,
-                                                               template_start_index)
+                                                               sequence_start_index)
             if template_sequence is None:
                 break
             else:
-                template_start_index = template_sequence["end"]
+                sequence_start_index = template_sequence["end"]
                 sequence_matches = phrase_matches[template_sequence["start"]:template_sequence["end"]]
                 template_match = TemplateMatch(template=self.template, phrase_matches=sequence_matches,
                                                template_sequence=template_sequence)
                 template_matches.append(template_match)
-            # print("template_sequence:", template_sequence["start"], template_sequence["end"])
-            # print("updated template_start_index:", template_start_index)
+            if DEBUG:
+                print("template_sequence:", template_sequence["start"], template_sequence["end"])
+            # print("updated sequence_start_index:", sequence_start_index)
             # print("\n\n")
         return template_matches

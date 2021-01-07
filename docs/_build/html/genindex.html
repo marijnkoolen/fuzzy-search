@@ -179,6 +179,8 @@
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_phrase_model.PhraseModel.add_distractors">add_distractors() (fuzzy_search.fuzzy_phrase_model.PhraseModel method)</a>
 </li>
+      <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_phrase_searcher.add_exact_match_score">add_exact_match_score() (in module fuzzy_search.fuzzy_phrase_searcher)</a>
+</li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_phrase_model.PhraseModel.add_labels">add_labels() (fuzzy_search.fuzzy_phrase_model.PhraseModel method)</a>
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_context_searcher.FuzzyContextSearcher.add_match_context">add_match_context() (fuzzy_search.fuzzy_context_searcher.FuzzyContextSearcher method)</a>
@@ -216,7 +218,11 @@
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_phrase_model.as_phrase_object">as_phrase_object() (in module fuzzy_search.fuzzy_phrase_model)</a>
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_match.PhraseMatch.as_web_anno">as_web_anno() (fuzzy_search.fuzzy_match.PhraseMatch method)</a>
+
+      <ul>
+        <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_match.PhraseMatchInContext.as_web_anno">(fuzzy_search.fuzzy_match.PhraseMatchInContext method)</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -497,9 +503,11 @@
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_template.FuzzyTemplate.has_group">has_group() (fuzzy_search.fuzzy_template.FuzzyTemplate method)</a>
 </li>
-      <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_phrase.Phrase.has_label">has_label() (fuzzy_search.fuzzy_phrase.Phrase method)</a>
+      <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_match.PhraseMatch.has_label">has_label() (fuzzy_search.fuzzy_match.PhraseMatch method)</a>
 
       <ul>
+        <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_phrase.Phrase.has_label">(fuzzy_search.fuzzy_phrase.Phrase method)</a>
+</li>
         <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_phrase_model.PhraseModel.has_label">(fuzzy_search.fuzzy_phrase_model.PhraseModel method)</a>
 </li>
         <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_template.FuzzyTemplate.has_label">(fuzzy_search.fuzzy_template.FuzzyTemplate method)</a>
@@ -567,6 +575,8 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_match.PhraseMatch.label_list">label_list() (fuzzy_search.fuzzy_match.PhraseMatch method)</a>
+</li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_patterns.list_context_pattern_types">list_context_pattern_types() (in module fuzzy_search.fuzzy_patterns)</a>
 </li>
   </ul></td>
@@ -660,9 +670,11 @@
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_patterns.pattern_comma_then_context">pattern_comma_then_context() (in module fuzzy_search.fuzzy_patterns)</a>
 </li>
+      <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_phrase.Phrase">Phrase (class in fuzzy_search.fuzzy_phrase)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_phrase.Phrase">Phrase (class in fuzzy_search.fuzzy_phrase)</a>
+      <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_match.phrase_match_from_json">phrase_match_from_json() (in module fuzzy_search.fuzzy_match)</a>
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_match.PhraseMatch">PhraseMatch (class in fuzzy_search.fuzzy_match)</a>
 </li>
@@ -773,6 +785,8 @@
       <li><a href="source/test.html#test.test_fuzzy_context_searcher.TestFuzzyContextSearcher.setUp">setUp() (test.test_fuzzy_context_searcher.TestFuzzyContextSearcher method)</a>
 
       <ul>
+        <li><a href="source/test.html#test.test_fuzzy_match.TestMatchAnnotation.setUp">(test.test_fuzzy_match.TestMatchAnnotation method)</a>
+</li>
         <li><a href="source/test.html#test.test_fuzzy_match.TestMatchInContext.setUp">(test.test_fuzzy_match.TestMatchInContext method)</a>
 </li>
         <li><a href="source/test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchExactMatch.setUp">(test.test_fuzzy_phrase_searcher.TestFuzzySearchExactMatch method)</a>
@@ -1013,14 +1027,14 @@
 </li>
       <li><a href="source/test.html#test.test_fuzzy_phrase_searcher.TestSearcherRealData.test_fuzzy_search_text2_finds_date">test_fuzzy_search_text2_finds_date() (test.test_fuzzy_phrase_searcher.TestSearcherRealData method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/test.html#test.test_fuzzy_phrase_searcher.TestSearcherRealData.test_fuzzy_search_text2_finds_four_matches">test_fuzzy_search_text2_finds_four_matches() (test.test_fuzzy_phrase_searcher.TestSearcherRealData method)</a>
 </li>
       <li><a href="source/test.html#test.test_fuzzy_phrase_searcher.TestSearcherRealData.test_fuzzy_search_text2_finds_friday">test_fuzzy_search_text2_finds_friday() (test.test_fuzzy_phrase_searcher.TestSearcherRealData method)</a>
 </li>
       <li><a href="source/test.html#test.test_fuzzy_phrase_searcher.TestSearcherRealData.test_fuzzy_search_text2_finds_president">test_fuzzy_search_text2_finds_president() (test.test_fuzzy_phrase_searcher.TestSearcherRealData method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/test.html#test.test_fuzzy_match.TestMatchInContext.test_make_match_in_context">test_make_match_in_context() (test.test_fuzzy_match.TestMatchInContext method)</a>
 </li>
       <li><a href="source/test.html#test.test_fuzzy_string.Test.test_make_ngrams_accepts_positive_integer">test_make_ngrams_accepts_positive_integer() (test.test_fuzzy_string.Test method)</a>
@@ -1048,6 +1062,16 @@
       <li><a href="source/test.html#test.test_fuzzy_match.TestFuzzyMatch.test_map_string_maps_space_string">test_map_string_maps_space_string() (test.test_fuzzy_match.TestFuzzyMatch method)</a>
 </li>
       <li><a href="source/test.html#test.test_fuzzy_match.TestFuzzyMatch.test_map_string_maps_word_string">test_map_string_maps_word_string() (test.test_fuzzy_match.TestFuzzyMatch method)</a>
+</li>
+      <li><a href="source/test.html#test.test_fuzzy_match.TestMatchAnnotation.test_match_as_web_anno_has_label">test_match_as_web_anno_has_label() (test.test_fuzzy_match.TestMatchAnnotation method)</a>
+</li>
+      <li><a href="source/test.html#test.test_fuzzy_match.TestMatchAnnotation.test_match_as_web_anno_has_multiple_bodies">test_match_as_web_anno_has_multiple_bodies() (test.test_fuzzy_match.TestMatchAnnotation method)</a>
+</li>
+      <li><a href="source/test.html#test.test_fuzzy_match.TestMatchAnnotation.test_match_as_web_anno_skips_correction_with_exact_match">test_match_as_web_anno_skips_correction_with_exact_match() (test.test_fuzzy_match.TestMatchAnnotation method)</a>
+</li>
+      <li><a href="source/test.html#test.test_fuzzy_match.TestMatchAnnotation.test_match_in_context_as_web_anno_has_multiple_selectors">test_match_in_context_as_web_anno_has_multiple_selectors() (test.test_fuzzy_match.TestMatchAnnotation method)</a>
+</li>
+      <li><a href="source/test.html#test.test_fuzzy_match.TestMatchAnnotation.test_match_in_context_as_web_anno_has_text_quote_selector">test_match_in_context_as_web_anno_has_text_quote_selector() (test.test_fuzzy_match.TestMatchAnnotation method)</a>
 </li>
       <li><a href="source/test.html#test.test_fuzzy_phrase_model.Test.test_phrase_model_can_add_phrase">test_phrase_model_can_add_phrase() (test.test_fuzzy_phrase_model.Test method)</a>
 </li>
@@ -1174,6 +1198,8 @@
       <li><a href="source/test.html#test.test_fuzzy_template_searcher.TestFuzzyTemplateSearcherWithRealData">TestFuzzyTemplateSearcherWithRealData (class in test.test_fuzzy_template_searcher)</a>
 </li>
       <li><a href="source/test.html#test.test_fuzzy_template.TestFuzzyTemplateWithRealData">TestFuzzyTemplateWithRealData (class in test.test_fuzzy_template)</a>
+</li>
+      <li><a href="source/test.html#test.test_fuzzy_match.TestMatchAnnotation">TestMatchAnnotation (class in test.test_fuzzy_match)</a>
 </li>
       <li><a href="source/test.html#test.test_fuzzy_match.TestMatchInContext">TestMatchInContext (class in test.test_fuzzy_match)</a>
 </li>

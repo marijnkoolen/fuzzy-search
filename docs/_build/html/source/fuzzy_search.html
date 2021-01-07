@@ -404,7 +404,7 @@ the find_matches function of the FuzzyPhraseSearcher by adding local context to 
 
 <dl class="py class">
 <dt id="fuzzy_search.fuzzy_match.PhraseMatch">
-<em class="property">class </em><code class="sig-prename descclassname">fuzzy_search.fuzzy_match.</code><code class="sig-name descname">PhraseMatch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">match_phrase</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#fuzzy_search.fuzzy_phrase.Phrase" title="fuzzy_search.fuzzy_phrase.Phrase">fuzzy_search.fuzzy_phrase.Phrase</a></span></em>, <em class="sig-param"><span class="n">match_variant</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#fuzzy_search.fuzzy_phrase.Phrase" title="fuzzy_search.fuzzy_phrase.Phrase">fuzzy_search.fuzzy_phrase.Phrase</a></span></em>, <em class="sig-param"><span class="n">match_string</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">match_offset</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">text_id</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>None<span class="p">, </span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_match.PhraseMatch" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">fuzzy_search.fuzzy_match.</code><code class="sig-name descname">PhraseMatch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">match_phrase</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#fuzzy_search.fuzzy_phrase.Phrase" title="fuzzy_search.fuzzy_phrase.Phrase">fuzzy_search.fuzzy_phrase.Phrase</a></span></em>, <em class="sig-param"><span class="n">match_variant</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#fuzzy_search.fuzzy_phrase.Phrase" title="fuzzy_search.fuzzy_phrase.Phrase">fuzzy_search.fuzzy_phrase.Phrase</a></span></em>, <em class="sig-param"><span class="n">match_string</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">match_offset</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">text_id</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>None<span class="p">, </span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">match_scores</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>dict<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">match_label</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">match_id</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_match.PhraseMatch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
 <dt id="fuzzy_search.fuzzy_match.PhraseMatch.add_scores">
@@ -431,8 +431,18 @@ and add these to the match object.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="fuzzy_search.fuzzy_match.PhraseMatch.has_label">
+<code class="sig-name descname">has_label</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_match.PhraseMatch.has_label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt id="fuzzy_search.fuzzy_match.PhraseMatch.json">
 <code class="sig-name descname">json</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#fuzzy_search.fuzzy_match.PhraseMatch.json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="fuzzy_search.fuzzy_match.PhraseMatch.label_list">
+<code class="sig-name descname">label_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_match.PhraseMatch.label_list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -498,8 +508,14 @@ and add these to the match object.</p>
 
 <dl class="py class">
 <dt id="fuzzy_search.fuzzy_match.PhraseMatchInContext">
-<em class="property">class </em><code class="sig-prename descclassname">fuzzy_search.fuzzy_match.</code><code class="sig-name descname">PhraseMatchInContext</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">match</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#fuzzy_search.fuzzy_match.PhraseMatch" title="fuzzy_search.fuzzy_match.PhraseMatch">fuzzy_search.fuzzy_match.PhraseMatch</a></span></em>, <em class="sig-param"><span class="n">text</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>dict<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">prefix_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">20</span></em>, <em class="sig-param"><span class="n">suffix_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_match.PhraseMatchInContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">fuzzy_search.fuzzy_match.</code><code class="sig-name descname">PhraseMatchInContext</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">match</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#fuzzy_search.fuzzy_match.PhraseMatch" title="fuzzy_search.fuzzy_match.PhraseMatch">fuzzy_search.fuzzy_match.PhraseMatch</a></span></em>, <em class="sig-param"><span class="n">text</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>dict<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">context</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">context_start</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">context_end</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">prefix_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">20</span></em>, <em class="sig-param"><span class="n">suffix_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_match.PhraseMatchInContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#fuzzy_search.fuzzy_match.PhraseMatch" title="fuzzy_search.fuzzy_match.PhraseMatch"><code class="xref py py-class docutils literal notranslate"><span class="pre">fuzzy_search.fuzzy_match.PhraseMatch</span></code></a></p>
+<dl class="py method">
+<dt id="fuzzy_search.fuzzy_match.PhraseMatchInContext.as_web_anno">
+<code class="sig-name descname">as_web_anno</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>any<span class="p">]</span><a class="headerlink" href="#fuzzy_search.fuzzy_match.PhraseMatchInContext.as_web_anno" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turn match object into a W3C Web Annotation representation</p>
+</dd></dl>
+
 <dl class="py method">
 <dt id="fuzzy_search.fuzzy_match.PhraseMatchInContext.json">
 <code class="sig-name descname">json</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_match.PhraseMatchInContext.json" title="Permalink to this definition">¶</a></dt>
@@ -604,6 +620,11 @@ and ‘s’ for whitespace char.</p>
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py function">
+<dt id="fuzzy_search.fuzzy_match.phrase_match_from_json">
+<code class="sig-prename descclassname">fuzzy_search.fuzzy_match.</code><code class="sig-name descname">phrase_match_from_json</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">match_json</span><span class="p">:</span> <span class="n">dict</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#fuzzy_search.fuzzy_match.PhraseMatch" title="fuzzy_search.fuzzy_match.PhraseMatch">fuzzy_search.fuzzy_match.PhraseMatch</a><a class="headerlink" href="#fuzzy_search.fuzzy_match.phrase_match_from_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt id="fuzzy_search.fuzzy_match.validate_match_props">
@@ -1486,6 +1507,11 @@ to find exact occurrences of phrases. This is to speed up the fuzzy matching pas
 </dd></dl>
 
 </dd></dl>
+
+<dl class="py function">
+<dt id="fuzzy_search.fuzzy_phrase_searcher.add_exact_match_score">
+<code class="sig-prename descclassname">fuzzy_search.fuzzy_phrase_searcher.</code><code class="sig-name descname">add_exact_match_score</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">match</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#fuzzy_search.fuzzy_match.PhraseMatch" title="fuzzy_search.fuzzy_match.PhraseMatch">fuzzy_search.fuzzy_match.PhraseMatch</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#fuzzy_search.fuzzy_match.PhraseMatch" title="fuzzy_search.fuzzy_match.PhraseMatch">fuzzy_search.fuzzy_match.PhraseMatch</a><a class="headerlink" href="#fuzzy_search.fuzzy_phrase_searcher.add_exact_match_score" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt id="fuzzy_search.fuzzy_phrase_searcher.candidates_to_matches">
