@@ -237,8 +237,6 @@ class TestFuzzySearchExactMatch(TestCase):
         searcher = FuzzyPhraseSearcher()
         searcher.index_phrase_model(phrase_model)
         exact_matches = searcher.find_exact_matches(text)
-        for exact_match in exact_matches:
-            print("exact match:", exact_match)
         self.assertEqual(len(exact_matches), 3)
 
 
@@ -322,3 +320,39 @@ class TestSearcherRealData(TestCase):
     def test_fuzzy_search_text2_finds_attendants(self):
         matches = self.searcher.find_matches(self.text2)
         self.assertEqual(matches[3].string, "PRA&SENTIBUS")
+
+
+class TestSearcherRealData2(TestCase):
+
+    def setUp(self) -> None:
+        self.text1 = 'TS gehoort het rapport van de Heeren I van Lynden'
+        self.config = {
+            "char_match_threshold": 0.7,
+            "ngram_threshold": 0.7,
+            "levenshtein_threshold": 0.7,
+            "ignorecase": False,
+            "include_variants": True,
+            "max_length_variance": 3,
+            "ngram_size": 2,
+            "skip_size": 2,
+        }
+        self.searcher = FuzzyPhraseSearcher(self.config)
+        # create a list of domain phrases
+        self.domain_phrases = [
+            {
+                'phrase': 'den Heere',
+                'variants': [
+                    'de Heer',
+                    'de Heeren',
+                ]
+            }
+        ]
+        self.phrase_model = PhraseModel(phrases=self.domain_phrases)
+        # register the keywords with the searcher
+        self.searcher.index_phrase_model(self.phrase_model)
+
+    def test_searcher_find_no_overlapping_variants(self):
+        phrase_matches = self.searcher.find_matches(self.text1)
+        for pm in phrase_matches:
+            print(pm.offset, pm.string)
+        self.assertEqual(len(phrase_matches), 1)

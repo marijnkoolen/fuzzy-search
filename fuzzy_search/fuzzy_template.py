@@ -101,11 +101,15 @@ class FuzzyTemplateGroupElement(FuzzyTemplateElement):
         self.ordered = ordered
         self.elements = elements
         self.group_element_labels: Set[str] = set()
+        self.has_variable_element = False
         for element in self.elements:
             if isinstance(element, FuzzyTemplateGroupElement):
                 self.group_element_labels = self.group_element_labels.union(element.group_element_labels)
+                self.has_variable_element = element.has_variable_element
             else:
                 self.group_element_labels.add(element.label)
+                if isinstance(element, FuzzyTemplateLabelElement) and element.variable:
+                    self.has_variable_element = True
             if element.required:
                 # override the received required value if one of its sub-elements is required
                 self.required = True

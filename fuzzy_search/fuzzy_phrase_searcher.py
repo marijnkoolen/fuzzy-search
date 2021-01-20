@@ -625,6 +625,7 @@ class FuzzyPhraseSearcher(object):
             # print("skipping exact matching")
             exact_matches = []
             known_word_offset = {}
+        # print('number of exact matches:', len(exact_matches))
         candidates = self.find_candidates(text, use_word_boundaries=use_word_boundaries,
                                           include_variants=include_variants, known_word_offset=known_word_offset)
         # print(candidates)
@@ -699,6 +700,7 @@ def search_exact_phrases(phrase_model: PhraseModel, text: Dict[str, str],
                          ignorecase: bool = False, use_word_boundaries: bool = True,
                          include_variants: bool = False):
     if use_word_boundaries:
+        # print('searching with word boundaries')
         return search_exact_phrases_with_word_boundaries(phrase_model, text, ignorecase=ignorecase,
                                                          include_variants=include_variants)
     else:
@@ -723,7 +725,12 @@ def search_exact_phrases_with_word_boundaries(phrase_model: PhraseModel, text: D
             phrase_word_offset = phrase_model.first_word_in_phrase[word.group(0)][phrase_string]
             phrase_start = word.start() - phrase_word_offset
             phrase_end = phrase_start + len(phrase_string)
+            # print(phrase_start, phrase_end, phrase_string)
             if text["text"][phrase_start:phrase_end] == phrase_string:
+                if phrase_start > 0 and re.match(r'\w', text["text"][phrase_start - 1]):
+                    continue
+                if phrase_end < len(text['text']) - 1 and re.match(r'\w', text['text'][phrase_end]):
+                    continue
                 if "phrase" in phrase_model.phrase_type[phrase_string]:
                     phrase = phrase_model.phrase_index[phrase_string]
                     match = PhraseMatch(phrase, phrase, phrase_string, phrase_start, text_id=text["id"])
