@@ -144,6 +144,14 @@ class TestFuzzyPhraseSearcher(TestCase):
         matches = searcher.find_matches(text)
         self.assertEqual("contains", matches[0].string)
 
+    def test_searcher_allows_length_variance(self):
+        searcher = FuzzyPhraseSearcher()
+        phrase = "coffee"
+        searcher.index_phrases(phrases=[phrase])
+        text = "For sale two units of coffy."
+        matches = searcher.find_matches(text)
+        self.assertEqual(len(matches), 1)
+
     def test_searcher_can_toggle_variants(self):
         searcher = FuzzyPhraseSearcher({"include_variants": True})
         self.assertEqual(searcher.include_variants, True)

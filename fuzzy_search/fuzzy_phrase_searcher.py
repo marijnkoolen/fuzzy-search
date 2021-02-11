@@ -119,12 +119,15 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
     # print(f"finding candidates for phrase ({len(phrase.phrase_string)}):", phrase.phrase_string)
     for ci, curr_offset in enumerate(skip_matches.match_offsets[phrase]):
         next_offset = None if ci == last_index else skip_matches.match_offsets[phrase][ci + 1]
+        # print(ci, 'curr offset:', curr_offset, '\tskip:',
+        #       skip_matches.match_skipgrams[phrase][ci].string, '\tnext offset:', next_offset)
         # add current skipgram to the candidate
         candidate.add_skip_match(skip_matches.match_skipgrams[phrase][ci])
         if abs(candidate.skip_match_length() - len(candidate.phrase.phrase_string)) < max_length_variance:
             skip = skip_matches.match_skipgrams[phrase][ci]
             # print(ci, curr_offset, "adding skip match:", skip.string, skip.offset, skip.length)
-            # print("candidate skips:", [skip.string for skip in candidate.skipgram_list], candidate.skip_match_length())
+            # print("candidate skips:", [skip.string for skip in candidate.skipgram_list],
+            #       candidate.skip_match_length())
             # print(candidate.get_skip_set_overlap(), candidate.get_match_string(text))
         # check if the current candidate is a potential match for the phrase
         if candidate.is_match(skipgram_threshold):
@@ -144,6 +147,7 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
             # start a new candidate for the next skipgram
             candidate = Candidate(phrase)
     # end of skipgrams reached, check if remaining candidate is a match
+    # print('checking if final candidate is match')
     if candidate.is_match(skipgram_threshold):
         if len(candidates) == 0 or not candidate.same_candidate(candidates[-1]):
             candidate.match_string = candidate.get_match_string(text)

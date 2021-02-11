@@ -432,15 +432,29 @@ class Candidate:
         """
         if len(self.skipgram_list) == 0:
             # there are no matching skipgrams, so no matching string
+            # print('NO MATCH: there are no matching skipgrams, so no matching string')
             return False
         if self.skipgram_list[0].string not in self.phrase.early_skipgram_index:
             # the first skipgram of candidate is not in the early skipgrams of phrase
+            # print('NO MATCH: the first skipgram of candidate is not in the early skipgrams of phrase')
             return False
-        if abs(self.skip_match_length() - len(self.phrase.phrase_string)) > self.max_length_variance:
+        # length of current skip matches should be no longer than phrase plus max length variance
+        # but also no shorter than phrase minus max length variance minus late skips offset from end
+        # of phrase.
+        if self.skip_match_length() > len(self.phrase.phrase_string) + self.max_length_variance:
+            # print('NO MATCH: skip match length is longer than max length variance of phrase')
+            return False
+        elif self.skip_match_length() < self.phrase.late_threshold - self.max_length_variance:
+            # print('phrase length:', len(self.phrase.phrase_string))
+            # print('skip match length:', self.skip_match_length())
+            # print('max length variance:', self.max_length_variance)
+            # print('late threshold:', self.phrase.late_threshold)
+            # print('NO MATCH: skip match length is not with max length variance of phrase')
             return False
         # print(self.get_skip_set_overlap())
+        # print('late threshold:', self.phrase.late_threshold)
         if self.skipgram_list[-1].string not in self.phrase.late_skipgram_index:
-            # print("last skip not in late index")
+            # print("NO MATCH: last skip not in late index")
             # the last skipgram of candidate is not in the late skipgrams of phrase
             return False
         if self.get_skip_set_overlap() < skipgram_threshold:
