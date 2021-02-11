@@ -10,6 +10,37 @@ from fuzzy_search.fuzzy_phrase import Phrase
 from fuzzy_search.fuzzy_string import text2skipgrams, SkipGram, score_levenshtein_similarity_ratio
 
 
+default_config = {
+    # these thresholds work when there are quite a few OCR errors
+    # use higher thresholds for higher quality OCR to avoid
+    # spurious matches.
+    "char_match_threshold": 0.6,
+    "ngram_threshold": 0.5,
+    "levenshtein_threshold": 0.6,
+    "skipgram_threshold": 0.3,
+    # Is upper/lowercase a meaningful signal?
+    "ignorecase": False,
+    # should matches follow word boundaries?
+    "use_word_boundaries": False,
+    # for phrases that have variant phrasings
+    "include_variants": False,
+    # avoid matching with similar but different phrases
+    "filter_distractors": False,
+    # matching string can be lower/shorter than prhase
+    "max_length_variance": 3,
+    # higher ngram size allows fewer character differences
+    "ngram_size": 3,
+    # fewer skips is much faster but less exhaustive
+    "skip_size": 1,
+    # first check for exact matches to speed up fuzzy search
+    "skip_exact_matching": False,
+    # allow matches of partially overlapping phrase
+    "allow_overlapping_matches": True,
+    # the set of symbols to use as punctuation (for word boundaries)
+    "punctuation": string.punctuation
+}
+
+
 class SkipMatches:
 
     def __init__(self, ngram_size: int, skip_size: int):
@@ -123,12 +154,12 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
         #       skip_matches.match_skipgrams[phrase][ci].string, '\tnext offset:', next_offset)
         # add current skipgram to the candidate
         candidate.add_skip_match(skip_matches.match_skipgrams[phrase][ci])
-        if abs(candidate.skip_match_length() - len(candidate.phrase.phrase_string)) < max_length_variance:
-            skip = skip_matches.match_skipgrams[phrase][ci]
-            # print(ci, curr_offset, "adding skip match:", skip.string, skip.offset, skip.length)
-            # print("candidate skips:", [skip.string for skip in candidate.skipgram_list],
-            #       candidate.skip_match_length())
-            # print(candidate.get_skip_set_overlap(), candidate.get_match_string(text))
+        # if abs(candidate.skip_match_length() - len(candidate.phrase.phrase_string)) < max_length_variance:
+        #     skip = skip_matches.match_skipgrams[phrase][ci]
+        #     print(ci, curr_offset, "adding skip match:", skip.string, skip.offset, skip.length)
+        #     print("candidate skips:", [skip.string for skip in candidate.skipgram_list],
+        #           candidate.skip_match_length())
+        #     print(candidate.get_skip_set_overlap(), candidate.get_match_string(text))
         # check if the current candidate is a potential match for the phrase
         if candidate.is_match(skipgram_threshold):
             candidate.match_string = candidate.get_match_string(text)
@@ -245,15 +276,11 @@ class FuzzyPhraseSearcher(object):
         self.ngram_threshold = 0.5
         self.skipgram_threshold = 0.3
         self.levenshtein_threshold = 0.5
-        self.perform_strip_suffix = True
         self.max_length_variance = 1
         self.allow_overlapping_matches = True
         self.skip_exact_matching = False
         self.use_word_boundaries = True
         self.ignorecase = False
-        self.track_candidates = False
-        self.use_confuse = False
-        self.tracking_level = 4
         self.known_candidates = defaultdict(dict)
         self.distractor_terms = defaultdict(list)
         self.ngram_size = 2
@@ -283,6 +310,8 @@ class FuzzyPhraseSearcher(object):
         if config:
             self.config = config
             self.configure(config)
+        else:
+            self.config = default_config
 
     def configure(self, config: Dict[str, Union[str, int, float]]) -> None:
         """Configure the fuzzy searcher with a given config object.
@@ -305,10 +334,6 @@ class FuzzyPhraseSearcher(object):
             self.use_word_boundaries = config["use_word_boundaries"]
         if "ignorecase" in config:
             self.ignorecase = config["ignorecase"]
-        if "track_candidates" in config:
-            self.track_candidates = config["track_candidates"]
-        if "use_confuse" in config:
-            self.use_confuse = config["use_confuse"]
         if "ngram_size" in config:
             self.ngram_size = config["ngram_size"]
         if "skip_size" in config:
@@ -323,16 +348,6 @@ class FuzzyPhraseSearcher(object):
             self.punctuation = config["punctuation"]
         if "debug" in config:
             self.debug = config["debug"]
-
-    def set_strip_suffix(self, strip_suffix: bool) -> None:
-        """Set boolean for whether match strings should be stripped to word boundaries.
-
-        :param strip_suffix: boolean for toggling match string suffix stripping
-        :type strip_suffix: bool
-        :return: None
-        :rtype: None
-        """
-        self.perform_strip_suffix = strip_suffix
 
     def index_phrase_model(self, phrase_model: Union[List[Dict[str, Union[str, int, float, list]]], PhraseModel]):
         """Add a phrase model to search for phrases in texts.
