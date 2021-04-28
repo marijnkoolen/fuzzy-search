@@ -406,6 +406,7 @@ class Candidate:
     def remove_first_skip(self) -> None:
         """Remove the first matching skipgram from the list and update the count and set."""
         first_skip = self.skipgram_list.pop(0)
+        # print('removing first skip')
         # reduce count of first skipgram by 1
         self.skipgram_count[first_skip.string] -= 1
         # if count has dropped to zero, remove skipgram from the set
@@ -571,6 +572,7 @@ class PhraseMatch:
             f'phrase: "{self.phrase.phrase_string}", variant: "{self.variant.phrase_string}",' + \
             f'string: "{self.string}", offset: {self.offset})'
 
+    @property
     def label_list(self):
         if isinstance(self.label, str):
             return [self.label]

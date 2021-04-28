@@ -5,7 +5,6 @@ from fuzzy_search.fuzzy_string import SkipGram
 from fuzzy_search.fuzzy_phrase_searcher import FuzzyPhraseSearcher, SkipMatches, Candidate
 from fuzzy_search.fuzzy_phrase_searcher import filter_skipgram_threshold, get_skipmatch_candidates
 
-
 class TestSkipMatches(TestCase):
 
     def test_skip_matches_registers_match(self):
@@ -152,6 +151,14 @@ class TestFuzzyPhraseSearcher(TestCase):
         matches = searcher.find_matches(text)
         self.assertEqual(len(matches), 1)
 
+    def test_searcher_allows_length_variance_2(self):
+        searcher = FuzzyPhraseSearcher()
+        phrase = "Makelaars"
+        searcher.index_phrases(phrases=[phrase])
+        text = 'door de Alakei&ers by na gecompletecrt'
+        matches = searcher.find_matches(text)
+        self.assertEqual(len(matches), 1)
+
     def test_searcher_can_toggle_variants(self):
         searcher = FuzzyPhraseSearcher({"include_variants": True})
         self.assertEqual(searcher.include_variants, True)
@@ -192,8 +199,10 @@ class TestFuzzyPhraseSearcher(TestCase):
         text = "This text is about baking and not about braking."
         matches = searcher.find_matches(text, filter_distractors=True)
         self.assertEqual(len(matches), 1)
+    """
 
 
+"""
 class TestFuzzySearchExactMatch(TestCase):
 
     def setUp(self) -> None:
@@ -361,6 +370,4 @@ class TestSearcherRealData2(TestCase):
 
     def test_searcher_find_no_overlapping_variants(self):
         phrase_matches = self.searcher.find_matches(self.text1)
-        for pm in phrase_matches:
-            print(pm.offset, pm.string)
         self.assertEqual(len(phrase_matches), 1)

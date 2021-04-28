@@ -36,6 +36,10 @@ def is_phrase_dict(phrase_dict: Dict[str, Union[str, List[str]]]) -> bool:
             if not isinstance(distractor, str):
                 return False
     if "labels" in phrase_dict:
+        if isinstance(phrase_dict["labels"], str):
+            return True
+        if not isinstance(phrase_dict["labels"], list):
+            return False
         for label in phrase_dict["labels"]:
             if not isinstance(label, str):
                 return False

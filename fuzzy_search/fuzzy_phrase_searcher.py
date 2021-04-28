@@ -17,7 +17,7 @@ default_config = {
     "char_match_threshold": 0.6,
     "ngram_threshold": 0.5,
     "levenshtein_threshold": 0.6,
-    "skipgram_threshold": 0.3,
+    "skipgram_threshold": 0.2,
     # Is upper/lowercase a meaningful signal?
     "ignorecase": False,
     # should matches follow word boundaries?
@@ -27,15 +27,15 @@ default_config = {
     # avoid matching with similar but different phrases
     "filter_distractors": False,
     # matching string can be lower/shorter than prhase
-    "max_length_variance": 3,
+    "max_length_variance": 1,
     # higher ngram size allows fewer character differences
-    "ngram_size": 3,
+    "ngram_size": 2,
     # fewer skips is much faster but less exhaustive
-    "skip_size": 1,
+    "skip_size": 2,
     # first check for exact matches to speed up fuzzy search
     "skip_exact_matching": False,
     # allow matches of partially overlapping phrase
-    "allow_overlapping_matches": True,
+    "allow_overlapping_matches": False,
     # the set of symbols to use as punctuation (for word boundaries)
     "punctuation": string.punctuation
 }
@@ -172,10 +172,12 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
                 # a better candidate and if so, add that as well
                 candidate.match_string = candidate.get_match_string(text)
                 candidates.append(copy.deepcopy(candidate))
-        if next_offset and next_offset - curr_offset > skip_matches.ngram_size + skip_matches.skip_size:
+        if next_offset and next_offset - curr_offset > skip_matches.ngram_size + skip_matches.skip_size + 1:
             # if the gap between the current skipgram and the next is larger than an entire skipgram
             # the next skipgram does not belong to this candidate
             # start a new candidate for the next skipgram
+            # print('curr_offset:', curr_offset, '\tnext_offset:', next_offset)
+            # print('starting a new candidate')
             candidate = Candidate(phrase)
     # end of skipgrams reached, check if remaining candidate is a match
     # print('checking if final candidate is match')
@@ -268,16 +270,31 @@ def candidates_to_matches(candidates: List[Candidate], text: dict, phrase_model:
     return matches
 
 
+def filter_matches_by_overlap(filtered_matches: List[PhraseMatch]) -> List[PhraseMatch]:
+    sorted_matches = sorted(filtered_matches, key=lambda x: (x.offset, len(x.string)))
+    filtered_matches = []
+    overlapping = defaultdict(list)
+    for match in sorted_matches:
+        overlapping[(match.offset, len(match.string))].append(match)
+    for offset_length in overlapping:
+        if len(overlapping[offset_length]) == 1:
+            filtered_matches.extend(overlapping[offset_length])
+        else:
+            best = max(overlapping[offset_length], key=lambda item: item.levenshtein_similarity)
+            filtered_matches.append(best)
+    return filtered_matches
+
+
 class FuzzyPhraseSearcher(object):
 
     def __init__(self, config: Union[None, Dict[str, Union[str, int, float]]] = None):
         # default configuration
         self.char_match_threshold = 0.5
         self.ngram_threshold = 0.5
-        self.skipgram_threshold = 0.3
+        self.skipgram_threshold = 0.2
         self.levenshtein_threshold = 0.5
         self.max_length_variance = 1
-        self.allow_overlapping_matches = True
+        self.allow_overlapping_matches = False
         self.skip_exact_matching = False
         self.use_word_boundaries = True
         self.ignorecase = False
@@ -307,19 +324,16 @@ class FuzzyPhraseSearcher(object):
         self.debug = False
         self.punctuation = string.punctuation
         # non-default configuration
+        self.config = copy.deepcopy(default_config)
         if config:
-            self.config = config
             self.configure(config)
-        else:
-            self.config = default_config
 
-    def configure(self, config: Dict[str, Union[str, int, float]]) -> None:
+    def configure(self, config: Dict[str, any]) -> None:
         """Configure the fuzzy searcher with a given config object.
 
         :param config: a config dictionary
         :type config: Dict[str, Union[str, int, float]]
         """
-        self.config = config
         if "char_match_threshold" in config:
             self.char_match_threshold = config["char_match_threshold"]
         if "ngram_threshold" in config:
@@ -655,6 +669,10 @@ class FuzzyPhraseSearcher(object):
             filter_distractors = self.filter_distractors
         if filter_distractors:
             filtered_matches = self.filter_matches_by_distractors(filtered_matches)
+        if allow_overlapping_matches is None:
+            allow_overlapping_matches = self.allow_overlapping_matches
+        if not allow_overlapping_matches:
+            filtered_matches = filter_matches_by_overlap(filtered_matches)
         # print(exact_matches)
         # print(filtered_matches)
         selected_matches = filtered_matches + exact_matches
