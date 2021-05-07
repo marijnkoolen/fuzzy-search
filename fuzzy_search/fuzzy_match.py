@@ -552,6 +552,7 @@ class PhraseMatch:
         self.label = match_phrase.label
         if match_label:
             self.label = match_label
+        self.metadata = {}
         self.variant = match_variant
         self.string = match_string
         self.offset = match_offset
@@ -573,7 +574,7 @@ class PhraseMatch:
             f'string: "{self.string}", offset: {self.offset})'
 
     @property
-    def label_list(self):
+    def label_list(self) -> List[str]:
         if isinstance(self.label, str):
             return [self.label]
         elif isinstance(self.label, list):

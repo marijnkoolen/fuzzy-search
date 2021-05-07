@@ -12,6 +12,7 @@ def as_phrase_object(phrase: Union[str, dict, Phrase], ngram_size: int = 2, skip
         return phrase
     if isinstance(phrase, dict):
         if not is_phrase_dict(phrase):
+            print(phrase)
             raise KeyError("invalid phrase dictionary")
         return Phrase(phrase, ngram_size=ngram_size, skip_size=skip_size)
     if isinstance(phrase, str):

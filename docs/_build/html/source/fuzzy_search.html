@@ -442,7 +442,7 @@ and add these to the match object.</p>
 
 <dl class="py method">
 <dt id="fuzzy_search.fuzzy_match.PhraseMatch.label_list">
-<code class="sig-name descname">label_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_match.PhraseMatch.label_list" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">label_list</code><a class="headerlink" href="#fuzzy_search.fuzzy_match.PhraseMatch.label_list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1317,7 +1317,7 @@ variant of.</p>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
 <dt id="fuzzy_search.fuzzy_phrase_searcher.FuzzyPhraseSearcher.configure">
-<code class="sig-name descname">configure</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#fuzzy_search.fuzzy_phrase_searcher.FuzzyPhraseSearcher.configure" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">configure</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>any<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#fuzzy_search.fuzzy_phrase_searcher.FuzzyPhraseSearcher.configure" title="Permalink to this definition">¶</a></dt>
 <dd><p>Configure the fuzzy searcher with a given config object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1499,6 +1499,11 @@ to find exact occurrences of phrases. This is to speed up the fuzzy matching pas
 <dl class="py function">
 <dt id="fuzzy_search.fuzzy_phrase_searcher.candidates_to_matches">
 <code class="sig-prename descclassname">fuzzy_search.fuzzy_phrase_searcher.</code><code class="sig-name descname">candidates_to_matches</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">candidates</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#fuzzy_search.fuzzy_match.Candidate" title="fuzzy_search.fuzzy_match.Candidate">fuzzy_search.fuzzy_match.Candidate</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">text</span><span class="p">:</span> <span class="n">dict</span></em>, <em class="sig-param"><span class="n">phrase_model</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#fuzzy_search.fuzzy_phrase_model.PhraseModel" title="fuzzy_search.fuzzy_phrase_model.PhraseModel">fuzzy_search.fuzzy_phrase_model.PhraseModel</a></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#fuzzy_search.fuzzy_match.PhraseMatch" title="fuzzy_search.fuzzy_match.PhraseMatch">fuzzy_search.fuzzy_match.PhraseMatch</a><span class="p">]</span><a class="headerlink" href="#fuzzy_search.fuzzy_phrase_searcher.candidates_to_matches" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="fuzzy_search.fuzzy_phrase_searcher.filter_matches_by_overlap">
+<code class="sig-prename descclassname">fuzzy_search.fuzzy_phrase_searcher.</code><code class="sig-name descname">filter_matches_by_overlap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filtered_matches</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#fuzzy_search.fuzzy_match.PhraseMatch" title="fuzzy_search.fuzzy_match.PhraseMatch">fuzzy_search.fuzzy_match.PhraseMatch</a><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#fuzzy_search.fuzzy_match.PhraseMatch" title="fuzzy_search.fuzzy_match.PhraseMatch">fuzzy_search.fuzzy_match.PhraseMatch</a><span class="p">]</span><a class="headerlink" href="#fuzzy_search.fuzzy_phrase_searcher.filter_matches_by_overlap" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
