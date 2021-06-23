@@ -73,3 +73,11 @@ class Test(TestCase):
         self.assertEqual(phrase_model.ngram_size, 3)
         self.assertEqual(phrase_model.phrase_index["test"].ngram_size, 3)
 
+    def test_can_get_json_representation(self):
+        phrases = [{"phrase": "okay", "variants": ["OK"]}]
+        phrase_model = PhraseModel(phrases=phrases)
+        phrase_model.add_variants(phrases)
+        phrase_json = phrase_model.json
+        self.assertEqual(phrase_json[0]['phrase'], phrases[0]['phrase'])
+        self.assertEqual(phrase_json[0]['variants'][0], phrases[0]['variants'][0])
+

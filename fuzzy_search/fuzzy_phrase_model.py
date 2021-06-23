@@ -111,6 +111,7 @@ class PhraseModel:
         self.add_labels(model)
         self.add_custom(model)
 
+    @property
     def json(self) -> List[Dict[str, Union[str, List[str]]]]:
         """Return a JSON representation of the phrase model.
 
@@ -119,11 +120,13 @@ class PhraseModel:
         """
         model_json: List[Dict[str, Union[str, List[str]]]] = []
         for phrase in self.phrase_index:
-            entry = {'phrase': self.phrase_index[phrase].metadata}
+            entry = {'phrase': phrase}
             if phrase in self.has_variants:
                 entry['variants'] = list(self.has_variants[phrase])
             if phrase in self.has_labels:
                 entry['label'] = list(self.has_labels[phrase])
+            if phrase in self.custom:
+                entry['custom'] = self.custom[phrase]
             model_json += [entry]
         return model_json
 
@@ -151,7 +154,7 @@ class PhraseModel:
             self.phrase_string_map[variant_phrase.phrase_string] = variant_phrase
         self.variant_index[variant_phrase.phrase_string] = variant_phrase
         self.is_variant_of[variant_phrase.phrase_string] = main_phrase.phrase_string
-        self.has_variants[main_phrase.phrase_string] = variant_phrase.phrase_string
+        self.has_variants[main_phrase.phrase_string].add(variant_phrase.phrase_string)
         self.phrase_type[variant_phrase.phrase_string].add("variant")
         self.variant_length_index[len(variant_phrase.phrase_string)].add(variant_phrase.phrase_string)
         self.index_phrase_words(variant_phrase)
@@ -254,7 +257,7 @@ class PhraseModel:
         del self.is_distractor_of[distractor_phrase.phrase_string]
 
     def add_phrases(self, phrases: List[Union[str, Dict[str, Union[str, List[str]]], Phrase]]) -> None:
-        """Add a list of phrases to the phrase model. Keywords must be either:
+        """Add a list of phrases to the phrase model. Phrases must be either:
         - a list of strings
         - a list of dictionaries with property 'phrase' and the phrase as a string value
         - a list of Phrase objects
@@ -382,7 +385,7 @@ class PhraseModel:
         :rtype: List[Dict[str, Union[str, List[str]]]]
         """
         if phrases is None:
-            phrases = self.phrase_index.keys
+            phrases = self.phrase_index.keys()
         phrases = [as_phrase_object(phrase, ngram_size=self.ngram_size, skip_size=self.skip_size) for phrase in phrases]
         return [{'phrase': phrase.phrase_string, 'variants': self.has_variants[phrase.phrase_string]}
                 for phrase in phrases]
@@ -548,7 +551,7 @@ class PhraseModel:
                 continue
             self.validate_entry_phrase(entry)
             # make sure the custom entry is a copy of the original and not a reference to the same object
-            self.custom[entry['phrase']] = copy.copy(entry)
+            self.custom[entry['phrase']] = copy.deepcopy(entry)
 
     def remove_custom(self, custom: List[Dict[str, any]]) -> None:
         """Remove custom properties for a list of phrases.
