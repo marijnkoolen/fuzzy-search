@@ -928,7 +928,7 @@ labels = [{‘phrase’: ‘some phrase’, ‘label’: ‘some label’}]</p>
 <dl class="py method">
 <dt id="fuzzy_search.fuzzy_phrase_model.PhraseModel.add_phrases">
 <code class="sig-name descname">add_phrases</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">phrases</span><span class="p">:</span> <span class="n">List<span class="p">[</span>Union<span class="p">[</span>str<span class="p">, </span>Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span><span class="p">]</span><span class="p">, </span><a class="reference internal" href="#fuzzy_search.fuzzy_phrase.Phrase" title="fuzzy_search.fuzzy_phrase.Phrase">fuzzy_search.fuzzy_phrase.Phrase</a><span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#fuzzy_search.fuzzy_phrase_model.PhraseModel.add_phrases" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a list of phrases to the phrase model. Keywords must be either:
+<dd><p>Add a list of phrases to the phrase model. Phrases must be either:
 - a list of strings
 - a list of dictionaries with property ‘phrase’ and the phrase as a string value
 - a list of Phrase objects</p>
@@ -1139,7 +1139,7 @@ of all registered phrases (when no list of phrases is given).</p>
 
 <dl class="py method">
 <dt id="fuzzy_search.fuzzy_phrase_model.PhraseModel.json">
-<code class="sig-name descname">json</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span><span class="p">]</span><span class="p">]</span><a class="headerlink" href="#fuzzy_search.fuzzy_phrase_model.PhraseModel.json" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">json</code><a class="headerlink" href="#fuzzy_search.fuzzy_phrase_model.PhraseModel.json" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a JSON representation of the phrase model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
