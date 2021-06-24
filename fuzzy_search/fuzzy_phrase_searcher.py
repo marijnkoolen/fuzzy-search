@@ -579,6 +579,7 @@ class FuzzyPhraseSearcher(object):
         for candidate in candidates:
             # print(candidate)
             if use_word_boundaries:
+                # print("candidate:", candidate)
                 adjusted_match = adjust_match_offsets(candidate.phrase.phrase_string, candidate.match_string,
                                                       text, candidate.match_start_offset, candidate.match_end_offset,
                                                       self.punctuation)

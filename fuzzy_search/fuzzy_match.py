@@ -34,6 +34,7 @@ def validate_match_props(match_phrase: Phrase, match_variant: Phrase,
     if not isinstance(match_string, str):
         raise TypeError('match string MUST be a string')
     if len(match_string) == 0:
+        print(match_phrase)
         raise ValueError('match string cannot be empty string')
     if not isinstance(match_offset, int):
         raise TypeError('match_offset must be an integer')
@@ -141,6 +142,8 @@ def adjust_match_offsets(phrase_string: str, candidate_string: str,
     match_end_offset = adjust_match_end_offset(phrase_string, candidate_string,
                                                text, candidate_end_offset, punctuation)
     if match_end_offset is None:
+        return None
+    elif match_end_offset <= match_start_offset:
         return None
     return {
         "match_string": text["text"][match_start_offset:match_end_offset],
