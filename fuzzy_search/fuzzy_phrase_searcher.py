@@ -181,7 +181,7 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
             # start a new candidate for the next skipgram
             # print('curr_offset:', curr_offset, '\tnext_offset:', next_offset)
             # print('starting a new candidate')
-            candidate = Candidate(phrase)
+            candidate = Candidate(phrase, max_length_variance=max_length_variance, ignore_case=ignore_case)
     # end of skipgrams reached, check if remaining candidate is a match
     # print('checking if final candidate is match:', candidate.is_match(skipgram_threshold))
     if candidate.is_match(skipgram_threshold):
