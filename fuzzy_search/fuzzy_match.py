@@ -58,11 +58,15 @@ def adjust_match_start_offset(text: Dict[str, any], match_string: str,
     # adjust the start
     # check if there match initial is a non-word character
     non_word_prefix = fuzzy_string.get_non_word_prefix(match_string)
+    # print('non_word_prefix:', non_word_prefix)
     if non_word_prefix == "":
         # match does not start with a non-word prefix, so check if it needs to be moved to the left
         if match_offset == 0:
             # match is at the start of text and starts with word characters
             return match_offset
+        # if character before match is first of text and not a word boundary, move left
+        if match_offset == 1 and text['text'][0] not in fuzzy_string.non_word_affixes_1:
+            return match_offset - 1
         # if character before match is a word boundary, match offset is good
         if text["text"][match_offset-1:match_offset] in fuzzy_string.non_word_affixes_1:
             return match_offset
@@ -70,6 +74,9 @@ def adjust_match_start_offset(text: Dict[str, any], match_string: str,
         elif match_offset > 1 and text["text"][match_offset-2:match_offset-1] in fuzzy_string.non_word_affixes_1:
             # move match_offset back by 1 to start at word boundary
             return match_offset-1
+        # if penultimate character before match is start of text, move offset by -2
+        elif match_offset == 2 and text['text'][0] not in fuzzy_string.non_word_affixes_1:
+            return match_offset - 2
         # if two characters before match is a word boundary, move offset by -2
         elif match_offset > 2 and text["text"][match_offset-3:match_offset-2] in fuzzy_string.non_word_affixes_1:
             # move match_offset back by 1 to start at word boundary
@@ -325,16 +332,31 @@ def calculate_end_shift(phrase_end: str, match_end: str, text_suffix: str, end_o
 
 class Candidate:
 
-    def __init__(self, phrase: Phrase, max_length_variance: int = 1):
+    def __init__(self, phrase: Phrase, max_length_variance: int = 1, ignore_case: bool = False):
         """Create a Candidate instance for a given Phrase object.
 
         :param phrase: a phrase object
         :type phrase: Phrase
+        :param ignore_case: whether to ignore case when matching skip grams
+        :type ignore_case: bool
         """
         self.skipgram_set = set()
         self.skipgram_list: List[SkipGram] = []
         self.skipgram_count = Counter()
         self.phrase = phrase
+        self.ignore_case = ignore_case
+        if ignore_case:
+            self.skipgrams = phrase.skipgrams_lower
+            self.skipgram_index = phrase.skipgram_index_lower
+            self.skipgram_freq = phrase.skipgram_freq_lower
+            self.early_skipgram_index = phrase.early_skipgram_index_lower
+            self.late_skipgram_index = phrase.late_skipgram_index_lower
+        else:
+            self.skipgrams = phrase.skipgrams
+            self.skipgram_index = phrase.skipgram_index
+            self.skipgram_freq = phrase.skipgram_freq
+            self.early_skipgram_index = phrase.early_skipgram_index
+            self.late_skipgram_index = phrase.late_skipgram_index
         self.max_length_variance = max_length_variance
         self.max_length = len(self.phrase.phrase_string) + self.max_length_variance
         self.match_start_offset: int = -1
@@ -353,7 +375,7 @@ class Candidate:
         :param skipgram: a matching skipgram
         :type skipgram: SkipGram
         """
-        if len(self.skipgram_list) == 0 and skipgram.string not in self.phrase.early_skipgram_index:
+        if len(self.skipgram_list) == 0 and skipgram.string not in self.early_skipgram_index:
             # print("skipping skipgram as first for candidate:", skipgram.string)
             return None
         self.skipgram_set.add(skipgram.string)
@@ -374,7 +396,7 @@ class Candidate:
             # print("\tremove - too long - length:", self.skip_match_length())
             # print("\tremove - too long - list:", [skip.string for skip in self.skipgram_list])
             # print("\tremove - too long - start:", self.match_start_offset, "\tend:", self.match_end_offset)
-        while len(self.skipgram_list) > 0 and self.skipgram_list[0].string not in self.phrase.early_skipgram_index:
+        while len(self.skipgram_list) > 0 and self.skipgram_list[0].string not in self.early_skipgram_index:
             self.remove_first_skip()
             self.match_start_offset = self.get_match_start_offset()
             # print("\tremove - no start - length:", self.skip_match_length())
@@ -386,12 +408,12 @@ class Candidate:
         if self.skip_match_length() <= len(self.phrase.phrase_string):
             return False
         start_skip = self.skipgram_list[0]
-        start_phrase_offset = self.phrase.skipgram_index[start_skip.string][0].offset
+        start_phrase_offset = self.skipgram_index[start_skip.string][0].offset
         best_start_phrase_offset = start_phrase_offset
         best_start_index = 0
         best_start_skip = start_skip
         for si, skip in enumerate(self.skipgram_list):
-            skip_phrase_offset = self.phrase.skipgram_index[skip.string][0].offset
+            skip_phrase_offset = self.skipgram_index[skip.string][0].offset
             if skip.offset - start_skip.offset > self.skip_match_length() - len(self.phrase.phrase_string):
                 # stop looking for better start when remaining skips result in too short match length
                 break
@@ -399,7 +421,7 @@ class Candidate:
                 best_start_index = si
                 best_start_skip = skip
                 best_start_phrase_offset = skip_phrase_offset
-            if skip.string not in self.phrase.early_skipgram_index:
+            if skip.string not in self.early_skipgram_index:
                 break
         for _ in range(0, best_start_index):
             self.remove_first_skip()
@@ -438,7 +460,7 @@ class Candidate:
             # there are no matching skipgrams, so no matching string
             # print('NO MATCH: there are no matching skipgrams, so no matching string')
             return False
-        if self.skipgram_list[0].string not in self.phrase.early_skipgram_index:
+        if self.skipgram_list[0].string not in self.early_skipgram_index:
             # the first skipgram of candidate is not in the early skipgrams of phrase
             # print('NO MATCH: the first skipgram of candidate is not in the early skipgrams of phrase')
             return False
@@ -455,9 +477,9 @@ class Candidate:
             # print('late threshold:', self.phrase.late_threshold)
             # print('NO MATCH: skip match length is not with max length variance of phrase')
             return False
-        # print(self.get_skip_set_overlap())
+        # print('skip_set_overlap:', self.get_skip_set_overlap())
         # print('late threshold:', self.phrase.late_threshold)
-        if self.skipgram_list[-1].string not in self.phrase.late_skipgram_index:
+        if self.skipgram_list[-1].string not in self.late_skipgram_index:
             # print("NO MATCH: last skip not in late index")
             # the last skipgram of candidate is not in the late skipgrams of phrase
             return False
@@ -485,7 +507,7 @@ class Candidate:
         diff = 0
         total = 0
         for skipgram_string, count in self.skipgram_count.items():
-            diff += abs(count - self.phrase.skipgram_freq[skipgram_string])
+            diff += abs(count - self.skipgram_freq[skipgram_string])
             total += count
         return (total - diff) / self.phrase.num_skipgrams
 
@@ -498,7 +520,7 @@ class Candidate:
         if len(self.skipgram_list) == 0:
             return None
         first_skip = self.skipgram_list[0]
-        first_skip_in_phrase = self.phrase.skipgram_index[first_skip.string][0]
+        first_skip_in_phrase = self.skipgram_index[first_skip.string][0]
         match_start_offset = self.skipgram_list[0].offset - first_skip_in_phrase.offset
         # print("in match:", first_skip.string, first_skip.offset)
         # print("in phrase:", first_skip_in_phrase.string, first_skip_in_phrase.offset)

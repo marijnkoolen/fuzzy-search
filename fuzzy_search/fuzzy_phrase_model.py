@@ -92,7 +92,7 @@ class PhraseModel:
 
     def __repr__(self):
         """A phrase model to support fuzzy searching in OCR/HTR output."""
-        return f"PhraseModel({json.dumps(self.json(), indent=2)})"
+        return f"PhraseModel({json.dumps(self.json, indent=2)})"
 
     def __str__(self):
         return self.__repr__()

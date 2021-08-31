@@ -57,7 +57,7 @@ class Phrase(object):
         # add lowercase version to allow both matching with and without ignore_case
         self.skipgrams_lower = [skipgram for skipgram in text2skipgrams(self.phrase_string.lower(),
                                                                         ngram_size=ngram_size, skip_size=skip_size)]
-        self.early_skipgram_index_lower = {skipgram: skipgram for skipgram in self.skipgrams_lower
+        self.early_skipgram_index_lower = {skipgram.string: skipgram for skipgram in self.skipgrams_lower
                                            if skipgram.offset < early_threshold}
         self.late_skipgram_index_lower = {skipgram.string: skipgram for skipgram in self.skipgrams_lower
                                           if skipgram.offset > self.late_threshold}

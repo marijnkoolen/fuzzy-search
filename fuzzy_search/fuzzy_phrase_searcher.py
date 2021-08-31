@@ -128,7 +128,8 @@ def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate]) -> 
 
 
 def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_matches: SkipMatches,
-                                    skipgram_threshold: float, max_length_variance: int = 1) -> List[Candidate]:
+                                    skipgram_threshold: float, max_length_variance: int = 1,
+                                    ignore_case: bool = False) -> List[Candidate]:
     """Find all candidate matches for a given phrase and SkipMatches object.
 
     :param text: the text object to match with phrases
@@ -141,11 +142,13 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
     :type skipgram_threshold: float
     :param max_length_variance: the maximum difference in length between candidate and phrase
     :type max_length_variance: int
+    :param ignore_case: whether to ignore case when matching skip grams
+    :type ignore_case: bool
     :return: a list of candidate matches
     :rtype: List[Candidate]
     """
     candidates: List[Candidate] = []
-    candidate = Candidate(phrase, max_length_variance=max_length_variance)
+    candidate = Candidate(phrase, max_length_variance=max_length_variance, ignore_case=ignore_case)
     last_index = len(skip_matches.match_offsets[phrase]) - 1
     # print(f"finding candidates for phrase ({len(phrase.phrase_string)}):", phrase.phrase_string)
     for ci, curr_offset in enumerate(skip_matches.match_offsets[phrase]):
@@ -180,7 +183,7 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
             # print('starting a new candidate')
             candidate = Candidate(phrase)
     # end of skipgrams reached, check if remaining candidate is a match
-    # print('checking if final candidate is match')
+    # print('checking if final candidate is match:', candidate.is_match(skipgram_threshold))
     if candidate.is_match(skipgram_threshold):
         if len(candidates) == 0 or not candidate.same_candidate(candidates[-1]):
             candidate.match_string = candidate.get_match_string(text)
@@ -195,7 +198,7 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
 
 def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
                              skipgram_threshold: float, phrase_model: PhraseModel,
-                             max_length_variance: int = 1) -> List[Candidate]:
+                             max_length_variance: int = 1, ignore_case: bool = False) -> List[Candidate]:
     """Find all candidate matches for the phrases in a SkipMatches object.
 
     :param text: the text object to match with phrases
@@ -208,6 +211,8 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
     :type phrase_model: PhraseModel
     :param max_length_variance: the maximum difference in length between candidate and phrase
     :type max_length_variance: int
+    :param ignore_case: whether to ignore case when matching skip grams
+    :type ignore_case: bool
     :return: a list of candidate matches
     :rtype: List[Candidate]
     """
@@ -216,6 +221,7 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
     for phrase in skip_matches.phrases:
         # print("get_skipmatch_candidates - phrase:", phrase.phrase_string)
         if get_skipset_overlap(phrase, skip_matches) < skipgram_threshold:
+            # print('below skipgram_threshold:', get_skipset_overlap(phrase, skip_matches))
             continue
         if phrase.phrase_string in phrase_model.is_variant_of:
             match_phrase = phrase_model.is_variant_of[phrase.phrase_string]
@@ -223,7 +229,8 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
             match_phrase = phrase.phrase_string
         phrase_candidates[match_phrase] += get_skipmatch_phrase_candidates(text, phrase, skip_matches,
                                                                            skipgram_threshold,
-                                                                           max_length_variance=max_length_variance)
+                                                                           max_length_variance=max_length_variance,
+                                                                           ignore_case=ignore_case)
     for phrase_string in phrase_candidates:
         # print("phrase_candidates:", len(phrase_candidates[phrase_string]))
         filtered_candidates = filter_overlapping_phrase_candidates(phrase_candidates[phrase_string])
@@ -232,6 +239,7 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
         # for candidate in filtered_candidates:
         #     print(candidate.match_string, candidate.match_start_offset, candidate.match_end_offset)
         candidates += filtered_candidates
+    # print(f'get_skipmatch_candidates - returning {len(candidates)} candidates')
     return candidates
 
 
@@ -326,6 +334,8 @@ class FuzzyPhraseSearcher(object):
         # non-default configuration
         self.config = copy.deepcopy(default_config)
         if config:
+            for key in config:
+                self.config[key] = config[key]
             self.configure(config)
 
     def configure(self, config: Dict[str, any]) -> None:
@@ -393,9 +403,11 @@ class FuzzyPhraseSearcher(object):
                 raise ValueError(f"phrase has different skip_size ({phrase.skip_size}) than {searcher_size}")
             self.phrases.add(phrase)
             if self.ignorecase:
+                # print(f'indexing phrase {phrase.phrase_string} with lowercase')
                 for skipgram in phrase.skipgrams_lower:
                     self.skipgram_index[skipgram.string].add(phrase)
                 for skipgram_string in phrase.early_skipgram_index_lower:
+                    # print('early skipgram_string:', skipgram_string)
                     self.early_skipgram_index[skipgram_string].add(phrase)
                 for skipgram_string in phrase.late_skipgram_index_lower:
                     self.late_skipgram_index[skipgram_string].add(phrase)
@@ -573,7 +585,9 @@ class FuzzyPhraseSearcher(object):
         skip_matches = self.find_skipgram_matches(text, include_variants=include_variants,
                                                   known_word_offset=known_word_offset)
         candidates = get_skipmatch_candidates(text, skip_matches, self.skipgram_threshold, self.phrase_model,
-                                              max_length_variance=self.max_length_variance)
+                                              max_length_variance=self.max_length_variance,
+                                              ignore_case=self.ignorecase)
+        # print('find_candidates - candidates:', candidates)
         filtered = []
         use_word_boundaries = use_word_boundaries if use_word_boundaries is not None else self.use_word_boundaries
         for candidate in candidates:
@@ -662,7 +676,7 @@ class FuzzyPhraseSearcher(object):
         # print('number of exact matches:', len(exact_matches))
         candidates = self.find_candidates(text, use_word_boundaries=use_word_boundaries,
                                           include_variants=include_variants, known_word_offset=known_word_offset)
-        # print(candidates)
+        # print('find_matches - candidates:', candidates)
         matches = candidates_to_matches(candidates, text, self.phrase_model)
         # print(matches)
         filtered_matches = self.filter_matches_by_threshold(matches)
