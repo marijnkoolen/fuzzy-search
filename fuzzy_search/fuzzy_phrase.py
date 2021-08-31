@@ -25,11 +25,11 @@ class Phrase(object):
 
     def __init__(self, phrase: Union[str, Dict[str, str]], ngram_size: int = 2, skip_size: int = 2,
                  early_threshold: int = 3, late_threshold: int = 3, within_range_threshold: int = 3,
-                 ignore_case: bool = False):
+                 ignorecase: bool = False):
         if isinstance(phrase, str):
             phrase = {"phrase": phrase}
         self.name = phrase["phrase"]
-        self.phrase_string = self.name if not ignore_case else self.name.lower()
+        self.phrase_string = self.name if not ignorecase else self.name.lower()
         self.exact_string = re.escape(self.phrase_string)
         self.extact_word_boundary_string = re.compile(rf"\b{self.exact_string}\b")
         self.label = None
@@ -43,7 +43,7 @@ class Phrase(object):
         self.early_threshold = early_threshold
         self.late_threshold = len(self.name) - late_threshold - ngram_size
         self.within_range_threshold = within_range_threshold
-        self.ignore_case = ignore_case
+        self.ignorecase = ignorecase
         self.skipgrams = [skipgram for skipgram in text2skipgrams(self.phrase_string,
                                                                   ngram_size=ngram_size, skip_size=skip_size)]
         self.skipgram_set = set([skipgram.string for skipgram in self. skipgrams])
@@ -53,14 +53,15 @@ class Phrase(object):
         self.early_skipgram_index = {skipgram.string: skipgram for skipgram in
                                      self.skipgrams if skipgram.offset < early_threshold}
         self.late_skipgram_index = {skipgram.string: skipgram for skipgram in
-                                    self.skipgrams if skipgram.offset > self.late_threshold}
-        # add lowercase version to allow both matching with and without ignore_case
+                                    self.skipgrams if skipgram.offset + skipgram.length > self.late_threshold}
+        # add lowercase version to allow both matching with and without ignorecase
         self.skipgrams_lower = [skipgram for skipgram in text2skipgrams(self.phrase_string.lower(),
                                                                         ngram_size=ngram_size, skip_size=skip_size)]
         self.early_skipgram_index_lower = {skipgram.string: skipgram for skipgram in self.skipgrams_lower
                                            if skipgram.offset < early_threshold}
         self.late_skipgram_index_lower = {skipgram.string: skipgram for skipgram in self.skipgrams_lower
-                                          if skipgram.offset > self.late_threshold}
+                                          if skipgram.offset + skipgram.length > self.late_threshold}
+        # print(self.late_skipgram_index_lower.keys())
         self.skipgram_freq_lower = Counter([skipgram.string for skipgram in self.skipgrams_lower])
         self.num_skipgrams = len(self.skipgrams)
         self.skipgram_distance = {}

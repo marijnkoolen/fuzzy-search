@@ -4,6 +4,7 @@ import string
 import re
 from collections import defaultdict
 
+import fuzzy_search
 from fuzzy_search.fuzzy_phrase_model import PhraseModel
 from fuzzy_search.fuzzy_match import PhraseMatch, Candidate, adjust_match_offsets
 from fuzzy_search.fuzzy_phrase import Phrase
@@ -129,7 +130,7 @@ def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate]) -> 
 
 def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_matches: SkipMatches,
                                     skipgram_threshold: float, max_length_variance: int = 1,
-                                    ignore_case: bool = False) -> List[Candidate]:
+                                    ignorecase: bool = False) -> List[Candidate]:
     """Find all candidate matches for a given phrase and SkipMatches object.
 
     :param text: the text object to match with phrases
@@ -142,13 +143,13 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
     :type skipgram_threshold: float
     :param max_length_variance: the maximum difference in length between candidate and phrase
     :type max_length_variance: int
-    :param ignore_case: whether to ignore case when matching skip grams
-    :type ignore_case: bool
+    :param ignorecase: whether to ignore case when matching skip grams
+    :type ignorecase: bool
     :return: a list of candidate matches
     :rtype: List[Candidate]
     """
     candidates: List[Candidate] = []
-    candidate = Candidate(phrase, max_length_variance=max_length_variance, ignore_case=ignore_case)
+    candidate = Candidate(phrase, max_length_variance=max_length_variance, ignorecase=ignorecase)
     last_index = len(skip_matches.match_offsets[phrase]) - 1
     # print(f"finding candidates for phrase ({len(phrase.phrase_string)}):", phrase.phrase_string)
     for ci, curr_offset in enumerate(skip_matches.match_offsets[phrase]):
@@ -181,7 +182,7 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
             # start a new candidate for the next skipgram
             # print('curr_offset:', curr_offset, '\tnext_offset:', next_offset)
             # print('starting a new candidate')
-            candidate = Candidate(phrase, max_length_variance=max_length_variance, ignore_case=ignore_case)
+            candidate = Candidate(phrase, max_length_variance=max_length_variance, ignorecase=ignorecase)
     # end of skipgrams reached, check if remaining candidate is a match
     # print('checking if final candidate is match:', candidate.is_match(skipgram_threshold))
     if candidate.is_match(skipgram_threshold):
@@ -193,12 +194,13 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
             # a better candidate and if so, add that as well
             candidate.match_string = candidate.get_match_string(text)
             candidates.append(copy.deepcopy(candidate))
+    # print(f'get_skipmatch_phrase_candidates - returning {len(candidates)} candidates')
     return candidates
 
 
 def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
                              skipgram_threshold: float, phrase_model: PhraseModel,
-                             max_length_variance: int = 1, ignore_case: bool = False) -> List[Candidate]:
+                             max_length_variance: int = 1, ignorecase: bool = False) -> List[Candidate]:
     """Find all candidate matches for the phrases in a SkipMatches object.
 
     :param text: the text object to match with phrases
@@ -211,8 +213,8 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
     :type phrase_model: PhraseModel
     :param max_length_variance: the maximum difference in length between candidate and phrase
     :type max_length_variance: int
-    :param ignore_case: whether to ignore case when matching skip grams
-    :type ignore_case: bool
+    :param ignorecase: whether to ignore case when matching skip grams
+    :type ignorecase: bool
     :return: a list of candidate matches
     :rtype: List[Candidate]
     """
@@ -230,7 +232,7 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
         phrase_candidates[match_phrase] += get_skipmatch_phrase_candidates(text, phrase, skip_matches,
                                                                            skipgram_threshold,
                                                                            max_length_variance=max_length_variance,
-                                                                           ignore_case=ignore_case)
+                                                                           ignorecase=ignorecase)
     for phrase_string in phrase_candidates:
         # print("phrase_candidates:", len(phrase_candidates[phrase_string]))
         filtered_candidates = filter_overlapping_phrase_candidates(phrase_candidates[phrase_string])
@@ -255,15 +257,14 @@ def get_text_dict(text: Union[str, dict], ignorecase: bool = False) -> dict:
     :rtype: dict
     """
     if isinstance(text, str):
-        text = {"text": text, "id": None}
-    if ignorecase:
-        text["text"] = text["text"].lower()
+        text = {"text": text, "id": None, 'text_lower': text.lower()}
     if "id" not in text:
         text["id"] = None
     return text
 
 
-def candidates_to_matches(candidates: List[Candidate], text: dict, phrase_model: PhraseModel) -> List[PhraseMatch]:
+def candidates_to_matches(candidates: List[Candidate], text: dict, phrase_model: PhraseModel,
+                          ignorecase: bool = False) -> List[PhraseMatch]:
     matches: List[PhraseMatch] = []
     for candidate in candidates:
         if candidate.phrase.phrase_string in phrase_model.is_variant_of:
@@ -271,8 +272,10 @@ def candidates_to_matches(candidates: List[Candidate], text: dict, phrase_model:
             match_phrase = phrase_model.phrase_index[match_phrase_string]
         else:
             match_phrase = candidate.phrase
+        # print('candidates_to_matches - ignorecase:', ignorecase)
         match = PhraseMatch(match_phrase, candidate.phrase,
-                            candidate.match_string, candidate.match_start_offset, text["id"])
+                            candidate.match_string, candidate.match_start_offset, text_id=text["id"],
+                            ignorecase=ignorecase)
         match.add_scores(skipgram_overlap=candidate.get_skip_count_overlap())
         matches.append(match)
     return matches
@@ -296,6 +299,7 @@ def filter_matches_by_overlap(filtered_matches: List[PhraseMatch]) -> List[Phras
 class FuzzyPhraseSearcher(object):
 
     def __init__(self, config: Union[None, Dict[str, Union[str, int, float]]] = None):
+        self.__version__ = fuzzy_search.__version__
         # default configuration
         self.char_match_threshold = 0.5
         self.ngram_threshold = 0.5
@@ -505,7 +509,8 @@ class FuzzyPhraseSearcher(object):
             known_word_offset = {}
         # print(known_word_offset)
         skip_matches = SkipMatches(self.ngram_size, self.skip_size)
-        for skipgram in text2skipgrams(text["text"], self.ngram_size, self.skip_size):
+        text_string = text['text_lower'] if self.ignorecase else text['text']
+        for skipgram in text2skipgrams(text_string, self.ngram_size, self.skip_size):
             # print(skipgram.offset, skipgram.string)
             # print("skipgram:", skipgram.string)
             if skipgram.offset in known_word_offset:
@@ -586,7 +591,7 @@ class FuzzyPhraseSearcher(object):
                                                   known_word_offset=known_word_offset)
         candidates = get_skipmatch_candidates(text, skip_matches, self.skipgram_threshold, self.phrase_model,
                                               max_length_variance=self.max_length_variance,
-                                              ignore_case=self.ignorecase)
+                                              ignorecase=self.ignorecase)
         # print('find_candidates - candidates:', candidates)
         filtered = []
         use_word_boundaries = use_word_boundaries if use_word_boundaries is not None else self.use_word_boundaries
@@ -624,6 +629,9 @@ class FuzzyPhraseSearcher(object):
     def filter_matches_by_threshold(self, matches: List[PhraseMatch]) -> List[PhraseMatch]:
         filtered: List[PhraseMatch] = []
         for match in matches:
+            # print('match.character_overlap:', match.character_overlap)
+            # print('match.ngram_overlap:', match.ngram_overlap)
+            # print('match.levenshtein_similarity:', match.levenshtein_similarity)
             if match.character_overlap < self.char_match_threshold:
                 continue
             if match.ngram_overlap < self.ngram_threshold:
@@ -677,8 +685,8 @@ class FuzzyPhraseSearcher(object):
         candidates = self.find_candidates(text, use_word_boundaries=use_word_boundaries,
                                           include_variants=include_variants, known_word_offset=known_word_offset)
         # print('find_matches - candidates:', candidates)
-        matches = candidates_to_matches(candidates, text, self.phrase_model)
-        # print(matches)
+        matches = candidates_to_matches(candidates, text, self.phrase_model, ignorecase=self.ignorecase)
+        # print('find_macthes - matches:', matches)
         filtered_matches = self.filter_matches_by_threshold(matches)
         if filter_distractors is None:
             filter_distractors = self.filter_distractors
@@ -689,7 +697,7 @@ class FuzzyPhraseSearcher(object):
         if not allow_overlapping_matches:
             filtered_matches = filter_matches_by_overlap(filtered_matches)
         # print(exact_matches)
-        # print(filtered_matches)
+        # print('filtered_matches:', filtered_matches)
         selected_matches = filtered_matches + exact_matches
         return sorted(selected_matches, key=lambda x: x.offset)
 
@@ -785,14 +793,16 @@ def search_exact_phrases_with_word_boundaries(phrase_model: PhraseModel, text: D
                     continue
                 if "phrase" in phrase_model.phrase_type[phrase_string]:
                     phrase = phrase_model.phrase_index[phrase_string]
-                    match = PhraseMatch(phrase, phrase, phrase_string, phrase_start, text_id=text["id"])
+                    match = PhraseMatch(phrase, phrase, phrase_string, phrase_start, text_id=text["id"],
+                                        ignorecase=ignorecase)
                     yield add_exact_match_score(match)
                     # print("the matching phrase:", phrase)
                 elif "variant" in phrase_model.phrase_type[phrase_string] and include_variants:
                     variant_phrase = phrase_model.variant_index[phrase_string]
                     main_phrase_string = phrase_model.is_variant_of[phrase_string]
                     main_phrase = phrase_model.phrase_index[main_phrase_string]
-                    match = PhraseMatch(main_phrase, variant_phrase, phrase_string, phrase_start, text_id=text["id"])
+                    match = PhraseMatch(main_phrase, variant_phrase, phrase_string, phrase_start,
+                                        text_id=text["id"], ignorecase=ignorecase)
                     yield add_exact_match_score(match)
 
 
@@ -803,7 +813,8 @@ def search_exact_phrases_without_word_boundaries(phrase_model: PhraseModel, text
         phrase = phrase_model.phrase_index[phrase_string]
         for match in re.finditer(phrase.exact_string, text["text"]):
             phrase = phrase_model.phrase_index[phrase_string]
-            match = PhraseMatch(phrase, phrase, phrase_string, match.start(), text_id=text["id"])
+            match = PhraseMatch(phrase, phrase, phrase_string, match.start(), text_id=text["id"],
+                                ignorecase=ignorecase)
             yield add_exact_match_score(match)
     if include_variants:
         for phrase_string in phrase_model.variant_index:
@@ -812,7 +823,8 @@ def search_exact_phrases_without_word_boundaries(phrase_model: PhraseModel, text
                 variant_phrase = phrase_model.variant_index[phrase_string]
                 main_phrase_string = phrase_model.is_variant_of[phrase_string]
                 main_phrase = phrase_model.phrase_index[main_phrase_string]
-                match = PhraseMatch(main_phrase, variant_phrase, phrase_string, match.start(), text_id=text["id"])
+                match = PhraseMatch(main_phrase, variant_phrase, phrase_string, match.start(),
+                                    text_id=text["id"], ignorecase=ignorecase)
                 yield add_exact_match_score(match)
 
 

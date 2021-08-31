@@ -320,7 +320,7 @@ class FuzzyTemplate:
             if "variable" in label_info and label_info["variable"] is True:
                 pass
             elif self.ignore_unknown:
-                print("skipping unknown phrase label", label)
+                # print("skipping unknown phrase label", label)
                 return None
             else:
                 raise ValueError(f"label '{label}' does not correspond to any phrase in registered phrase model")

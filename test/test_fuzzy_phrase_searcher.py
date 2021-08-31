@@ -345,9 +345,9 @@ class TestSearcherRealData2(TestCase):
     def setUp(self) -> None:
         self.text1 = 'TS gehoort het rapport van de Heeren I van Lynden'
         self.config = {
-            "char_match_threshold": 0.7,
-            "ngram_threshold": 0.7,
-            "levenshtein_threshold": 0.7,
+            "char_match_threshold": 0.6,
+            "ngram_threshold": 0.5,
+            "levenshtein_threshold": 0.6,
             "ignorecase": False,
             "include_variants": True,
             "max_length_variance": 3,
@@ -380,5 +380,14 @@ class TestSearcherRealData2(TestCase):
         searcher.index_phrases(phrases=[phrase])
         text = 'aaniraliteyten in het gemeen'
         matches = searcher.find_matches(text)
-        # print(matches[0].score_levenshtein_similarity())
         self.assertEqual(len(matches), 1)
+
+    def test_searcher_allows_length_variance_3(self):
+        searcher = FuzzyPhraseSearcher(self.config)
+        searcher.ignorecase = True
+        phrase = 'Admiraliteit in Vriesland'
+        searcher.index_phrases(phrases=[phrase])
+        text = 'AduiraliteytVrieslaidt'
+        matches = searcher.find_matches(text)
+        self.assertEqual(len(matches), 1)
+

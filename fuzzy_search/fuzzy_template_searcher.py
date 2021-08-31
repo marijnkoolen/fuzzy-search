@@ -1,5 +1,6 @@
 from typing import Dict, List, Union
 
+import fuzzy_search
 from fuzzy_search.fuzzy_match import PhraseMatch
 from fuzzy_search.fuzzy_phrase_model import PhraseModel
 from fuzzy_search.fuzzy_template import FuzzyTemplate, FuzzyTemplateElement, FuzzyTemplateGroupElement
@@ -474,6 +475,7 @@ class FuzzyTemplateSearcher(FuzzyContextSearcher):
         :param searcher_config: an optional configuration dictionary to configure the FuzzyTemplateSearcher
         """
         super().__init__(config=config)
+        self.__version__ = fuzzy_search.__version__
         self.template: Union[None, FuzzyTemplate] = template if template else None
         self.phrase_model: Union[None, PhraseModel] = template.phrase_model if template else None
         if self.phrase_model:

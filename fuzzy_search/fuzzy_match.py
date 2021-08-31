@@ -332,20 +332,20 @@ def calculate_end_shift(phrase_end: str, match_end: str, text_suffix: str, end_o
 
 class Candidate:
 
-    def __init__(self, phrase: Phrase, max_length_variance: int = 1, ignore_case: bool = False):
+    def __init__(self, phrase: Phrase, max_length_variance: int = 1, ignorecase: bool = False):
         """Create a Candidate instance for a given Phrase object.
 
         :param phrase: a phrase object
         :type phrase: Phrase
-        :param ignore_case: whether to ignore case when matching skip grams
-        :type ignore_case: bool
+        :param ignorecase: whether to ignore case when matching skip grams
+        :type ignorecase: bool
         """
         self.skipgram_set = set()
         self.skipgram_list: List[SkipGram] = []
         self.skipgram_count = Counter()
         self.phrase = phrase
-        self.ignore_case = ignore_case
-        if ignore_case:
+        self.ignorecase = ignorecase
+        if ignorecase:
             self.skipgrams = phrase.skipgrams_lower
             self.skipgram_index = phrase.skipgram_index_lower
             self.skipgram_freq = phrase.skipgram_freq_lower
@@ -487,6 +487,7 @@ class Candidate:
             # print("below skipgram threshold:", self.get_skip_set_overlap(), skipgram_threshold)
             return False
         else:
+            # print('MATCH!')
             return True
 
     def get_skip_set_overlap(self) -> float:
@@ -535,6 +536,7 @@ class Candidate:
         :return: the matching string
         :rtype: str
         """
+        # print('get_match_string - text:', text)
         if self.match_start_offset == self.match_end_offset:
             raise ValueError('start and end offset cannot be the same')
         if self.match_start_offset > self.match_end_offset:
@@ -567,7 +569,7 @@ class Candidate:
 class PhraseMatch:
 
     def __init__(self, match_phrase: Phrase, match_variant: Phrase, match_string: str,
-                 match_offset: int, text_id: Union[None, str] = None,
+                 match_offset: int, ignorecase: bool = False, text_id: Union[None, str] = None,
                  match_scores: dict = None, match_label: Union[str, List[str]] = None,
                  match_id: str = None):
         # print("Match class match_phrase:", match_phrase)
@@ -580,6 +582,7 @@ class PhraseMatch:
         self.metadata = {}
         self.variant = match_variant
         self.string = match_string
+        self.ignorecase = ignorecase
         self.offset = match_offset
         self.end = self.offset + len(self.string)
         self.text_id = text_id
@@ -595,8 +598,9 @@ class PhraseMatch:
 
     def __repr__(self):
         return f'PhraseMatch(' + \
-            f'phrase: "{self.phrase.phrase_string}", variant: "{self.variant.phrase_string}",' + \
-            f'string: "{self.string}", offset: {self.offset})'
+            f'phrase: "{self.phrase.phrase_string}", variant: "{self.variant.phrase_string}", ' + \
+            f'string: "{self.string}", offset: {self.offset}, ignorecase: {self.ignorecase}, ' + \
+            f'levenshtein_similarity: {self.levenshtein_similarity})'
 
     @property
     def label_list(self) -> List[str]:
@@ -621,6 +625,7 @@ class PhraseMatch:
             "string": self.string,
             "offset": self.offset,
             "label": self.label,
+            "ignorecase": self.ignorecase,
             "text_id": self.text_id,
             "match_scores": {
                 "char_match": self.character_overlap,
@@ -641,9 +646,16 @@ class PhraseMatch:
         :return: None
         :rtype: None
         """
-        self.character_overlap = self.score_character_overlap()
-        self.ngram_overlap = self.score_ngram_overlap()
-        self.levenshtein_similarity = self.score_levenshtein_similarity()
+        # print('PhraseMatch - ignorecase:', self.ignorecase)
+        match_string = self.string.lower() if self.ignorecase else self.string
+        phrase_string = self.variant.phrase_string.lower() if self.ignorecase else self.variant.phrase_string
+        # print('match_string:', match_string)
+        # print('variant.phrase_string:', self.variant.phrase_string)
+        self.character_overlap = fuzzy_string.score_char_overlap_ratio(phrase_string, match_string)
+        self.ngram_overlap = fuzzy_string.score_ngram_overlap_ratio(phrase_string, match_string,
+                                                                    self.variant.ngram_size)
+        self.levenshtein_similarity = fuzzy_string.score_levenshtein_similarity_ratio(phrase_string,
+                                                                                      match_string)
         if skipgram_overlap is not None:
             self.skipgram_overlap = skipgram_overlap
 
@@ -653,8 +665,11 @@ class PhraseMatch:
         :return: the character overlap as proportion of the variant phrase string
         :rtype: float
         """
-        if not self.character_overlap:
-            self.character_overlap = fuzzy_string.score_char_overlap_ratio(self.variant.phrase_string, self.string)
+        match_string = self.string.lower() if self.ignorecase else self.string
+        phrase_string = self.variant.phrase_string.lower() if self.ignorecase else self.variant.phrase_string
+        # print('match_string:', match_string)
+        # print('variant.phrase_string:', self.variant.phrase_string)
+        self.character_overlap = fuzzy_string.score_char_overlap_ratio(phrase_string, match_string)
         return self.character_overlap
 
     def score_ngram_overlap(self) -> float:
@@ -663,9 +678,12 @@ class PhraseMatch:
         :return: the ngram overlap as proportion of the variant phrase string
         :rtype: float
         """
-        if not self.ngram_overlap:
-            self.ngram_overlap = fuzzy_string.score_ngram_overlap_ratio(self.variant.phrase_string,
-                                                                        self.string, self.phrase.ngram_size)
+        match_string = self.string.lower() if self.ignorecase else self.string
+        phrase_string = self.variant.phrase_string.lower() if self.ignorecase else self.variant.phrase_string
+        # print('match_string:', match_string)
+        # print('variant.phrase_string:', self.variant.phrase_string)
+        self.ngram_overlap = fuzzy_string.score_ngram_overlap_ratio(phrase_string,
+                                                                    match_string, self.phrase.ngram_size)
         return self.ngram_overlap
 
     def score_levenshtein_similarity(self):
@@ -674,9 +692,12 @@ class PhraseMatch:
         :return: the levenshtein similarity as proportion of the variant phrase string
         :rtype: float
         """
-        if not self.levenshtein_similarity:
-            self.levenshtein_similarity = fuzzy_string.score_levenshtein_similarity_ratio(self.variant.phrase_string,
-                                                                                          self.string)
+        match_string = self.string.lower() if self.ignorecase else self.string
+        phrase_string = self.variant.phrase_string.lower() if self.ignorecase else self.variant.phrase_string
+        # print('match_string:', match_string)
+        # print('variant.phrase_string:', self.variant.phrase_string)
+        self.levenshtein_similarity = fuzzy_string.score_levenshtein_similarity_ratio(phrase_string,
+                                                                                      match_string)
         return self.levenshtein_similarity
 
     def overlaps(self, other: PhraseMatch) -> bool:
