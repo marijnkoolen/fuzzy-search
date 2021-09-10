@@ -152,6 +152,7 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
     candidate = Candidate(phrase, max_length_variance=max_length_variance, ignorecase=ignorecase)
     last_index = len(skip_matches.match_offsets[phrase]) - 1
     # print(f"finding candidates for phrase ({len(phrase.phrase_string)}):", phrase.phrase_string)
+    # print(skip_matches.match_offsets[phrase])
     for ci, curr_offset in enumerate(skip_matches.match_offsets[phrase]):
         next_offset = None if ci == last_index else skip_matches.match_offsets[phrase][ci + 1]
         # print(ci, 'curr offset:', curr_offset, '\tskip:',
@@ -501,6 +502,7 @@ class FuzzyPhraseSearcher(object):
         :return: a SkipMatches object contain all skipgram matches
         :rtype: SkipMatches
         """
+        # print(known_word_offset)
         # skipmatch_count = 0
         known_word = None
         if include_variants is None:
@@ -548,9 +550,9 @@ class FuzzyPhraseSearcher(object):
                     # print(f"skipping phrase {phrase.phrase_string} at offset", skipgram.offset)
                     continue
                 if known_word:
-                    if phrase.phrase_string not in self.phrase_model.word_in_phrase[known_word["word"]]:
-                        # print("skipping phrase because doesn't match known word:", phrase.phrase_string)
-                        continue
+                    #if phrase.phrase_string not in self.phrase_model.word_in_phrase[known_word["word"]]:
+                    #    print("skipping phrase because doesn't match known word:", phrase.phrase_string)
+                    #    continue
                     if phrase.phrase_string in known_word["match_phrases"]:
                         # print("skipping phrase because found as exact match:", phrase.phrase_string)
                         continue
@@ -596,6 +598,7 @@ class FuzzyPhraseSearcher(object):
         filtered = []
         use_word_boundaries = use_word_boundaries if use_word_boundaries is not None else self.use_word_boundaries
         for candidate in candidates:
+            # print()
             # print(candidate)
             if use_word_boundaries:
                 # print("candidate:", candidate)

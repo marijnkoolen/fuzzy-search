@@ -391,3 +391,24 @@ class TestSearcherRealData2(TestCase):
         matches = searcher.find_matches(text)
         self.assertEqual(len(matches), 1)
 
+    def test_searcher_finds_DONtfangen(self):
+        searcher = FuzzyPhraseSearcher(self.config)
+        searcher.ignorecase = True
+        phrase = "ONtfangen een Missive van"
+        searcher.index_phrases(phrases=[phrase])
+        text = 'DONtfangen een Missive van den Heere vander Goes'
+        matches = searcher.find_matches(text)
+        self.assertEqual(len(matches), 1)
+
+    def test_searcher_finds_long_opening(self):
+        searcher = FuzzyPhraseSearcher(self.config)
+        searcher.ignorecase = True
+        phrases = [
+            "hebben ter Vergaderinge ingebraght",
+            'hebben ter Vergaderinge ingebragt en laaten leezen de Resolutie'
+        ]
+        searcher.index_phrases(phrases=phrases)
+        text = "De Heeren Gedeputeerden van de Provincie van Zeelandt, hebben ter Vergaderinge ingebraght en laten lesen de Resolutie van de Heeren Staten van de hoogh-gemelde Provincie hare Principalen, raeckende het negotieren van hare quote voor een derde part in de Petitie tot de extraordinaris Equipage voor het loopende jaer, volgende de voorschreve Resolutie hier na geinsereert."
+        matches = searcher.find_matches(text)
+        self.assertEqual(len(matches), 2)
+
