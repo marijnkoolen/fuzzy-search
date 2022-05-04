@@ -182,6 +182,10 @@ class FuzzyTemplate:
         self.group_element_index: Dict[str, FuzzyTemplateGroupElement] = {}
         self.root_element = None
         self.ignore_unknown = ignore_unknown
+        self.template_json = template_json
+        self.template_name = None
+        if 'label' in template_json:
+            self.template_name = template_json['label']
         self.register_template(template_json)
 
     def __repr__(self):
