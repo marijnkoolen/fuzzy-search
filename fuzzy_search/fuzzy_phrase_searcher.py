@@ -3,6 +3,7 @@ import copy
 import string
 import re
 from collections import defaultdict
+import time
 
 import fuzzy_search
 from fuzzy_search.fuzzy_phrase_model import PhraseModel
@@ -371,6 +372,8 @@ class FuzzyPhraseSearcher(object):
             self.include_variants = config["include_variants"]
         if "filter_distractors" in config:
             self.filter_distractors = config["filter_distractors"]
+        if "skip_exact_matching" in config:
+            self.skip_exact_matching = config["skip_exact_matching"]
         if "allow_overlapping_matches" in config:
             self.allow_overlapping_matches = config["allow_overlapping_matches"]
         if "punctuation" in config:
@@ -649,7 +652,8 @@ class FuzzyPhraseSearcher(object):
                      allow_overlapping_matches: Union[None, bool] = None,
                      include_variants: Union[None, bool] = None,
                      filter_distractors: Union[None, bool] = None,
-                     skip_exact_matching: bool = None) -> List[PhraseMatch]:
+                     skip_exact_matching: bool = None,
+                     debug: bool = None) -> List[PhraseMatch]:
         """Find all fuzzy matching phrases for a given text. By default, a first pass of exact matching is conducted
         to find exact occurrences of phrases. This is to speed up the fuzzy matching pass
 
@@ -666,8 +670,13 @@ class FuzzyPhraseSearcher(object):
         :param skip_exact_matching: boolean flag whether to skip the exact matching step
         :type skip_exact_matching: Union[None, bool]
         :return: a list of phrases matches
+        :param debug: show debug information
+        :type debug: bool
         :rtype: PhraseMatch
         """
+        if debug:
+            print('getting text dict')
+            time_step = step_timer()
         if self.phrase_model is None:
             raise ValueError("No phrase model indexed")
         text = get_text_dict(text, ignorecase=self.ignorecase)
@@ -676,20 +685,30 @@ class FuzzyPhraseSearcher(object):
         if skip_exact_matching is None:
             skip_exact_matching = self.skip_exact_matching
         if not skip_exact_matching:
-            # print("running exact matching")
+            if debug:
+                time_step()
+                print("running exact matching")
             exact_matches = self.find_exact_matches(text, use_word_boundaries=use_word_boundaries,
                                                     include_variants=include_variants)
             known_word_offset = index_known_word_offsets(exact_matches)
         else:
-            # print("skipping exact matching")
+            if debug:
+                time_step()
+                print("skipping exact matching")
             exact_matches = []
             known_word_offset = {}
-        # print('number of exact matches:', len(exact_matches))
+        if debug:
+            time_step()
+            print('number of exact matches:', len(exact_matches))
         candidates = self.find_candidates(text, use_word_boundaries=use_word_boundaries,
                                           include_variants=include_variants, known_word_offset=known_word_offset)
-        # print('find_matches - candidates:', candidates)
+        if debug:
+            time_step()
+            print('find_matches - candidates:', candidates)
         matches = candidates_to_matches(candidates, text, self.phrase_model, ignorecase=self.ignorecase)
-        # print('find_macthes - matches:', matches)
+        if debug:
+            time_step()
+            print('find_macthes - matches:', matches)
         filtered_matches = self.filter_matches_by_threshold(matches)
         if filter_distractors is None:
             filter_distractors = self.filter_distractors
@@ -700,7 +719,9 @@ class FuzzyPhraseSearcher(object):
         if not allow_overlapping_matches:
             filtered_matches = filter_matches_by_overlap(filtered_matches)
         # print(exact_matches)
-        # print('filtered_matches:', filtered_matches)
+        if debug:
+            time_step()
+            print('filtered_matches:', filtered_matches)
         selected_matches = filtered_matches + exact_matches
         return sorted(selected_matches, key=lambda x: x.offset)
 
@@ -728,6 +749,22 @@ class FuzzyPhraseSearcher(object):
                                                 include_variants=include_variants):
             exact_matches.append(exact_match)
         return exact_matches
+
+
+def step_timer():
+
+    first_step = time.time()
+    prev_step = first_step
+
+    def time_step():
+        nonlocal prev_step
+        curr_step = time.time()
+        took = curr_step - prev_step
+        prev_step = curr_step
+        print(f'\tstep took {took: >.2f} seconds, total: {curr_step - first_step: >.2f}')
+        return took
+
+    return time_step
 
 
 def index_known_word_offsets(exact_matches: List[PhraseMatch]) -> Dict[int, Dict[str, any]]:

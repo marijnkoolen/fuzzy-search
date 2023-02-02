@@ -157,14 +157,10 @@ class SkipGram:
 def insert_skips(window: str, skipgram_combinations: List[List[int]]):
     """For a given skip gram window, return all skip grams for a given configuration."""
     for combination in skipgram_combinations:
-        # prev_index = 0
         skip_gram = window[0]
         try:
             for index in combination:
-                # if index - prev_index > 1:
-                #     skip_gram += "_"
                 skip_gram += window[index]
-                # prev_index = index
             yield skip_gram, combination[-1] + 1
         except IndexError:
             pass

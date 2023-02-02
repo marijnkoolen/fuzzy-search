@@ -5,6 +5,12 @@ from fuzzy_search.fuzzy_phrase_searcher import FuzzyPhraseSearcher
 
 
 class FuzzyContextSearcher(FuzzyPhraseSearcher):
+    """
+
+    Attributes
+    ----------
+    context_size : int
+    """
 
     def __init__(self, config: Union[dict, None] = None):
         super().__init__(config)

@@ -567,11 +567,27 @@ class Candidate:
 ###############
 
 class PhraseMatch:
+    """
+
+    Attributes
+    """
 
     def __init__(self, match_phrase: Phrase, match_variant: Phrase, match_string: str,
                  match_offset: int, ignorecase: bool = False, text_id: Union[None, str] = None,
                  match_scores: dict = None, match_label: Union[str, List[str]] = None,
                  match_id: str = None):
+        """
+
+        :param match_phrase: a phrase object for which a matching string is found in the text
+        :param match_variant: a phrase object for the variant that matches the string in the text
+        :param match_string: the matching string found in the text
+        :param match_offset: the offset of the matching string in the text
+        :param ignorecase: boolean flag whether to ignore case differences
+        :param text_id: the identifier of the text in which the match is found
+        :param match_scores: the similarity scores of the match
+        :param match_label: one or more labels to attach to the match
+        :param match_id: an optional identifier to use for the match
+        """
         # print("Match class match_phrase:", match_phrase)
         validate_match_props(match_phrase, match_variant, match_string, match_offset)
         self.id = match_id if match_id else str(uuid.uuid4())
