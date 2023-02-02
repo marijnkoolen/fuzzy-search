@@ -4,8 +4,8 @@ from collections import Counter
 import math
 
 
-from fuzzy_string import score_levenshtein_distance
-from fuzzy_string import text2skipgrams
+from fuzzy_search.fuzzy_string import score_levenshtein_distance
+from fuzzy_search.fuzzy_string import text2skipgrams
 
 
 def vector_length(skipgram_freq):

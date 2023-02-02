@@ -92,6 +92,14 @@ fuzzy\_search.fuzzy\_template\_searcher module
    :undoc-members:
    :show-inheritance:
 
+fuzzy\_search.similarity module
+-------------------------------
+
+.. automodule:: fuzzy_search.similarity
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 
