@@ -1,4 +1,4 @@
-__version__ = '1.5.0'
+__version__ = '1.6.0'
 
 from fuzzy_search.fuzzy_phrase_searcher import FuzzyPhraseSearcher
 from fuzzy_search.fuzzy_phrase_model import PhraseModel

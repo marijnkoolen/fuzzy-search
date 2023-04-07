@@ -341,7 +341,10 @@
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.html#fuzzy_search.similarity.vector_length"><code class="docutils literal notranslate"><span class="pre">vector_length()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.html#module-fuzzy_search">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.html#module-fuzzy_search">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.html#fuzzy_search.make_searcher"><code class="docutils literal notranslate"><span class="pre">make_searcher()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
@@ -446,6 +449,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.setUp"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.setUp()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_can_add_phrases_as_phrase_objects"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_can_add_phrases_as_phrase_objects()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_can_add_phrases_as_strings"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_can_add_phrases_as_strings()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_can_filter_skipgram_threshold"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_can_filter_skipgram_threshold()</span></code></a></li>
@@ -453,20 +457,22 @@
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_can_get_candidates"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_can_get_candidates()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_can_make_default_phrase_searcher"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_can_make_default_phrase_searcher()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_finds_multiple_candidates"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_finds_multiple_candidates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_accepts_phrases_on_init"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_accepts_phrases_on_init()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_allows_length_variance"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_allows_length_variance()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_allows_length_variance_2"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_allows_length_variance_2()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_can_match_distractors"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_can_match_distractors()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_can_match_variants"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_can_match_variants()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_can_register_distractors"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_can_register_distractors()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_can_register_variants"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_can_register_variants()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_can_toggle_distractors"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_can_toggle_distractors()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_can_toggle_variants"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_can_toggle_variants()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_finds_correct_start"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_finds_correct_start()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_finds_near_match"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_finds_near_match()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_finds_repeat_phrases_as_multiple_matches"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_finds_repeat_phrases_as_multiple_matches()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_handles_ignorecase"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_handles_ignorecase()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_is_case_sensitive"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_is_case_sensitive()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzyPhraseSearcher.test_searcher_uses_word_boundaries"><code class="docutils literal notranslate"><span class="pre">TestFuzzyPhraseSearcher.test_searcher_uses_word_boundaries()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchDistractors"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchDistractors</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchDistractors.setUp"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchDistractors.setUp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchDistractors.test_searcher_can_match_distractors"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchDistractors.test_searcher_can_match_distractors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchDistractors.test_searcher_can_register_distractors"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchDistractors.test_searcher_can_register_distractors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchDistractors.test_searcher_can_toggle_distractors"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchDistractors.test_searcher_can_toggle_distractors()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchExactMatch"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchExactMatch</span></code></a><ul>
@@ -476,6 +482,13 @@
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchExactMatch.test_fuzzy_search_can_search_exact_match_with_word_boundaries"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchExactMatch.test_fuzzy_search_can_search_exact_match_with_word_boundaries()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchExactMatch.test_fuzzy_search_can_search_exact_match_without_word_boundaries"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchExactMatch.test_fuzzy_search_can_search_exact_match_without_word_boundaries()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchExactMatch.test_text_split"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchExactMatch.test_text_split()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchVariants"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchVariants</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchVariants.setUp"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchVariants.setUp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchVariants.test_searcher_can_match_variants"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchVariants.test_searcher_can_match_variants()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchVariants.test_searcher_can_register_variants"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchVariants.test_searcher_can_register_variants()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestFuzzySearchVariants.test_searcher_can_toggle_variants"><code class="docutils literal notranslate"><span class="pre">TestFuzzySearchVariants.test_searcher_can_toggle_variants()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="test.html#test.test_fuzzy_phrase_searcher.TestSearcherRealData"><code class="docutils literal notranslate"><span class="pre">TestSearcherRealData</span></code></a><ul>
