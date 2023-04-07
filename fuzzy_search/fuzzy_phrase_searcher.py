@@ -1,9 +1,9 @@
-from typing import Dict, List, Set, Union
 import copy
 import string
 import re
-from collections import defaultdict
 import time
+from collections import defaultdict
+from typing import Dict, List, Set, Union
 
 import fuzzy_search
 from fuzzy_search.fuzzy_phrase_model import PhraseModel
@@ -300,7 +300,27 @@ def filter_matches_by_overlap(filtered_matches: List[PhraseMatch]) -> List[Phras
 
 class FuzzyPhraseSearcher(object):
 
-    def __init__(self, config: Union[None, Dict[str, Union[str, int, float]]] = None):
+    def __init__(self, phrase_list: List[any] = None, phrase_model: Union[Dict[str, any], PhraseModel] = None,
+                 config: Union[None, Dict[str, Union[str, int, float]]] = None):
+        """This class represents the basic fuzzy searcher. You can pass a list of phrases or a phrase model and
+        configuration dictionary that overrides the default configuration values. The default config dictionary
+        is available via `fuzzy_search.default_config`.
+
+        To set e.g. the character ngram_size to 3 and the skip_size to 1 use the following dictionary:
+
+        config = {
+            'ngram_size': 3,
+            'skip_size': 1
+        }
+
+        :param phrase_list: a list of phrases (a list of strings or more complex dictionaries with phrases and variants)
+        :type phrase_list: list
+        :param phrase_model: a phrase model
+        :type phrase_model: PhraseModel
+        :param config: a configuration dictionary to override default configuration properties.
+        Only the properties in the config dictionaries of updated.
+        :type config: dict
+        """
         self.__version__ = fuzzy_search.__version__
         # default configuration
         self.char_match_threshold = 0.5
@@ -343,6 +363,15 @@ class FuzzyPhraseSearcher(object):
             for key in config:
                 self.config[key] = config[key]
             self.configure(config)
+        if phrase_list is not None:
+            phrase_model = PhraseModel(phrases=phrase_list, config=config)
+            self.index_phrase_model(phrase_model)
+        if phrase_model is not None:
+            if isinstance(phrase_model, dict) or isinstance(phrase_model, list):
+                phrase_model = PhraseModel(model=phrase_model)
+            elif isinstance(phrase_model, PhraseModel) is False:
+                raise TypeError('invalid phrase_model type, should PhraseModel or a list of dictionaries')
+            self.index_phrase_model(phrase_model)
 
     def configure(self, config: Dict[str, any]) -> None:
         """Configure the fuzzy searcher with a given config object.

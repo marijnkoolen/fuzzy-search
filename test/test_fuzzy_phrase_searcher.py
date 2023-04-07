@@ -40,77 +40,71 @@ class TestCandidate(TestCase):
 
 class TestFuzzyPhraseSearcher(TestCase):
 
+    def setUp(self) -> None:
+        self.searcher = FuzzyPhraseSearcher()
+
     def test_can_make_default_phrase_searcher(self):
-        searcher = FuzzyPhraseSearcher()
-        self.assertNotEqual(searcher, None)
+        self.assertNotEqual(self.searcher, None)
 
     def test_can_add_phrases_as_strings(self):
-        searcher = FuzzyPhraseSearcher()
         phrase = "test"
-        searcher.index_phrases(phrases=[phrase])
-        phrase_object = searcher.phrases.pop()
+        self.searcher.index_phrases(phrases=[phrase])
+        phrase_object = self.searcher.phrases.pop()
         self.assertEqual(phrase_object.phrase_string, phrase)
 
     def test_can_add_phrases_as_phrase_objects(self):
-        searcher = FuzzyPhraseSearcher()
         phrase = Phrase("test")
-        searcher.index_phrases(phrases=[phrase])
-        self.assertTrue(phrase in searcher.phrases)
+        self.searcher.index_phrases(phrases=[phrase])
+        self.assertTrue(phrase in self.searcher.phrases)
 
     def test_can_generate_skip_matches(self):
-        searcher = FuzzyPhraseSearcher()
         phrase = "test"
-        searcher.index_phrases(phrases=[phrase])
+        self.searcher.index_phrases(phrases=[phrase])
         text = "this is a test"
-        skip_matches = searcher.find_skipgram_matches({"text": text})
-        phrase_object = searcher.phrases.pop()
+        skip_matches = self.searcher.find_skipgram_matches({"text": text})
+        phrase_object = self.searcher.phrases.pop()
         self.assertTrue(phrase_object in skip_matches.match_set)
 
     def test_can_filter_skipgram_threshold(self):
-        searcher = FuzzyPhraseSearcher()
         phrase = Phrase("test")
-        searcher.index_phrases(phrases=[phrase])
+        self.searcher.index_phrases(phrases=[phrase])
         text = "this is a test"
-        skip_matches = searcher.find_skipgram_matches({"text": text})
+        skip_matches = self.searcher.find_skipgram_matches({"text": text})
         phrases = filter_skipgram_threshold(skip_matches, 0.5)
         self.assertEqual(len(phrases), 1)
 
     def test_can_get_candidates(self):
-        searcher = FuzzyPhraseSearcher()
         phrase_model = PhraseModel(phrases=["test"])
-        searcher.index_phrase_model(phrase_model=phrase_model)
+        self.searcher.index_phrase_model(phrase_model=phrase_model)
         text = {"text": "this is a test"}
-        skip_matches = searcher.find_skipgram_matches(text)
+        skip_matches = self.searcher.find_skipgram_matches(text)
         phrases = get_skipmatch_candidates(text, skip_matches, 0.5, phrase_model=phrase_model)
         self.assertEqual(len(phrases), 1)
 
     def test_finds_multiple_candidates(self):
-        searcher = FuzzyPhraseSearcher()
         phrase_model = PhraseModel(phrases=["test"])
-        searcher.index_phrase_model(phrase_model=phrase_model)
+        self.searcher.index_phrase_model(phrase_model=phrase_model)
         text = {"text": "a test is a test is a test"}
-        skip_matches = searcher.find_skipgram_matches(text)
+        skip_matches = self.searcher.find_skipgram_matches(text)
         phrases = get_skipmatch_candidates(text, skip_matches, 0.5, phrase_model=phrase_model)
         self.assertEqual(len(phrases), 3)
 
     def test_searcher_finds_near_match(self):
-        searcher = FuzzyPhraseSearcher()
         phrase = "contains"
-        searcher.index_phrases(phrases=[phrase])
+        self.searcher.index_phrases(phrases=[phrase])
         text = "This text consaint some typos."
-        matches = searcher.find_matches(text)
+        matches = self.searcher.find_matches(text)
         self.assertEqual(len(matches), 1)
 
     def test_searcher_is_case_sensitive(self):
-        searcher = FuzzyPhraseSearcher()
         phrase = "contains"
-        searcher.index_phrases(phrases=[phrase])
+        self.searcher.index_phrases(phrases=[phrase])
         text = "This text CONSAINT some typos."
-        matches = searcher.find_matches(text)
+        matches = self.searcher.find_matches(text)
         self.assertEqual(len(matches), 0)
 
     def test_searcher_handles_ignorecase(self):
-        searcher = FuzzyPhraseSearcher({"ignorecase": True})
+        searcher = FuzzyPhraseSearcher(config={"ignorecase": True})
         phrase = "contains"
         searcher.index_phrases(phrases=[phrase])
         text = "This text CONSAINT some typos."
@@ -118,92 +112,95 @@ class TestFuzzyPhraseSearcher(TestCase):
         self.assertEqual(len(matches), 1)
 
     def test_searcher_uses_word_boundaries(self):
-        searcher = FuzzyPhraseSearcher()
         phrase = "contains"
-        searcher.index_phrases(phrases=[phrase])
+        self.searcher.index_phrases(phrases=[phrase])
         text = "This text containsi some typos."
-        matches = searcher.find_matches(text)
+        matches = self.searcher.find_matches(text)
         self.assertEqual(isinstance(matches, list), True)
         self.assertEqual("containsi", matches[0].string)
 
     def test_searcher_finds_repeat_phrases_as_multiple_matches(self):
-        searcher = FuzzyPhraseSearcher()
         phrase = "contains"
-        searcher.index_phrases(phrases=[phrase])
+        self.searcher.index_phrases(phrases=[phrase])
         text = "This text contains contains some repetition."
-        matches = searcher.find_matches(text)
+        matches = self.searcher.find_matches(text)
         self.assertEqual(len(matches), 2)
         self.assertEqual("contains", matches[0].string)
         self.assertEqual("contains", matches[1].string)
 
     def test_searcher_finds_correct_start(self):
-        searcher = FuzzyPhraseSearcher()
         phrase = "contains"
-        searcher.index_phrases(phrases=[phrase])
+        self.searcher.index_phrases(phrases=[phrase])
         text = "This text con contains some weirdness."
-        matches = searcher.find_matches(text)
+        matches = self.searcher.find_matches(text)
         self.assertEqual("contains", matches[0].string)
 
     def test_searcher_allows_length_variance(self):
-        searcher = FuzzyPhraseSearcher()
         phrase = "coffee"
-        searcher.index_phrases(phrases=[phrase])
+        self.searcher.index_phrases(phrases=[phrase])
         text = "For sale two units of coffy."
-        matches = searcher.find_matches(text)
+        matches = self.searcher.find_matches(text)
         self.assertEqual(len(matches), 1)
 
     def test_searcher_allows_length_variance_2(self):
-        searcher = FuzzyPhraseSearcher()
         phrase = "Makelaars"
-        searcher.index_phrases(phrases=[phrase])
+        self.searcher.index_phrases(phrases=[phrase])
         text = 'door de Alakei&ers by na gecompletecrt'
-        matches = searcher.find_matches(text)
+        matches = self.searcher.find_matches(text)
         self.assertEqual(len(matches), 1)
 
+    def test_searcher_accepts_phrases_on_init(self):
+        phrase = "Makelaars"
+        searcher = FuzzyPhraseSearcher(phrase_list=[phrase])
+        self.assertEqual(1, len(searcher.phrases))
+
+
+class TestFuzzySearchVariants(TestCase):
+
+    def setUp(self) -> None:
+        self.searcher = FuzzyPhraseSearcher(config={"include_variants": True})
+        self.phrase = {"phrase": "okay", "variants": ["OK"]}
+
     def test_searcher_can_toggle_variants(self):
-        searcher = FuzzyPhraseSearcher({"include_variants": True})
-        self.assertEqual(searcher.include_variants, True)
+        self.assertEqual(self.searcher.include_variants, True)
 
     def test_searcher_can_register_variants(self):
-        searcher = FuzzyPhraseSearcher({"include_variants": True})
-        phrase = {"phrase": "okay", "variants": ["OK"]}
-        searcher.index_phrase_model(phrase_model=PhraseModel([phrase]))
-        self.assertEqual(len(searcher.variants), 1)
-        variant = searcher.variants.pop()
+        self.searcher.index_phrase_model(phrase_model=PhraseModel([self.phrase]))
+        self.assertEqual(len(self.searcher.variants), 1)
+        variant = self.searcher.variants.pop()
         self.assertEqual(variant.phrase_string, "OK")
 
     def test_searcher_can_match_variants(self):
-        searcher = FuzzyPhraseSearcher({"include_variants": True})
-        phrase = {"phrase": "okay", "variants": ["OK"]}
-        searcher.index_phrase_model(phrase_model=PhraseModel([phrase]))
+        self.searcher.index_phrase_model(phrase_model=PhraseModel([self.phrase]))
         text = "This text is okay and this test is OK."
-        matches = searcher.find_matches(text, include_variants=True)
-        self.assertEqual(matches[1].phrase.phrase_string, phrase["phrase"])
-        self.assertEqual(matches[1].variant.phrase_string, phrase["variants"][0])
+        matches = self.searcher.find_matches(text, include_variants=True)
+        self.assertEqual(matches[1].phrase.phrase_string, self.phrase["phrase"])
+        self.assertEqual(matches[1].variant.phrase_string, self.phrase["variants"][0])
+
+
+class TestFuzzySearchDistractors(TestCase):
+
+    def setUp(self) -> None:
+        self.searcher = FuzzyPhraseSearcher(config={"filter_distractors": True})
+        self.phrase = {"phrase": "okay", "distractors": ["OK"]}
 
     def test_searcher_can_toggle_distractors(self):
-        searcher = FuzzyPhraseSearcher({"filter_distractors": True})
-        self.assertEqual(searcher.filter_distractors, True)
+        self.assertEqual(self.searcher.filter_distractors, True)
 
     def test_searcher_can_register_distractors(self):
-        searcher = FuzzyPhraseSearcher({"filter_distractors": True})
-        phrase = {"phrase": "okay", "distractors": ["OK"]}
-        searcher.index_phrase_model(phrase_model=PhraseModel([phrase]))
-        self.assertEqual(len(searcher.distractors), 1)
-        distractor = searcher.distractors.pop()
+        self.searcher.index_phrase_model(phrase_model=PhraseModel([self.phrase]))
+        self.assertEqual(len(self.searcher.distractors), 1)
+        distractor = self.searcher.distractors.pop()
         self.assertEqual(distractor.phrase_string, "OK")
 
     def test_searcher_can_match_distractors(self):
-        searcher = FuzzyPhraseSearcher({"filter_distractors": True})
         phrase = {"phrase": "baking", "distractors": ["braking"]}
-        searcher.index_phrase_model(phrase_model=PhraseModel([phrase]))
+        self.searcher.index_phrase_model(phrase_model=PhraseModel([phrase]))
         text = "This text is about baking and not about braking."
-        matches = searcher.find_matches(text, filter_distractors=True)
+        matches = self.searcher.find_matches(text, filter_distractors=True)
         self.assertEqual(len(matches), 1)
-    """
 
 
-"""
 class TestFuzzySearchExactMatch(TestCase):
 
     def setUp(self) -> None:
@@ -283,7 +280,7 @@ class TestSearcherRealData(TestCase):
             "ngram_size": 2,
             "skip_size": 2,
         }
-        self.searcher = FuzzyPhraseSearcher(self.config)
+        self.searcher = FuzzyPhraseSearcher(config=self.config)
         # create a list of domain phrases
         self.domain_phrases = [
             # terms for the chair and attendants of a meeting
@@ -354,7 +351,7 @@ class TestSearcherRealData2(TestCase):
             "ngram_size": 2,
             "skip_size": 2,
         }
-        self.searcher = FuzzyPhraseSearcher(self.config)
+        self.searcher = FuzzyPhraseSearcher(config=self.config)
         # create a list of domain phrases
         self.domain_phrases = [
             {
@@ -374,7 +371,7 @@ class TestSearcherRealData2(TestCase):
         self.assertEqual(len(phrase_matches), 1)
 
     def test_searcher_allows_length_variance_2(self):
-        searcher = FuzzyPhraseSearcher(self.config)
+        searcher = FuzzyPhraseSearcher(config=self.config)
         searcher.ignorecase = True
         phrase = "Admiraliteiten in t gemeen"
         searcher.index_phrases(phrases=[phrase])
@@ -383,7 +380,7 @@ class TestSearcherRealData2(TestCase):
         self.assertEqual(len(matches), 1)
 
     def test_searcher_allows_length_variance_3(self):
-        searcher = FuzzyPhraseSearcher(self.config)
+        searcher = FuzzyPhraseSearcher(config=self.config)
         searcher.ignorecase = True
         phrase = 'Admiraliteit in Vriesland'
         searcher.index_phrases(phrases=[phrase])
@@ -392,7 +389,7 @@ class TestSearcherRealData2(TestCase):
         self.assertEqual(len(matches), 1)
 
     def test_searcher_finds_DONtfangen(self):
-        searcher = FuzzyPhraseSearcher(self.config)
+        searcher = FuzzyPhraseSearcher(config=self.config)
         searcher.ignorecase = True
         phrase = "ONtfangen een Missive van"
         searcher.index_phrases(phrases=[phrase])
@@ -401,7 +398,7 @@ class TestSearcherRealData2(TestCase):
         self.assertEqual(len(matches), 1)
 
     def test_searcher_finds_long_opening(self):
-        searcher = FuzzyPhraseSearcher(self.config)
+        searcher = FuzzyPhraseSearcher(config=self.config)
         searcher.ignorecase = True
         phrases = [
             "hebben ter Vergaderinge ingebraght",
