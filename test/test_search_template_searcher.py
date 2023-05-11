@@ -1,10 +1,9 @@
 from unittest import TestCase
 
-from fuzzy_search.fuzzy_phrase_model import PhraseModel
-from fuzzy_search.fuzzy_phrase import Phrase
-from fuzzy_search.fuzzy_template import FuzzyTemplate
-from fuzzy_search.fuzzy_template_searcher import FuzzyTemplateSearcher, get_phrase_match_list_labels
-from fuzzy_search.fuzzy_match import PhraseMatch
+from fuzzy_search.phrase.phrase_model import PhraseModel
+from fuzzy_search.pattern.fuzzy_template import FuzzyTemplate
+from fuzzy_search.search.template_searcher import FuzzyTemplateSearcher, get_phrase_match_list_labels
+from fuzzy_search.match.phrase_match import PhraseMatch
 
 from data.demo_data import DemoData
 

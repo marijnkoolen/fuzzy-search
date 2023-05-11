@@ -1,41 +1,10 @@
 from unittest import TestCase
-from fuzzy_search.fuzzy_phrase import Phrase
-from fuzzy_search.fuzzy_phrase_model import PhraseModel
-from fuzzy_search.fuzzy_string import SkipGram
-from fuzzy_search.fuzzy_phrase_searcher import FuzzyPhraseSearcher, SkipMatches, Candidate
-from fuzzy_search.fuzzy_phrase_searcher import filter_skipgram_threshold, get_skipmatch_candidates
 
-
-class TestSkipMatches(TestCase):
-
-    def test_skip_matches_registers_match(self):
-        skip_matches = SkipMatches(2, 2)
-        phrase = Phrase('test')
-        skipgram = SkipGram('ts', 0, 3)
-        skip_matches.add_skip_match(skipgram, phrase)
-        self.assertTrue(phrase in skip_matches.match_set)
-
-
-class TestCandidate(TestCase):
-
-    def test_candidate_detects_no_match_with_no_skip_match(self):
-        phrase = Phrase('test')
-        candidate = Candidate(phrase)
-        self.assertEqual(candidate.is_match(0.5), False)
-
-    def test_candidate_detects_no_match(self):
-        phrase = Phrase('test')
-        candidate = Candidate(phrase)
-        skipgram = SkipGram('ts', 0, 3)
-        candidate.add_skip_match(skipgram)
-        self.assertEqual(candidate.is_match(0.5), False)
-
-    def test_candidate_has_skipgram_overlap(self):
-        phrase = Phrase('test')
-        candidate = Candidate(phrase)
-        skipgram = SkipGram('ts', 0, 3)
-        candidate.add_skip_match(skipgram)
-        self.assertTrue(candidate.get_skip_set_overlap() > 0.0)
+from fuzzy_search.phrase.phrase import Phrase
+from fuzzy_search.phrase.phrase_model import PhraseModel
+from fuzzy_search.search.phrase_searcher import FuzzyPhraseSearcher
+from fuzzy_search.match.skip_match import filter_skipgram_threshold
+from fuzzy_search.match.skip_match import get_skipmatch_candidates
 
 
 class TestFuzzyPhraseSearcher(TestCase):
@@ -210,7 +179,7 @@ class TestFuzzySearchExactMatch(TestCase):
 
     def test_fuzzy_search_can_search_exact_match(self):
         text = "This text is about baking and not about braking."
-        matches = self.searcher.find_exact_matches(text)
+        matches = self.searcher.find_exact_matches(text, debug=True)
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0].string, "baking")
 

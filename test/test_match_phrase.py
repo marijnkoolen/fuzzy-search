@@ -1,9 +1,9 @@
 from unittest import TestCase
 import string
-from fuzzy_search.fuzzy_match import PhraseMatch, PhraseMatchInContext, adjust_match_offsets
-from fuzzy_search.fuzzy_phrase import Phrase
-from fuzzy_search.fuzzy_match import adjust_match_start_offset, adjust_match_end_offset
-from fuzzy_search.fuzzy_match import map_string
+from fuzzy_search.match.phrase_match import PhraseMatch, PhraseMatchInContext, adjust_match_offsets
+from fuzzy_search.phrase.phrase import Phrase
+from fuzzy_search.match.phrase_match import adjust_match_start_offset, adjust_match_end_offset
+from fuzzy_search.match.phrase_match import map_string
 
 
 class TestFuzzyMatch(TestCase):

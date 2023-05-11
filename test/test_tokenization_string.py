@@ -1,7 +1,7 @@
 from unittest import TestCase
-from fuzzy_search.fuzzy_string import make_ngrams, score_char_overlap, score_char_overlap_ratio
-from fuzzy_search.fuzzy_string import score_ngram_overlap, score_ngram_overlap_ratio
-from fuzzy_search.fuzzy_string import score_levenshtein_distance, score_levenshtein_similarity_ratio
+from fuzzy_search.tokenization.string import make_ngrams, score_char_overlap
+from fuzzy_search.tokenization.string import score_ngram_overlap
+from fuzzy_search.tokenization.string import score_levenshtein_similarity_ratio
 
 
 class Test(TestCase):

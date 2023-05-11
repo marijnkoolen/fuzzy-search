@@ -1,11 +1,11 @@
-from typing import Generator, Iterable, List, Tuple, Union
+import math
 from collections import defaultdict
 from collections import Counter
-import math
+from typing import Generator, Iterable, List, Tuple, Union
 
 
-from fuzzy_search.fuzzy_string import score_levenshtein_distance
-from fuzzy_search.fuzzy_string import text2skipgrams
+from fuzzy_search.tokenization.string import score_levenshtein_distance
+from fuzzy_search.tokenization.string import text2skipgrams
 
 
 def vector_length(skipgram_freq):

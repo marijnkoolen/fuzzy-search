@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import Dict, List, Set, Union
 
-from fuzzy_search.fuzzy_phrase_model import PhraseModel
-from fuzzy_search.fuzzy_phrase import Phrase
+from fuzzy_search.phrase.phrase_model import PhraseModel
+from fuzzy_search.phrase.phrase import Phrase
 
 
 def validate_element_properties(label: str, required: bool = False, cardinality: str = "multi",

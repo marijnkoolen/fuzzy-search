@@ -1,6 +1,9 @@
-from unittest import TestCase
 from typing import Generator
-from fuzzy_search.fuzzy_phrase import text2skipgrams, Phrase
+from unittest import TestCase
+
+from fuzzy_search.phrase.phrase import text2skipgrams, Phrase
+from fuzzy_search.tokenization.token import Token
+from fuzzy_search.tokenization.token import Tokenizer
 
 
 class Test(TestCase):
@@ -74,3 +77,31 @@ class TestFuzzyPhrase(TestCase):
         except ValueError as err:
             error = err
         self.assertNotEqual(error, None)
+
+
+class TestPhraseTokens(TestCase):
+
+    def setUp(self) -> None:
+        self.phrase = "some phrase"
+        self.tokenizer = Tokenizer()
+        self.doc = self.tokenizer.tokenize(self.phrase)
+
+    def test_phrase_can_take_tokens(self):
+        phrase = Phrase(self.phrase, tokens=self.doc.tokens)
+        for doc_token, phrase_token in zip(self.doc.tokens, phrase.tokens):
+            with self.subTest(doc_token.char_index):
+                self.assertEqual(doc_token, phrase_token)
+
+    def test_phrase_can_take_tokenizer(self):
+        phrase = Phrase(self.phrase, tokenizer=self.tokenizer)
+        for doc_token, phrase_token in zip(self.doc.tokens, phrase.tokens):
+            with self.subTest(doc_token.char_index):
+                self.assertEqual(doc_token.char_index, phrase_token.char_index)
+
+    def test_phrase_with_tokens_has_token_index(self):
+        phrase = Phrase(self.phrase, tokenizer=self.tokenizer)
+        self.assertEqual(True, 0 in phrase.token_index['some'])
+
+    def test_phrase_with_tokens_has_token_multi_index(self):
+        phrase = Phrase('multiple occurs multiple times', tokenizer=self.tokenizer)
+        self.assertEqual(2, len(phrase.token_index['multiple']))

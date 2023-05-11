@@ -1,5 +1,7 @@
 from unittest import TestCase
-from fuzzy_search.fuzzy_phrase_model import PhraseModel
+
+from fuzzy_search.phrase.phrase_model import PhraseModel
+from fuzzy_search.tokenization.token import Tokenizer
 
 
 class Test(TestCase):
@@ -81,3 +83,16 @@ class Test(TestCase):
         self.assertEqual(phrase_json[0]['phrase'], phrases[0]['phrase'])
         self.assertEqual(phrase_json[0]['variants'][0], phrases[0]['variants'][0])
 
+
+class TestPhraseModelTokenizer(TestCase):
+
+    def setUp(self) -> None:
+        self.tokenizer = Tokenizer()
+        self.phrase = 'this is a test'
+        self.phrases = [{"phrase": "this is a test"}]
+        self.phrase_model = PhraseModel(phrases=self.phrases, tokenizer=self.tokenizer)
+
+    def test_can_add_tokenizer_at_init(self):
+        phrase_model = PhraseModel(phrases=self.phrases, tokenizer=self.tokenizer)
+        tokens = self.tokenizer.tokenize(self.phrase)
+        self.assertEqual(True, phrase_model.has_token(tokens[0]))

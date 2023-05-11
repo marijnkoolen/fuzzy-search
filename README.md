@@ -12,8 +12,8 @@ pip install -u fuzzy-search
 ## Usage
 
 ```python
-from fuzzy_search.fuzzy_phrase_searcher import FuzzyPhraseSearcher
-from fuzzy_search.fuzzy_phrase_model import PhraseModel
+from fuzzy_search.search.phrase_searcher import FuzzyPhraseSearcher
+from fuzzy_search.phrase.phrase_model import PhraseModel
 
 # highger matching thresholds for higher quality OCR/HTR (higher precision, recall should be good anyway)
 # lower matching thresholds for lower quality OCR/HTR (higher recall, as that's the main problem)
@@ -35,7 +35,7 @@ domain_phrases = [
     "PRAESIDE",
     "PRAESENTIBUS",
     # some weekdays in Latin
-    "Veneris", 
+    "Veneris",
     "Mercuri",
     # some date phrase where any date in January 1725 should match
     "den .. Januarii 1725"

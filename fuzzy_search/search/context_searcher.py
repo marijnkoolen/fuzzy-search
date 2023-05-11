@@ -1,7 +1,7 @@
 from typing import List, Union
 
-from fuzzy_search.fuzzy_match import PhraseMatch, PhraseMatchInContext
-from fuzzy_search.fuzzy_phrase_searcher import FuzzyPhraseSearcher
+from fuzzy_search.match.phrase_match import PhraseMatch, PhraseMatchInContext
+from fuzzy_search.search.phrase_searcher import FuzzyPhraseSearcher
 
 
 class FuzzyContextSearcher(FuzzyPhraseSearcher):

@@ -1,8 +1,10 @@
-from typing import Dict, List, Set, Union
-from collections import defaultdict, Counter
 import re
+from collections import defaultdict, Counter
+from typing import Dict, List, Set, Union
 
-from fuzzy_search.fuzzy_string import SkipGram, text2skipgrams
+from fuzzy_search.tokenization.string import SkipGram, text2skipgrams
+from fuzzy_search.tokenization.token import Token
+from fuzzy_search.tokenization.token import Tokenizer
 
 
 def is_valid_label(label: Union[str, List[str]]) -> bool:
@@ -25,7 +27,7 @@ class Phrase(object):
 
     def __init__(self, phrase: Union[str, Dict[str, str]], ngram_size: int = 2, skip_size: int = 2,
                  early_threshold: int = 3, late_threshold: int = 3, within_range_threshold: int = 3,
-                 ignorecase: bool = False):
+                 ignorecase: bool = False, tokens: List[Token] = None, tokenizer: Tokenizer = None):
         if isinstance(phrase, str):
             phrase = {"phrase": phrase}
         self.name = phrase["phrase"]
@@ -68,6 +70,8 @@ class Phrase(object):
         self.metadata: dict = phrase
         self.words: List[str] = [word for word in re.split(r"\W+", self.phrase_string) if word != ""]
         self.word_set: Set[str] = set(self.words)
+        self.tokens: List[Token] = tokens
+        self.token_index = defaultdict(list)
         self.first_word = None if len(self.words) == 0 else self.words[0]
         self.last_word = None if len(self.words) == 0 else self.words[-1]
         self.num_words = len(self.words)
@@ -77,10 +81,17 @@ class Phrase(object):
             self.add_metadata(phrase)
         self._index_skipgrams()
         self._set_within_range()
+        if tokens is None and tokenizer is not None:
+            self.tokens = tokenizer.tokenize(self.phrase_string)
+            self.words = [token.string for token in self.tokens]
+            for ti, token in enumerate(self.tokens):
+                self.token_index[token.n].append(ti)
 
     def __repr__(self):
         return f"Phrase({self.phrase_string}, {self.label})"
 
+    def __len__(self):
+        return len(self.phrase_string)
     # internal methods
 
     def _index_skipgrams(self) -> None:

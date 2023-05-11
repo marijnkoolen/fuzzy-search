@@ -1,22 +1,27 @@
-from typing import Dict, Generator, List, Set, Union
-from collections import defaultdict
-import json
 import copy
+import json
 import re
+from collections import defaultdict
+from typing import Dict, Generator, List, Set, Union
 
-from fuzzy_search.fuzzy_phrase import Phrase
+from fuzzy_search.phrase.phrase import Phrase
+from fuzzy_search.tokenization.token import Token
+from fuzzy_search.tokenization.token import Tokenizer
 
 
-def as_phrase_object(phrase: Union[str, dict, Phrase], ngram_size: int = 2, skip_size: int = 2) -> Phrase:
+def as_phrase_object(phrase: Union[str, dict, Phrase],
+                     ngram_size: int = 2,
+                     skip_size: int = 2,
+                     tokenizer: Tokenizer = None) -> Phrase:
     if isinstance(phrase, Phrase):
         return phrase
     if isinstance(phrase, dict):
         if not is_phrase_dict(phrase):
             print(phrase)
             raise KeyError("invalid phrase dictionary")
-        return Phrase(phrase, ngram_size=ngram_size, skip_size=skip_size)
+        return Phrase(phrase, ngram_size=ngram_size, skip_size=skip_size, tokenizer=tokenizer)
     if isinstance(phrase, str):
-        return Phrase(phrase, ngram_size=ngram_size, skip_size=skip_size)
+        return Phrase(phrase, ngram_size=ngram_size, skip_size=skip_size, tokenizer=tokenizer)
     else:
         raise TypeError('phrase must be of type string')
 
@@ -55,7 +60,8 @@ class PhraseModel:
                  distractors: Union[None, List[Union[Dict[str, List[str]], Phrase]]] = None,
                  model: Union[None, List[Dict[str, Union[str, list]]]] = None,
                  custom: Union[None, List[Dict[str, Union[str, int, float, list]]]] = None,
-                 config: dict = None):
+                 config: dict = None,
+                 tokenizer: Tokenizer = None):
         if config is None:
             config = {}
         self.ngram_size = config["ngram_size"] if "ngram_size" in config else 2
@@ -74,9 +80,12 @@ class PhraseModel:
         self.is_label_of: Dict[str, Set[str]] = defaultdict(set)
         self.custom = {}
         self.word_in_phrase: Dict[str, Set[str]] = defaultdict(set)
+        self.token_in_phrase: Dict[str, Set[str]] = defaultdict(set)
         self.first_word_in_phrase: Dict[str, Dict[str, int]] = defaultdict(dict)
+        self.first_token_in_phrase: Dict[str, Dict[str, int]] = defaultdict(dict)
         self.phrase_type: Dict[str, Set[str]] = defaultdict(set)
         self.phrase_string_map: Dict[str, Phrase] = {}
+        self.tokenizer = tokenizer
         if phrases:
             self.add_phrases(phrases)
         if variants:
@@ -140,7 +149,8 @@ class PhraseModel:
         self.phrase_type[phrase.phrase_string].add("phrase")
         self.phrase_index[phrase.phrase_string] = phrase
         self.phrase_length_index[len(phrase.phrase_string)].add(phrase.phrase_string)
-        self.index_phrase_words(phrase)
+        self._index_phrase_words(phrase)
+        self._index_phrase_tokens(phrase)
 
     def add_variant(self, variant_phrase: Phrase, main_phrase: Phrase):
         """Add a phrase to the model as variant of a given main phrase.
@@ -157,7 +167,8 @@ class PhraseModel:
         self.has_variants[main_phrase.phrase_string].add(variant_phrase.phrase_string)
         self.phrase_type[variant_phrase.phrase_string].add("variant")
         self.variant_length_index[len(variant_phrase.phrase_string)].add(variant_phrase.phrase_string)
-        self.index_phrase_words(variant_phrase)
+        self._index_phrase_words(variant_phrase)
+        self._index_phrase_tokens(variant_phrase)
 
     def add_distractor(self, distractor_phrase: Phrase, main_phrase: Phrase):
         """Add a phrase to the model as distractor of a given main phrase.
@@ -173,7 +184,8 @@ class PhraseModel:
         self.is_distractor_of[distractor_phrase.phrase_string].add(main_phrase.phrase_string)
         self.has_distractors[main_phrase.phrase_string].add(distractor_phrase.phrase_string)
         self.phrase_type[distractor_phrase.phrase_string].add("distractor")
-        self.index_phrase_words(distractor_phrase)
+        self._index_phrase_words(distractor_phrase)
+        self._index_phrase_tokens(distractor_phrase)
 
     def remove_phrase(self, phrase: Phrase):
         """Remove a main phrase from the model, including its connections to any variant and distractor phrases.
@@ -193,7 +205,8 @@ class PhraseModel:
         if len(self.phrase_type[phrase.phrase_string]) == 0:
             # if the phrase string is not registered as another type (variant or distractor)
             # remove the phrase words from the word_to_phrase index
-            self.remove_phrase_words(phrase)
+            self._remove_phrase_words(phrase)
+            self._remove_phrase_tokens(phrase)
         # if the phrase has variants, remove those as well
         if phrase.phrase_string in self.has_variants:
             for variant_string in self.has_variants:
@@ -224,7 +237,8 @@ class PhraseModel:
         self.phrase_type[variant_phrase.phrase_string].remove("variant")
         # if that is the only type of the phrase, remove it from the word_to_phrase index
         if len(self.phrase_type[variant_phrase.phrase_string]) == 0:
-            self.remove_phrase_words(variant_phrase)
+            self._remove_phrase_words(variant_phrase)
+            self._remove_phrase_tokens(variant_phrase)
         # remove the variant from the variant index
         del self.variant_index[variant_phrase.phrase_string]
         # remove the variant from the phrase length index
@@ -248,7 +262,8 @@ class PhraseModel:
             raise ValueError(f"{distractor_phrase.phrase_string} is not registered as a distractor")
         self.phrase_type[distractor_phrase.phrase_string].remove("distractor")
         if len(self.phrase_type[distractor_phrase.phrase_string]) == 0:
-            self.remove_phrase_words(distractor_phrase)
+            self._remove_phrase_words(distractor_phrase)
+            self._remove_phrase_tokens(distractor_phrase)
         del self.distractor_index[distractor_phrase.phrase_string]
         for main_phrase_string in self.is_distractor_of[distractor_phrase.phrase_string]:
             self.has_distractors[main_phrase_string].remove(distractor_phrase.phrase_string)
@@ -266,15 +281,17 @@ class PhraseModel:
         :type phrases: List[Union[str, Dict[str, Union[str, List[str]]]]]
         """
         for phrase in phrases:
-            phrase = as_phrase_object(phrase, ngram_size=self.ngram_size, skip_size=self.skip_size)
+            phrase = as_phrase_object(phrase, ngram_size=self.ngram_size,
+                                      skip_size=self.skip_size, tokenizer=self.tokenizer)
             self.add_phrase(phrase)
         # if phrases is a dictionary with possible variants, distractors, labels and custom metadata
         # per phrase, add those variants and distractors
         phrase_dicts = [phrase for phrase in phrases if isinstance(phrase, dict)]
-        self.add_variants(phrase_dicts)
-        self.add_distractors(phrase_dicts)
-        self.add_custom(phrase_dicts)
-        self.add_labels(phrase_dicts)
+        phrases = [Phrase(phrase_dict, tokenizer=self.tokenizer) for phrase_dict in phrase_dicts]
+        self.add_variants(phrases)
+        self.add_distractors(phrases)
+        self.add_custom(phrases)
+        self.add_labels(phrases)
 
     def remove_phrases(self, phrases: List[Union[str, Dict[str, Union[str, List[str]]], Phrase]]):
         """Remove a list of phrases from the phrase model. If it has any registered spelling variants,
@@ -283,8 +300,11 @@ class PhraseModel:
         :param phrases: a list of phrases/keyphrases
         :type phrases: List[Union[str, Dict[str, Union[str, List[str]]]]]
         """
+        print('REMOVING PHRASES')
         for phrase in phrases:
+            print('\tphrase:', phrase)
             phrase = as_phrase_object(phrase, ngram_size=self.ngram_size, skip_size=self.skip_size)
+            print('\tas phrase:', phrase)
             if phrase.phrase_string not in self.phrase_index:
                 raise KeyError(f"Unknown phrase: {phrase.phrase_string}")
             self.remove_phrase(phrase)
@@ -327,19 +347,19 @@ class PhraseModel:
         phrase = as_phrase_object(phrase, ngram_size=self.ngram_size, skip_size=self.skip_size)
         return phrase.phrase_string in self.phrase_index
 
-    def add_variants(self, variants: List[Dict[str, Union[str, List[str]]]],
+    def add_variants(self, variants: List[Union[Phrase, Dict[str, Union[str, List[str]]]]],
                      add_new_phrases: bool = True) -> None:
         """Add variants of a phrase. If the phrase is not registered, add it to the set.
         - input is a list of dictionaries:
         variants = [{'phrase': 'some phrase', 'variants': ['some variant', 'some other variant']}]
 
-        :param variants: a list of phrase dictionaries with 'variant' property
+        :param variants: a list of phrases or phrase dictionaries with 'variant' property
         :type variants: List[Dict[str, Union[str, List[str]]]]
         :param add_new_phrases: a Boolean to indicate if unknown phrases should be added
         :type add_new_phrases: bool
         """
-        for phrase_dict in variants:
-            main_phrase = as_phrase_object(phrase_dict, ngram_size=self.ngram_size, skip_size=self.skip_size)
+        for phrase in variants:
+            main_phrase = as_phrase_object(phrase, ngram_size=self.ngram_size, skip_size=self.skip_size)
             if main_phrase.phrase_string not in self.phrase_index:
                 if add_new_phrases:
                     self.add_phrase(main_phrase)
@@ -412,7 +432,7 @@ class PhraseModel:
         else:
             return [self.variant_index[variant_string] for variant_string in self.has_variants[phrase_string]]
 
-    def add_distractors(self, distractors: List[Dict[str, Union[str, List[str]]]],
+    def add_distractors(self, distractors: List[Union[Phrase, Dict[str, Union[str, List[str]]]]],
                         add_new_phrases: bool = True) -> None:
         """Add distractors of a phrase. If the phrase is not registered, add it to the set.
         - input is a list of dictionaries:
@@ -423,8 +443,8 @@ class PhraseModel:
         :param add_new_phrases: a Boolean to indicate if unknown phrases should be added
         :type add_new_phrases: bool
         """
-        for phrase_dict in distractors:
-            main_phrase = as_phrase_object(phrase_dict, ngram_size=self.ngram_size, skip_size=self.skip_size)
+        for phrase in distractors:
+            main_phrase = as_phrase_object(phrase, ngram_size=self.ngram_size, skip_size=self.skip_size)
             if main_phrase.phrase_string not in self.phrase_index:
                 if add_new_phrases:
                     self.add_phrase(main_phrase)
@@ -463,13 +483,13 @@ class PhraseModel:
                 distractor = as_phrase_object(distractor_string, ngram_size=self.ngram_size, skip_size=self.skip_size)
                 self.remove_distractor(distractor)
 
-    def add_labels(self, phrase_labels: List[Dict[str, Union[str, list]]]):
+    def add_labels(self, phrase_labels: List[Union[Phrase, Dict[str, Union[str, List[str]]]]]):
         """Add a label to a phrase. This can be used to group phrases under the same label.
         - input is a list of phrase/label pair dictionaries:
         labels = [{'phrase': 'some phrase', 'label': 'some label'}]
         """
-        for phrase_dict in phrase_labels:
-            phrase = as_phrase_object(phrase_dict, ngram_size=self.ngram_size, skip_size=self.skip_size)
+        for phrase in phrase_labels:
+            phrase = as_phrase_object(phrase, ngram_size=self.ngram_size, skip_size=self.skip_size)
             if phrase.label is None:
                 continue
             if phrase.phrase_string not in self.phrase_index:
@@ -527,31 +547,19 @@ class PhraseModel:
             raise KeyError(f"Unknown phrase: {phrase}")
         return self.has_labels[phrase]
 
-    def validate_entry_phrase(self, entry: Dict[str, Union[str, int, float, list]]) -> None:
-        """Check if a given phrase (as dictionary) is registered.
-
-        :param entry: a phrase dictionary with a 'phrase' property
-        :type entry: Dict[str, Union[str, int, float, list]]
-        """
-        if 'phrase' not in entry:
-            raise KeyError("Keywords as list of dictionaries should have 'phrase' property")
-        if not isinstance(entry['phrase'], str):
-            raise ValueError("phrase property must be a string")
-        if entry['phrase'] not in self.phrase_index:
-            raise KeyError("Unknown phrase")
-
-    def add_custom(self, custom: List[Dict[str, Union[str, int, float, list]]]) -> None:
+    def add_custom(self, custom: List[Union[Phrase, Dict[str, Union[str, int, float, list]]]]) -> None:
         """Add custom key/value pairs to the entry as phrase metadata.
 
         param entry: an Array of phrase dictionaries, each with a 'phrase' property and additional key/value pairs
         type entry: Dict[str, Union[str, int, float, list]]
         """
         for entry in custom:
-            if not isinstance(entry, dict):
+            phrase = as_phrase_object(entry, ngram_size=self.ngram_size, skip_size=self.skip_size)
+            if phrase.metadata is None:
                 continue
-            self.validate_entry_phrase(entry)
-            # make sure the custom entry is a copy of the original and not a reference to the same object
-            self.custom[entry['phrase']] = copy.deepcopy(entry)
+            if phrase.phrase_string not in self.phrase_index:
+                continue
+            self.custom[phrase.phrase_string] = copy.deepcopy(phrase.metadata)
 
     def remove_custom(self, custom: List[Dict[str, any]]) -> None:
         """Remove custom properties for a list of phrases.
@@ -560,9 +568,9 @@ class PhraseModel:
         :type custom: List[Dict[str, any]]
         """
         for entry in custom:
-            self.validate_entry_phrase(entry)
-            for custom_property in entry:
-                del self.custom[entry['phrase']][custom_property]
+            phrase = as_phrase_object(entry, ngram_size=self.ngram_size, skip_size=self.skip_size)
+            for custom_property in phrase.metadata:
+                del self.custom[phrase.phrase_string][custom_property]
 
     def has_custom(self, phrase_string: str, custom_property: str) -> bool:
         """Check if a phrase has a given custom property.
@@ -574,6 +582,7 @@ class PhraseModel:
         :return: a boolean to indicate whether the phrase has a custom property of the given property name
         :rtype: bool
         """
+        print('CUSTOM:', self.custom)
         return phrase_string in self.custom and custom_property in self.custom[phrase_string]
 
     def get(self, phrase_string: str, custom_property: str) -> any:
@@ -592,7 +601,7 @@ class PhraseModel:
             raise ValueError("Unknown custom property")
         return self.custom[phrase_string][custom_property]
 
-    def index_phrase_words(self, phrase: Phrase) -> None:
+    def _index_phrase_words(self, phrase: Phrase) -> None:
         """Index a phrase on its individual words, for exact match look up routines.
 
         :param phrase: a phrase object that is part of the phrase model
@@ -605,7 +614,7 @@ class PhraseModel:
                 self.first_word_in_phrase[word.group(0)][phrase.phrase_string] = word.start()
             self.word_in_phrase[word.group(0)].add(phrase.phrase_string)
 
-    def remove_phrase_words(self, phrase: Phrase) -> None:
+    def _remove_phrase_words(self, phrase: Phrase) -> None:
         """Remove the individual words of a phrase from the index. Only use this is you are removing
         the phrase from the phrase model.
 
@@ -620,3 +629,36 @@ class PhraseModel:
             self.word_in_phrase[word.group(0)].remove(phrase.phrase_string)
             if len(self.word_in_phrase[word.group(0)]) == 0:
                 del self.word_in_phrase[word.group(0)]
+
+    def _remove_phrase_tokens(self, phrase: Phrase, tokenizer: Tokenizer = None) -> None:
+        """Remove the individual words of a phrase from the index. Only use this is you are removing
+        the phrase from the phrase model.
+
+        :param phrase: a phrase object that is part of the phrase model
+        :type phrase: Phrase
+        """
+        tokenizer = self._get_tokenizer(tokenizer)
+        if tokenizer is None:
+            return None
+        tokens = tokenizer.tokenize(phrase.phrase_string)
+        for ti, token in enumerate(tokens):
+            if ti == 0:
+                del self.first_token_in_phrase[token.n][phrase.phrase_string]
+                if len(self.first_token_in_phrase[token.n].keys()) == 0:
+                    del self.first_token_in_phrase[token.n]
+            self.token_in_phrase[token.n].remove(phrase.phrase_string)
+            if len(self.token_in_phrase[token.n]) == 0:
+                del self.token_in_phrase[token.n]
+
+    def _get_tokenizer(self, tokenizer: Tokenizer = None):
+        return tokenizer if tokenizer is not None else self.tokenizer
+
+    def _index_phrase_tokens(self, phrase: Phrase, tokenizer: Tokenizer = None):
+        tokenizer = self._get_tokenizer(tokenizer)
+        if tokenizer:
+            tokens = tokenizer.tokenize(phrase.phrase_string, doc_id=phrase.phrase_string)
+            for token in tokens:
+                self.token_in_phrase[token.n].add(phrase.phrase_string)
+
+    def has_token(self, token: Union[str, Token]):
+        return token.n in self.token_in_phrase

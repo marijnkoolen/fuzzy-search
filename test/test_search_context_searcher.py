@@ -1,9 +1,9 @@
 from unittest import TestCase
 
-from fuzzy_search.fuzzy_match import PhraseMatch, PhraseMatchInContext
-from fuzzy_search.fuzzy_context_searcher import FuzzyContextSearcher
-from fuzzy_search.fuzzy_phrase import Phrase
-from fuzzy_search.fuzzy_phrase_model import PhraseModel
+from fuzzy_search.match.phrase_match import PhraseMatch
+from fuzzy_search.search.context_searcher import FuzzyContextSearcher
+from fuzzy_search.phrase.phrase import Phrase
+from fuzzy_search.phrase.phrase_model import PhraseModel
 
 
 class TestFuzzyContextSearcher(TestCase):
