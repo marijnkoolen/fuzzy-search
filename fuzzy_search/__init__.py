@@ -1,4 +1,4 @@
-__version__ = '1.6.0'
+__version__ = '2.0.1a'
 
 from fuzzy_search.search.config import default_config
 from fuzzy_search.search.phrase_searcher import FuzzyPhraseSearcher

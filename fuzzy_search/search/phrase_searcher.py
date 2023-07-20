@@ -37,7 +37,7 @@ def get_text_dict(text: Union[str, dict], ignorecase: bool = False) -> dict:
 class FuzzyPhraseSearcher(FuzzySearcher):
 
     def __init__(self, phrase_list: List[any] = None,
-                 phrase_model: Union[Dict[str, any], PhraseModel] = None,
+                 phrase_model: Union[Dict[str, any], List[Dict[str, any]], PhraseModel] = None,
                  config: Union[None, Dict[str, Union[str, int, float]]] = None,
                  tokenizer: Tokenizer = None,
                  token_searcher: FuzzyTokenSearcher = None):
@@ -231,14 +231,14 @@ class FuzzyPhraseSearcher(FuzzySearcher):
             filtered_matches = self.filter_matches_by_distractors(filtered_matches)
         if allow_overlapping_matches is None:
             allow_overlapping_matches = self.allow_overlapping_matches
+        filtered_matches = filtered_matches + exact_matches
         if not allow_overlapping_matches:
             filtered_matches = filter_matches_by_overlap(filtered_matches)
         # print(exact_matches)
         if debug > 0:
             time_step()
             print('find_matches - filtered_matches:', filtered_matches)
-        selected_matches = filtered_matches + exact_matches
-        return sorted(selected_matches, key=lambda x: x.offset)
+        return sorted(filtered_matches, key=lambda x: (x.text_id, x.offset, x.offset + len(x.string)))
 
     def find_exact_matches(self, text: Union[str, Dict[str, str]],
                            use_word_boundaries: Union[None, bool] = None,

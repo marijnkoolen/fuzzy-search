@@ -276,7 +276,7 @@ class FuzzySearcher(object):
             known_word_offset = {}
         # print(known_word_offset)
         skip_matches = SkipMatches(self.ngram_size, self.skip_size)
-        text_string = text['text_lower'] if self.ignorecase else text['text']
+        text_string = text['text'].lower() if self.ignorecase else text['text']
         for skipgram in text2skipgrams(text_string, self.ngram_size, self.skip_size):
             # print(skipgram.offset, skipgram.string)
             # print("skipgram:", skipgram.string)

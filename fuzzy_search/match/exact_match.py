@@ -80,16 +80,20 @@ def search_exact_phrases_with_word_boundaries(phrase_model: PhraseModel, text: D
 
             if text["text"][phrase_start:phrase_end] == phrase_string:
                 if phrase_start > 0 and re.match(r'\w', text["text"][phrase_start - 1]):
-                    print('\tsearch_exact_phrases_with_word_boundaries - match word is not at start word boundary')
+                    if debug > 0:
+                        print('\tsearch_exact_phrases_with_word_boundaries - match word is not at start word boundary')
                     continue
                 if phrase_end < len(text['text']) - 1 and re.match(r'\w', text['text'][phrase_end]):
-                    print('\tsearch_exact_phrases_with_word_boundaries - match word is not at end word boundary')
+                    if debug > 0:
+                        print('\tsearch_exact_phrases_with_word_boundaries - match word is not at end word boundary')
                     continue
 
-                print('\tsearch_exact_phrases_with_word_boundaries - phrase_string, phrase_type:', phrase_string,
+                if debug > 0:
+                    print('\tsearch_exact_phrases_with_word_boundaries - phrase_string, phrase_type:', phrase_string,
                       phrase_model.phrase_type[phrase_string])
                 if "phrase" in phrase_model.phrase_type[phrase_string]:
-                    print('\tsearch_exact_phrases_with_word_boundaries - match word is phrase')
+                    if debug > 0:
+                        print('\tsearch_exact_phrases_with_word_boundaries - match word is phrase')
                     phrase = phrase_model.phrase_index[phrase_string]
                     match = PhraseMatch(phrase, phrase, phrase_string, phrase_start, text_id=text["id"],
                                         ignorecase=ignorecase)
@@ -97,7 +101,8 @@ def search_exact_phrases_with_word_boundaries(phrase_model: PhraseModel, text: D
                     if debug > 0:
                         print("\tsearch_exact_phrases_with_word_boundaries - the matching phrase:", phrase)
                 elif "variant" in phrase_model.phrase_type[phrase_string] and include_variants:
-                    print('\tsearch_exact_phrases_with_word_boundaries - match word is variant')
+                    if debug > 0:
+                        print('\tsearch_exact_phrases_with_word_boundaries - match word is variant')
                     variant_phrase = phrase_model.variant_index[phrase_string]
                     main_phrase_string = phrase_model.is_variant_of[phrase_string]
                     main_phrase = phrase_model.phrase_index[main_phrase_string]
