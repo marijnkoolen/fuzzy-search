@@ -16,6 +16,8 @@ class NgramFreq:
 
     def __getitem__(self, item):
         ngram_size = item.count(' ') + 1
+        if ngram_size > self.max_ngram_size:
+            return 0
         return self.ngram_freq[ngram_size][item] if item in self.ngram_freq[ngram_size] else 0
 
     def count_ngrams(self, docs: List[Doc]):
@@ -75,16 +77,6 @@ def compute_expected(observed: np.array) -> np.array:
     return expected
 
 
-def compute_llr(token: str, target_counter: Counter, target_total: int,
-                reference_counter: Counter, reference_total: int,
-                include_direction: bool = False) -> Tuple[float, str]:
-    """Computes the log likelihood ratio for given a target token, and target and
-    reference analysers and counters."""
-    observed = get_observed_from_counter(token, target_counter, target_total, reference_counter,
-                                         reference_total)
-    return compute_llr_from_observed(observed, include_direction=include_direction)
-
-
 def compute_llr_from_observed(observed: np.array,
                               include_direction: bool = False) -> Union[float, Tuple[float, str]]:
     sum_likelihood = 0
@@ -96,3 +88,23 @@ def compute_llr_from_observed(observed: np.array,
         return 2 * sum_likelihood, 'more' if observed[0, 0] > expected[0, 0] else 'less'
     else:
         return 2 * sum_likelihood
+
+
+def compute_llr(token: str, target_counter: Counter, target_total: int,
+                reference_counter: Counter, reference_total: int,
+                include_direction: bool = False) -> Tuple[float, str]:
+    """Computes the log likelihood ratio for given a target token, and target and
+    reference analysers and counters."""
+    observed = get_observed_from_counter(token, target_counter, target_total, reference_counter,
+                                         reference_total)
+    return compute_llr_from_observed(observed, include_direction=include_direction)
+
+
+def compute_percentage_diff(token, target_counter, target_total, reference_counter, reference_total):
+    target_freq = target_counter[token] if token in target_counter else 0
+    ref_freq = reference_counter[token] if token in reference_counter else 0
+    if ref_freq == 0:
+        return float('inf')
+    target_frac = target_freq / target_total
+    ref_frac = ref_freq / reference_total
+    return (target_frac - ref_frac) / ref_frac

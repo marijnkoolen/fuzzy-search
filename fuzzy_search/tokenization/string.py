@@ -148,9 +148,10 @@ def score_levenshtein_distance(term1: str, term2: str) -> int:
 
 class SkipGram:
 
-    def __init__(self, skipgram_string: str, offset: int, skipgram_length: int):
+    def __init__(self, skipgram_string: str, start_offset: int, end_offset: int, skipgram_length: int):
         self.string = skipgram_string
-        self.offset = offset
+        self.start_offset = start_offset
+        self.end_offset = end_offset
         self.length = skipgram_length
 
 
@@ -181,10 +182,11 @@ def text2skipgrams(text: str, ngram_size: int = 2, skip_size: int = 2) -> Genera
         raise ValueError('ngram_size must be a positive integer, skip_size must be a positive integer or zero')
     indexes = [i for i in range(0, ngram_size+skip_size)]
     skipgram_combinations = [combination for combination in combinations(indexes[1:], ngram_size-1)]
-    for offset in range(0, len(text)-1):
-        window = text[offset:offset+ngram_size+skip_size]
+    for start_offset in range(0, len(text)-1):
+        end_offset = len(text) - start_offset
+        window = text[start_offset:start_offset+ngram_size+skip_size]
         for skipgram, skipgram_length in insert_skips(window, skipgram_combinations):
-            yield SkipGram(skipgram, offset, skipgram_length)
+            yield SkipGram(skipgram, start_offset, end_offset, skipgram_length)
 
 
 non_word_affixes_2 = {

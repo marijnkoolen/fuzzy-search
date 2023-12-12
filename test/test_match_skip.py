@@ -10,7 +10,7 @@ class TestSkipMatches(TestCase):
     def test_skip_matches_registers_match(self):
         skip_matches = SkipMatches(2, 2)
         phrase = Phrase('test')
-        skipgram = SkipGram('ts', 0, 3)
+        skipgram = SkipGram('ts', 0, len(phrase.phrase_string), 3)
         skip_matches.add_skip_match(skipgram, phrase)
         self.assertTrue(phrase in skip_matches.match_set)
 

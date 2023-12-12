@@ -1,64 +1,16 @@
 import math
 from collections import defaultdict
 from collections import Counter
-from typing import Generator, Iterable, List, Tuple, Union
+from typing import Dict, Generator, Iterable, List, Tuple, Union
 
 
 from fuzzy_search.tokenization.string import score_levenshtein_distance
 from fuzzy_search.tokenization.string import text2skipgrams
+from fuzzy_search.tokenization.vocabulary import Vocabulary
 
 
 def vector_length(skipgram_freq):
     return math.sqrt(sum([skipgram_freq[skip] ** 2 for skip in skipgram_freq]))
-
-
-class Vocabulary:
-
-    def __init__(self):
-        """A Vocabulary class to map terms to identifiers."""
-        self.term_id = {}
-        self.id_term = {}
-        self.term_freq = {}
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}(vocabulary_size="{len(self.term_id)}")'
-
-    def __len__(self):
-        return len(self.term_id)
-
-    def reset_index(self):
-        self.term_id = {}
-        self.id_term = {}
-        self.term_freq = {}
-
-    def add_terms(self, terms: List[str], reset_index: bool = True):
-        """Add a list of terms to the vocabulary. Use 'reset_index=True' to reset
-        the vocabulary before adding the terms.
-
-        :param terms: a list of terms to add to the vocabulary
-        :type terms: List[str]
-        :param reset_index: a flag to indicate whether to empty the vocabulary before adding terms
-        :type reset_index: bool
-        """
-        if reset_index is True:
-            self.reset_index()
-        for term in terms:
-            if term in self.term_id:
-                continue
-            self._index_term(term)
-
-    def _index_term(self, term: str):
-        term_id = len(self.term_id)
-        self.term_id[term] = term_id
-        self.id_term[term_id] = term
-
-    def term2id(self, term: str):
-        """Return the term ID for a given term."""
-        return self.term_id[term] if term in self.term_id else None
-
-    def id2term(self, term_id: int):
-        """Return the term for a given term ID."""
-        return self.id_term[term_id] if term_id in self.id_term else None
 
 
 def get_skip_coocs(seq_ids: List[str], skip_size: int = 0) -> Generator[Tuple[int, int], None, None]:
@@ -120,6 +72,67 @@ class SkipCooccurrence:
         for cooc_ids in self.cooc_freq:
             if term_id in cooc_ids:
                 yield self._cooc_ids2terms(cooc_ids), self.cooc_freq[cooc_ids]
+
+
+def is_close_distance_keyword_pair(keyword1: str, keyword2: str, max_distance_ratio: float,
+                                   max_length_difference: int, max_distance: int) -> bool:
+    if abs(len(keyword1) - len(keyword2)) > max_length_difference:
+        return False
+    distance = score_levenshtein_distance(keyword1, keyword2)
+    if distance < max_distance and (
+            distance / len(keyword1) < max_distance_ratio or distance / len(keyword2) < max_distance_ratio):
+        return True
+    return False
+
+
+class KeywordList:
+
+    def __init__(self, keywords: List[str], max_length_diff: int):
+        self.len_keys = defaultdict(list)
+        self.max_length_diff = max_length_diff
+        for ki, keyword in enumerate(keywords):
+            if isinstance(keyword, str) is False:
+                raise ValueError(f"keyword '{keyword}' at index {ki} is not of "
+                                 f"type str but type {type(keyword)}")
+            len_key = len(keyword)
+            self.len_keys[len_key].append(keyword)
+        self.len_order = sorted(self.len_keys.keys())
+
+    def iterate_candidate_pairs(self):
+        for len_key1 in self.len_order:
+            for ki, kw1 in enumerate(self.len_keys[len_key1]):
+                for len_key2 in range(len_key1, len_key1 + self.max_length_diff + 1):
+                    start = ki + 1 if len_key2 == len_key1 else 0
+                    for kw2 in self.len_keys[len_key2][start:]:
+                        yield kw1, kw2
+
+    def find_close_distance_keywords(self, max_distance_ratio: float = 0.3,
+                                     max_length_diff: int = 3, max_distance: int = 10,
+                                     ignorecase: bool = False) -> Dict[str, List[str]]:
+        """TODO: should we make the arguments into a config?"""
+        if max_length_diff is None:
+            max_length_diff = self.max_length_diff
+        close_distance_keywords = defaultdict(list)
+        for keyword1, keyword2 in self.iterate_candidate_pairs():
+            string1 = keyword1.lower() if ignorecase else keyword1
+            string2 = keyword2.lower() if ignorecase else keyword2
+            if is_close_distance_keyword_pair(string1, string2, max_distance_ratio=max_distance_ratio,
+                                              max_length_difference=max_length_diff,
+                                              max_distance=max_distance):
+                close_distance_keywords[keyword1].append(keyword2)
+                close_distance_keywords[keyword2].append(keyword1)
+        return close_distance_keywords
+
+    def find_closer_terms(self, candidate: str, keyword: str, close_terms: List[str]):
+        closer_terms = {}
+        keyword_distance = score_levenshtein_distance(keyword, candidate)
+        # print("candidate:", candidate, "\tkeyword:", keyword)
+        # print("keyword_distance", keyword_distance)
+        for close_term in close_terms:
+            close_term_distance = score_levenshtein_distance(close_term, candidate)
+            # print("close_term:", close_term, "\tdistance:", close_term_distance)
+            if close_term_distance < keyword_distance:
+                closer_terms[close_term] = close_term_distance
 
 
 class SkipgramSimilarity:

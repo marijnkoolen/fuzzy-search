@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.pattern package &mdash; fuzzy-search 0.3.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="fuzzy_search.phrase package" href="fuzzy_search.phrase.html" />
+    <link rel="prev" title="fuzzy_search.match package" href="fuzzy_search.match.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="fuzzy_search.html">fuzzy_search package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="fuzzy_search.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html">fuzzy_search.match package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">fuzzy_search.pattern package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.pattern.fuzzy_patterns">fuzzy_search.pattern.fuzzy_patterns module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.pattern.fuzzy_template">fuzzy_search.pattern.fuzzy_template module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.pattern">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.phrase.html">fuzzy_search.phrase package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html">fuzzy_search.search package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html">fuzzy_search.tokenization package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.html#module-fuzzy_search.fuzzy_searcher">fuzzy_search.fuzzy_searcher module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.html#module-fuzzy_search.similarity">fuzzy_search.similarity module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.html#module-fuzzy_search">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="fuzzy_search.html">fuzzy_search package</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.pattern package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/source/fuzzy_search.pattern.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fuzzy-search-pattern-package">
+<h1>fuzzy_search.pattern package<a class="headerlink" href="#fuzzy-search-pattern-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-fuzzy_search.pattern.fuzzy_patterns">
+<span id="fuzzy-search-pattern-fuzzy-patterns-module"></span><h2>fuzzy_search.pattern.fuzzy_patterns module<a class="headerlink" href="#module-fuzzy_search.pattern.fuzzy_patterns" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_patterns.context_before_pattern">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_patterns.</span></span><span class="sig-name descname"><span class="pre">context_before_pattern</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern_definition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_distance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_patterns.context_before_pattern" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_patterns.context_then_pattern">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_patterns.</span></span><span class="sig-name descname"><span class="pre">context_then_pattern</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern_definition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_string</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_patterns.context_then_pattern" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_patterns.escape_string">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_patterns.</span></span><span class="sig-name descname"><span class="pre">escape_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_patterns.escape_string" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_patterns.get_context_patterns">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_patterns.</span></span><span class="sig-name descname"><span class="pre">get_context_patterns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_patterns.get_context_patterns" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_patterns.get_search_patterns">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_patterns.</span></span><span class="sig-name descname"><span class="pre">get_search_patterns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_patterns.get_search_patterns" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_patterns.list_context_pattern_types">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_patterns.</span></span><span class="sig-name descname"><span class="pre">list_context_pattern_types</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_patterns.list_context_pattern_types" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_patterns.list_pattern_definitions">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_patterns.</span></span><span class="sig-name descname"><span class="pre">list_pattern_definitions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_patterns.list_pattern_definitions" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_patterns.list_pattern_names">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_patterns.</span></span><span class="sig-name descname"><span class="pre">list_pattern_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_patterns.list_pattern_names" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_patterns.make_search_context_patterns">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_patterns.</span></span><span class="sig-name descname"><span class="pre">make_search_context_patterns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_patterns</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_patterns.make_search_context_patterns" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_patterns.pattern_before_context">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_patterns.</span></span><span class="sig-name descname"><span class="pre">pattern_before_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern_definition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_distance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_patterns.pattern_before_context" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_patterns.pattern_comma_then_context">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_patterns.</span></span><span class="sig-name descname"><span class="pre">pattern_comma_then_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern_definition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_string</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_patterns.pattern_comma_then_context" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-fuzzy_search.pattern.fuzzy_template">
+<span id="fuzzy-search-pattern-fuzzy-template-module"></span><h2>fuzzy_search.pattern.fuzzy_template module<a class="headerlink" href="#module-fuzzy_search.pattern.fuzzy_template" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_template.</span></span><span class="sig-name descname"><span class="pre">FuzzyTemplate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel" title="fuzzy_search.phrase.phrase_model.PhraseModel"><span class="pre">PhraseModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_unknown</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordered</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_element">
+<span class="sig-name descname"><span class="pre">get_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement"><span class="pre">FuzzyTemplateLabelElement</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement"><span class="pre">FuzzyTemplateGroupElement</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_element" title="Permalink to this definition"></a></dt>
+<dd><p>Return the element corresponding to a given label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>element_label</strong> (<em>str</em>) – a fuzzy element label</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the element corresponding to the label or None if label is unknown</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Union[<a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement">FuzzyTemplateElement</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_elements_by_cardinality">
+<span class="sig-name descname"><span class="pre">get_elements_by_cardinality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cardinality</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'single'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement"><span class="pre">FuzzyTemplateLabelElement</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_elements_by_cardinality" title="Permalink to this definition"></a></dt>
+<dd><p>Return all template elements with a given cardinality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cardinality</strong> (<em>str</em>) – a cardinality type (‘single’ or ‘multi’)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the list of labels of elements with a given cardinality</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_label_phrases">
+<span class="sig-name descname"><span class="pre">get_label_phrases</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><span class="pre">Phrase</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_label_phrases" title="Permalink to this definition"></a></dt>
+<dd><p>Return a list of phrases that have a given label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>label</strong> (<em>str</em>) – a phrase label for phrases in the registered phrase_model</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a list of phrases from the registered phrase model that have a given phrase</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase">Phrase</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_labels_by_cardinality">
+<span class="sig-name descname"><span class="pre">get_labels_by_cardinality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cardinality</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'single'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_labels_by_cardinality" title="Permalink to this definition"></a></dt>
+<dd><p>Return the labels of all template elements with a given cardinality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cardinality</strong> (<em>str</em>) – a cardinality type (‘single’ or ‘multi’)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the list of labels of elements with a given cardinality</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_required_elements">
+<span class="sig-name descname"><span class="pre">get_required_elements</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement"><span class="pre">FuzzyTemplateLabelElement</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_required_elements" title="Permalink to this definition"></a></dt>
+<dd><p>Return all required elements in the template.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the list of labels of required elements</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>List[<a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement">FuzzyTemplateElement</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_required_labels">
+<span class="sig-name descname"><span class="pre">get_required_labels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_required_labels" title="Permalink to this definition"></a></dt>
+<dd><p>Return the labels of all required elements in the template.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the list of labels of required elements</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.has_group">
+<span class="sig-name descname"><span class="pre">has_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.has_group" title="Permalink to this definition"></a></dt>
+<dd><p>Check if the template has group elements with a given group name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>group</strong> (<em>str</em>) – a fuzzy element group</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>whether the group corresponds to any registered element(s)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.has_label">
+<span class="sig-name descname"><span class="pre">has_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.has_label" title="Permalink to this definition"></a></dt>
+<dd><p>Check if the template has label elements with a given label or list of label (any or all).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>label</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – a fuzzy element label</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>whether the label corresponds to any registered element(s)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.parse_group_element">
+<span class="sig-name descname"><span class="pre">parse_group_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement"><span class="pre">FuzzyTemplateGroupElement</span></a></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.parse_group_element" title="Permalink to this definition"></a></dt>
+<dd><p>Parse a group element dictionary/JSON object into a fuzzy template group element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>group_info</strong> (<em>dict</em>) – a dictionary containing the properties of the template group element</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a fuzzy template group element</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement">FuzzyTemplateGroupElement</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.parse_label_element">
+<span class="sig-name descname"><span class="pre">parse_label_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement"><span class="pre">FuzzyTemplateLabelElement</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.parse_label_element" title="Permalink to this definition"></a></dt>
+<dd><p>Parse a label element dictionary/JSON object into a fuzzy template label element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>label_info</strong> (<em>dict</em>) – a dictionary containing the properties of the template label element</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a fuzzy template label element, or None if the label is not used in the phrase model</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement">FuzzyTemplateLabelElement</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.register_template">
+<span class="sig-name descname"><span class="pre">register_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.register_template" title="Permalink to this definition"></a></dt>
+<dd><p>Register a list of elements as a fuzzy template. Each element contains a label
+that corresponds to at least one phrase in the registered phrase model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>template_json</strong> (<em>Union</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>dict</em><em>]</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>dict</em><em>]</em><em>]</em><em>]</em>) – a dictionary of template groups or elements to be registered as part of the template</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_template.</span></span><span class="sig-name descname"><span class="pre">FuzzyTemplateElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_template.</span></span><span class="sig-name descname"><span class="pre">FuzzyTemplateGroupElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement"><span class="pre">FuzzyTemplateElement</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordered</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement"><code class="xref py py-class docutils literal notranslate"><span class="pre">FuzzyTemplateElement</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_template.</span></span><span class="sig-name descname"><span class="pre">FuzzyTemplateLabelElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cardinality</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'single'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_distance_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement"><code class="xref py py-class docutils literal notranslate"><span class="pre">FuzzyTemplateElement</span></code></a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.generate_group_from_json">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_template.</span></span><span class="sig-name descname"><span class="pre">generate_group_from_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_elements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement"><span class="pre">FuzzyTemplateElement</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement"><span class="pre">FuzzyTemplateGroupElement</span></a></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.generate_group_from_json" title="Permalink to this definition"></a></dt>
+<dd><p>Generate a FuzzyTemplateGroupElement from a element json dictionary and a list of group elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>element_info</strong> (<em>dict</em>) – a dictionary containing the properties of the template group element</p></li>
+<li><p><strong>group_elements</strong> (<em>List</em><em>[</em><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement"><em>FuzzyTemplateElement</em></a><em>]</em>) – a list of fuzzy template elements that are part of the group element</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a fuzzy template group element</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement">FuzzyTemplateGroupElement</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.generate_label_from_json">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_template.</span></span><span class="sig-name descname"><span class="pre">generate_label_from_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement"><span class="pre">FuzzyTemplateLabelElement</span></a></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.generate_label_from_json" title="Permalink to this definition"></a></dt>
+<dd><p>Generate a FuzzyTemplateLabelElement from a label and an element json dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>label</strong> (<em>str</em>) – the label string for the label element</p></li>
+<li><p><strong>element_info</strong> (<em>dict</em>) – a dictionary containing the properties of the template label element</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a fuzzy template label element</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement" title="fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement">FuzzyTemplateLabelElement</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.pattern.fuzzy_template.validate_element_properties">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.pattern.fuzzy_template.</span></span><span class="sig-name descname"><span class="pre">validate_element_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cardinality</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'multi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_distance_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#fuzzy_search.pattern.fuzzy_template.validate_element_properties" title="Permalink to this definition"></a></dt>
+<dd><p>Validate the properties of a FuzzyTemplate element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>label</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – the label of the element, which can be a single string or a list of strings</p></li>
+<li><p><strong>required</strong> (<em>bool</em>) – whether or not the element must match for the template to match</p></li>
+<li><p><strong>cardinality</strong> (<em>str</em>) – whether the element can occur only once (default) or multiple times in a template match.</p></li>
+<li><p><strong>next_label</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – what the label of the next element should be. Use a list of labels for multiple options.</p></li>
+<li><p><strong>next_distance_max</strong> (<em>int</em>) – the maximum distance allowed between this element and the next element in the template</p></li>
+<li><p><strong>variable</strong> (<em>bool</em>) – flag to indicate the element has no phrases but has variable text (default is False)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-fuzzy_search.pattern">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-fuzzy_search.pattern" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fuzzy_search.match.html" class="btn btn-neutral float-left" title="fuzzy_search.match package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fuzzy_search.phrase.html" class="btn btn-neutral float-right" title="fuzzy_search.phrase package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import time
 from collections import defaultdict
 from enum import Enum
 from typing import Dict, List, Union
@@ -14,6 +15,7 @@ from fuzzy_search.tokenization.string import text2skipgrams
 from fuzzy_search.tokenization.token import Doc
 from fuzzy_search.tokenization.token import Token
 from fuzzy_search.tokenization.token import Tokenizer
+from fuzzy_search.tokenization.vocabulary import Vocabulary
 
 
 class MatchType(Enum):
@@ -52,8 +54,8 @@ class TokenMatch:
 
 class PartialPhraseMatch:
 
-    def __init__(self, phrase: Phrase, token_matches: List[TokenMatch] = None, max_char_gap: int = 3,
-                 max_token_gap: int = 0):
+    def __init__(self, phrase: Phrase, token_matches: List[TokenMatch] = None, max_char_gap: int = 20,
+                 max_token_gap: int = 1):
         # create a new list instead of pointing to original list
         self.token_matches = []
         self.phrase = phrase
@@ -67,15 +69,37 @@ class PartialPhraseMatch:
         self.text_start = -1
         self.text_end = -1
         self.text_length = 0
+        self.match_string = None
         self.first_text_token = None
         self.last_text_token = None
         self.first_phrase_token = None
         self.last_phrase_token = None
+        self.levenshtein_score = None
         if token_matches is not None:
             self.add_tokens(token_matches)
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(phrase={self.phrase}, token_matches={self.token_matches}, " \
+               f"text_tokens={self.text_tokens}, phrase_tokens={self.phrase_tokens}," \
+               f", missing_tokens={self.missing_tokens})"
+
     def _update(self):
-        self.text_tokens = tuple([token for match in self.token_matches for token in match.text_tokens])
+        text_tokens = []
+        prev_match = None
+        for match in self.token_matches:
+            if prev_match is None:
+                text_tokens.extend(match.text_tokens)
+            elif match.text_start == prev_match.text_start:
+                continue
+            elif match.text_start >= prev_match.text_end:
+                text_tokens.extend(match.text_tokens)
+            else:
+                print('TO DO: figure out how to filter text tokens in partially overlapping token matches')
+            # print('_update - match.text_start', match.text_start)
+            prev_match = match
+        # print('text_tokens:', text_tokens)
+        self.text_tokens = tuple(text_tokens)
+        # self.text_tokens = tuple([token for match in self.token_matches for token in match.text_tokens])
         self.phrase_tokens = tuple([token for match in self.token_matches for token in match.phrase_tokens])
         self.first = self.text_tokens[0]
         self.last = self.text_tokens[-1]
@@ -83,7 +107,7 @@ class PartialPhraseMatch:
         self.text_end = self.last.char_index + len(self.last)
         self.text_length = self.text_end - self.text_start
 
-    def _pop(self):
+    def pop(self):
         self.token_matches.pop(0)
         self._update()
 
@@ -93,7 +117,7 @@ class PartialPhraseMatch:
         if token_gap > self.max_token_gap or char_gap > self.max_char_gap:
             self.__init__(phrase=self.phrase)
 
-    def _push(self, token_match: TokenMatch):
+    def push(self, token_match: TokenMatch):
         self.token_matches.append(token_match)
         if len(self.text_tokens) > 0:
             self._check_gap(token_match)
@@ -109,9 +133,12 @@ class PartialPhraseMatch:
 
     def add_tokens(self, token_matches: Union[List[TokenMatch], TokenMatch]):
         if isinstance(token_matches, TokenMatch):
-            self.token_matches.append(token_matches)
-        else:
-            self.token_matches.extend(token_matches)
+            token_matches = [token_matches]
+        for token_match in token_matches:
+            for phrase_token in token_match.phrase_tokens:
+                if phrase_token in self.missing_tokens:
+                    self.missing_tokens.remove(phrase_token)
+        self.token_matches.extend(token_matches)
         self._update()
 
 
@@ -136,61 +163,94 @@ def map_text_tokens_to_phrase_tokens(partial_match: PartialPhraseMatch) -> Union
     return text_phrase_map
 
 
-def get_best_text_phrase_token_map(token_matches: List[TokenMatch]):
-    prev_token = None
-    best_phrase_tokens = []
-    phrase_token_map = {}
-    per_token_sim = []
-    text_phrase_map = map_text_tokens_to_phrase_tokens()
-    for text_token in text_phrase_map:
-        best_match = None
-        best_sim = 0
-        for phrase_token in text_phrase_map[text_token]:
-            sim = score_levenshtein_similarity_ratio(phrase_token, text_token.n)
-            if sim > best_sim:
-                best_match = phrase_token
-                best_sim = sim
-            best_phrase_tokens.append(best_match)
-            per_token_sim.append(best_sim)
-    for text_token in partial_match.text_tokens:
-        if text_token == prev_token:
-            continue
-        prev_token = text_token
-
-
 def get_partial_phrases(token_matches: List[TokenMatch], token_searcher: FuzzyTokenSearcher,
-                        max_token_gap: int = 20):
-    partial_phrase = Dict[Phrase, PartialPhraseMatch] = {}
+                        max_char_gap: int = 20, debug: int = 0):
+    partial_phrase: Dict[Phrase, PartialPhraseMatch] = {}
+    partial_phrases = {}
     candidate_phrase: Dict[Phrase, List[PartialPhraseMatch]] = defaultdict(list)
     prev_token_match = None
     for token_match in token_matches:
-        if prev_token_match and token_match.text_start - prev_token_match.text_end > max_token_gap:
-            partial_phrase = Dict[Phrase, PartialPhraseMatch] = {}
-        print(
-            f"text start: {token_match.text_start: >4}\tend{token_match.text_end: >4}\t\t"
-            f"text tokens: {token_match.text_tokens}\t\tphrase tokens{token_match.phrase_tokens}")
+        if prev_token_match and token_match.text_start - prev_token_match.text_end > max_char_gap:
+            partial_phrase: Dict[Phrase, PartialPhraseMatch] = {}
+        if debug > 1:
+            print(
+                f"text start: {token_match.text_start: >4}\tend{token_match.text_end: >4}\t\t"
+                f"text tokens: {token_match.text_tokens}\t\tphrase tokens{token_match.phrase_tokens}")
         for phrase_token_string in token_match.phrase_tokens:
-            print('\tphrase_token_string:', phrase_token_string)
+            if debug > 1:
+                print('\tphrase_token_string:', phrase_token_string)
             for phrase_string in token_searcher.phrase_model.token_in_phrase[phrase_token_string]:
-                phrase = token_searcher.phrase_model.phrase_index[phrase_string]
-                print('\t\tphrase:', phrase)
+                # phrase = token_searcher.phrase_model.phrase_index[phrase_string]
+                phrase = token_searcher.phrase_model.get_phrase(phrase_string)
+                if phrase is None:
+                    continue
+                # print('phrase:', phrase)
+                # print('phrase.tokens:', phrase.tokens)
+                if debug > 1:
+                    print('\t\tphrase:', phrase)
                 if phrase not in candidate_phrase:
-                    print('\t\t\tADDING PHRASE')
-                    partial_phrase[phrase] = PartialPhraseMatch([token_match], phrase)
+                    if debug > 1:
+                        print('\t\t\tADDING PHRASE')
+                    partial = PartialPhraseMatch(phrase, [token_match])
+                    # partial_phrase[phrase] = partial
+                    candidate_phrase[phrase].append(partial)
                 else:
-                    print('\t\t\tADDING TOKEN')
-                    partial_phrase[phrase].add_tokens(token_match)
-                print('\t\t', partial_phrase[phrase].text_tokens)
-                print('\t\t', partial_phrase[phrase].text_start, partial_phrase[phrase].text_end)
-                print('\t\t', partial_phrase[phrase].text_length, len(phrase))
-                if abs(partial_phrase[phrase].text_length - len(phrase)) <= token_searcher.config['max_length_variance']:
-                    print('\t\tCANDIDATE FOUND!')
-                    c
-                    del partial_phrase[phrase]
-                elif partial_phrase[phrase].text_length > len(phrase) + token_searcher.config['max_length_variance']:
-                    print('REMOVE CANDIDATE!')
-                    del partial_phrase[phrase]
+                    added = False
+                    for partial in candidate_phrase[phrase]:
+                        # check if token extends existing partial match
+                        if token_match.text_start - partial.text_end > max_char_gap:
+                            # print('skipping partial match:', token_match.text_start, partial.text_end)
+                            continue
+                        if partial.text_end < token_match.text_start and \
+                                any([pt for pt in token_match.phrase_tokens if pt in partial.missing_tokens]):
+                            partial.add_tokens([token_match])
+                            if debug > 1:
+                                print('\t\t\tADDING TOKEN')
+                                print('\t\t', partial.text_tokens)
+                                print('\t\t', partial.text_start, partial.text_end)
+                                print('\t\t', partial.text_length, len(phrase))
+                            added = True
+                    if not added:
+                        partial = PartialPhraseMatch(phrase, [token_match])
+                        if debug > 1:
+                            print('\t\t\tADDING PARTIAL TO PHRASE')
+                            print('\t\t', partial.text_tokens)
+                            print('\t\t', partial.text_start, partial.text_end)
+                            print('\t\t', partial.text_length, len(phrase))
+                        candidate_phrase[phrase].append(partial)
         prev_token_match = token_match
+    for phrase in candidate_phrase:
+        remove_phrases = []
+        for partial in candidate_phrase[phrase]:
+            if debug > 1:
+                print('\tCHECKING PARTIAL CANDIDATE')
+                print('\t\t', partial.text_tokens)
+                print('\t\t', partial.text_start, partial.text_end)
+                print('\t\t', partial.text_length, len(phrase))
+            if abs(partial.text_length - len(phrase)) > token_searcher.config['max_length_variance']:
+                if debug > 0:
+                    print('\t\tREMOVE CANDIDATE!')
+                remove_phrases.append(partial)
+                candidate_phrase[phrase].remove(partial)
+                # candidate_phrase.append(partial)
+                # del partial
+            # elif partial.text_length > len(phrase) + token_searcher.config['max_length_variance']:
+            else:
+                if debug > 0:
+                    print('\t\tCANDIDATE FOUND!')
+                # del partial[phrase]
+    return candidate_phrase
+
+
+def get_tokenized_doc(text: Union[str, Dict[str, any], Doc], tokenizer: Tokenizer) -> Doc:
+    if isinstance(text, Doc):
+        return text
+    elif isinstance(text, dict):
+        return tokenizer.tokenize(text['text'], doc_id=text['id'])
+    elif isinstance(text, str):
+        return tokenizer.tokenize(text)
+    else:
+        raise TypeError(f"text must be str, dict (with 'text' and 'id' properties) or Doc, not {type(text)}")
 
 
 def get_text_tokens(text: Union[str, Dict[str, any], Doc], tokenizer: Tokenizer = None):
@@ -221,7 +281,8 @@ def get_text_string(text: Union[str, Dict[str, any], Doc]) -> str:
             f'invalid text type {type(text)}, must be string, Doc or a dictionary with "text" and "id" properties')
 
 
-def get_token_skipgram_matches(text_token_skips: List[SkipGram], token_searcher: FuzzyTokenSearcher):
+def get_token_skipgram_matches(text_token_skips: List[SkipGram], token_searcher: FuzzyTokenSearcher,
+                               debug: int = 0):
     token_skip_matches = SkipMatches(token_searcher.ngram_size, token_searcher.skip_size)
     for skipgram in text_token_skips:
         for phrase_token in token_searcher.token_skipgram_index[skipgram.string]:
@@ -232,7 +293,8 @@ def get_token_skipgram_matches(text_token_skips: List[SkipGram], token_searcher:
 class FuzzyTokenSearcher(FuzzySearcher):
 
     def __init__(self, phrase_list: List[any] = None, phrase_model: Union[Dict[str, any], PhraseModel] = None,
-                 config: Union[None, Dict[str, Union[str, int, float]]] = None, tokenizer: Tokenizer = None):
+                 config: Union[None, Dict[str, Union[str, int, float]]] = None, tokenizer: Tokenizer = None,
+                 vocabulary: Vocabulary = None, max_char_gap: int = 20, max_token_gap: int = 1):
         """This class represents the basic fuzzy searcher. You can pass a list of phrases or a phrase model and
         configuration dictionary that overrides the default configuration values. The default config dictionary
         is available via `fuzzy_search.default_config`.
@@ -259,6 +321,9 @@ class FuzzyTokenSearcher(FuzzySearcher):
         debug = self.config['debug']
         self.token_skipgram_index = defaultdict(set)
         self.token_num_skips = {}
+        self.max_token_gap = max_token_gap
+        self.max_char_gap = max_char_gap
+        self.vocabulary = vocabulary
         if debug > 3:
             print(f'{self.__class__.__name__}.index_phrase_model - calling index_token_skipgrams()')
         if debug > 3:
@@ -267,6 +332,11 @@ class FuzzyTokenSearcher(FuzzySearcher):
             if debug > 3:
                 print(f'{self.__class__.__name__}.index_phrase_model - calling index_token_skipgrams()')
             self.index_token_skipgrams()
+
+    def configure(self, config: Dict[str, any]):
+        for prop in config:
+            if hasattr(self, prop):
+                self.__setattr__(prop, config[prop])
 
     def index_token_skipgrams(self, debug: int = 0):
         debug = self._get_debug_level(debug)
@@ -293,8 +363,25 @@ class FuzzyTokenSearcher(FuzzySearcher):
         token_matches = []
         partial_matches = defaultdict(list)
         for text_token in text_tokens:
+            if self.vocabulary and self.vocabulary.has_term(text_token):
+                self.find_vocabulary_token_matches_for_token(text_token, token_matches, debug=debug)
+                continue
+            if debug > 0:
+                print('\nfind_skipgram_token_matches_in_text - text_token:', text_token)
             self.find_skipgram_token_matches_for_token(text_token, partial_matches, token_matches, debug=debug)
         return token_matches
+
+    def find_vocabulary_token_matches_for_token(self, text_token: Token, token_matches: List[TokenMatch],
+                                                debug: int = 0):
+        if text_token.n not in self.phrase_model.token_in_phrase:
+            return None
+        for phrase_string in self.phrase_model.token_in_phrase[text_token.n]:
+            phrase = self.phrase_model.get_phrase(phrase_string)
+            if isinstance(phrase, Phrase):
+                phrase_tokens = [token for token in phrase.tokens if token.n == text_token.n]
+                token_match = TokenMatch(text_tokens=text_token, phrase_tokens=phrase_tokens,
+                                         match_type=MatchType.FULL)
+                token_matches.append(token_match)
 
     def find_skipgram_token_matches_for_token(self, text_token: Token, partial_matches: Dict[str, List[Token]],
                                               token_matches: List[TokenMatch], debug: int = 0):
@@ -309,21 +396,32 @@ class FuzzyTokenSearcher(FuzzySearcher):
         :param debug: level to show debug information
         :type debug: int
         """
-        if debug > 1:
-            print(f'find_skipgram_token_matches - text_token: {text_token}')
+        if debug > 0:
+            print(f'\nfind_skipgram_token_matches - text_token: {text_token}')
         text_token_skips = [skipgram for skipgram in text2skipgrams(text_token.normalised_string,
                                                                     self.ngram_size,
                                                                     self.skip_size)]
         token_skip_matches = get_token_skipgram_matches(text_token_skips, self)
+        if debug > 0:
+            print(f'find_skipgram_token_matches - number of phrase matches: '
+                  f'{len(token_skip_matches.match_start_offsets)}')
+            print()
         text_token_num_skips = len(text_token_skips)
         token_match_types = set()
-        for phrase_token_match in token_skip_matches.match_offsets:
-            if debug > 2:
+        for phrase_token_match in token_skip_matches.match_start_offsets:
+            if debug > 1:
+                print(f'\n\tfind_skipgram_token_matches - phrase_token_match: {phrase_token_match}')
                 print(f'\tfind_skipgram_token_matches - phrase_token_match: {phrase_token_match}')
+                print(f'\tfind_skipgram_token_matches - number of skipgram matches: '
+                      f'{len(token_skip_matches.match_start_offsets[phrase_token_match])}')
+                print(f'\tfind_skipgram_token_matches - skipgram matches: ',
+                      token_skip_matches.match_skipgrams[phrase_token_match][0].start_offset,
+                      token_skip_matches.match_skipgrams[phrase_token_match][-1].end_offset,
+                      )
             match_type = get_token_skip_match_type(text_token.normalised_string,
                                                    text_token_num_skips,
                                                    token_skip_matches,
-                                                   phrase_token_match, self)
+                                                   phrase_token_match, self, debug=debug)
             if debug > 2:
                 print(f'\tfind_skipgram_token_matches - match_type: {match_type}')
             token_match_types.add(match_type)
@@ -334,7 +432,8 @@ class FuzzyTokenSearcher(FuzzySearcher):
                 if debug > 2:
                     print(f'\n\tfind_skipgram_token_matches - adding full match: {token_match}\n')
                 token_matches.append(token_match)
-                print('NUMBER OF TOKEN MATCHES:', len(token_matches))
+                if debug > 0:
+                    print('NUMBER OF TOKEN MATCHES:', len(token_matches))
             elif match_type == MatchType.PARTIAL_OF_PHRASE_TOKEN:
                 if debug > 2:
                     print(f'\t\tfind_skipgram_token_matches - partial_matches: {partial_matches}')
@@ -372,7 +471,8 @@ class FuzzyTokenSearcher(FuzzySearcher):
                         token_match = TokenMatch(partial_matches[phrase_token_match],
                                                  phrase_token_match, match_type)
                         token_matches.append(token_match)
-                        print('NUMBER OF TOKEN MATCHES:', len(token_matches))
+                        if debug > 0:
+                            print('NUMBER OF TOKEN MATCHES:', len(token_matches))
                         if debug > 2:
                             print(f'\n\tfind_skipgram_token_matches - adding full match: {token_match}')
                         partial_matches[phrase_token_match].pop(0)
@@ -386,54 +486,96 @@ class FuzzyTokenSearcher(FuzzySearcher):
         if debug > 1:
             print(partial_matches, '\n')
 
-    def find_tokenized_matches(self, text: Union[str, List[Token]],
-                               use_word_boundaries: Union[None, bool] = None,
-                               allow_overlapping_matches: Union[None, bool] = None,
-                               include_variants: Union[None, bool] = None,
-                               filter_distractors: Union[None, bool] = None,
-                               skip_exact_matching: bool = None,
-                               tokenizer: Tokenizer = None,
-                               debug: int = 0) -> List[PhraseMatch]:
-        """Find all fuzzy matching phrases for a given text. By default, a first pass of exact matching is conducted
-        to find exact occurrences of phrases. This is to speed up the fuzzy matching pass
+    def _pick_best_candidates(self, doc: Doc, candidate_phrases: Dict[Phrase, List[PartialPhraseMatch]],
+                              debug: int = 0):
+        if debug > 0:
+            print('\nfind_phrase_matches - listing partial matches:')
+            for phrase in candidate_phrases:
+                print('\tfind_phrase_matches - phrase:', phrase)
+                for partial in candidate_phrases[phrase]:
+                    print('\t\tfind_phrase_matches - partial:', partial)
+        phrase_at_offset: Dict[int, PartialPhraseMatch] = {}
+        for phrase in candidate_phrases:
+            for pp in candidate_phrases[phrase]:
+                pp.match_string = doc.text[pp.text_start:pp.text_end]
+                # the match_string is only the text tokens, not the text between
+                # start and end offsets: if there are non-matching tokens in between,
+                # the Levenshtein score should be computed only on the matching text
+                # tokens.
+                pp.match_string = ' '.join([token.n for token in pp.text_tokens])
+                if debug > 0:
+                    print('\nfind_phrase_matches - pp:', pp.phrase.phrase_string)
+                    print('\tfind_phrase_matches - pp.match_string:', pp.match_string)
+                if abs(len(pp.match_string) - len(pp.phrase.phrase_string)) > self.max_length_variance:
+                    continue
+                pp.levenshtein_score = score_levenshtein_similarity_ratio(pp.phrase.phrase_string, pp.match_string)
+                if debug > 1:
+                    print('\tfind_phrase_matches - pp.levenshtein_score:', pp.levenshtein_score)
+                if pp.levenshtein_score < self.config['levenshtein_threshold']:
+                    if debug > 0:
+                        print(f'\t\tfind_phrase_matches - phrase below score threshold {pp.text_start}:', pp.phrase.phrase_string)
+                    continue
+                if pp.text_start in phrase_at_offset:
+                    if debug > 0:
+                        print(f'\t\tfind_phrase_matches - next phrase at offset {pp.text_start}:', pp.phrase.phrase_string)
+                    if pp.levenshtein_score > phrase_at_offset[pp.text_start].levenshtein_score:
+                        if debug > 0:
+                            print(f'\t\tfind_phrase_matches - replacing phrase at offset {pp.text_start}:', pp.phrase.phrase_string)
+                        phrase_at_offset[pp.text_start] = pp
+                else:
+                    if debug > 0:
+                        print(f'\t\tfind_phrase_matches - first phrase at offset {pp.text_start}:', pp.phrase.phrase_string)
+                    phrase_at_offset[pp.text_start] = pp
+        phrases = []
+        for partial_phrase in sorted(phrase_at_offset.values(), key=lambda x: x.text_start):
+            phrase = PhraseMatch(partial_phrase.phrase, partial_phrase.phrase, partial_phrase.match_string,
+                                 partial_phrase.text_start, text_id=doc.id,
+                                 levenshtein_similarity=partial_phrase.levenshtein_score,
+                                 match_label=list(partial_phrase.phrase.label_set))
+            phrases.append(phrase)
+        return phrases
+
+    def find_matches(self, text: Union[Doc, str, Dict[str, any]],
+                     debug: int = 0) -> List[PhraseMatch]:
+        """Find all fuzzy matching phrases for a given text using token-based searching.
+        The `FuzzyTokenSearcher` turns the phrases and the target text into lists of word
+        tokens (the tokenizer is configurable) and uses character skip grams to identify
+        candidate phrase tokens matching tokens in the text. It then uses token sequences
+        to identify fuzzy matches.
+
+        This speeds up the search (especially for the default settings `ngram_size=2` and
+        `skip_size=2`) at the cost of slightly less exhaustive search.
 
         :param text: A tokenized text.
         :type text: Union[str, Dict[str, str]]
-        :param use_word_boundaries: use word boundaries in determining match boundaries
-        :type use_word_boundaries: Union[None, bool]
-        :param allow_overlapping_matches: boolean flag for whether to allow matches to overlap in their text ranges
-        :type allow_overlapping_matches: Union[None, bool]
-        :param include_variants: boolean flag for whether to include phrase variants for finding matches
-        :type include_variants: Union[None, bool]
-        :param filter_distractors: boolean flag for whether to remove phrase matches that better match distractors
-        :type filter_distractors: Union[None, bool]
-        :param skip_exact_matching: boolean flag whether to skip the exact matching step
-        :type skip_exact_matching: Union[None, bool]
-        :return: a list of phrases matches
-        :param tokenizer: a tokenizer instance
-        :type tokenizer: Tokenizer
         :param debug: level to show debug information
         :type debug: int
-        :rtype: PhraseMatch
+        :return: a list of phrase matches
+        :rtype: List[PartialPhraseMatch]
         """
-        tokenizer = tokenizer if tokenizer is not None else self.tokenizer
-        tokens = get_text_tokens(text, tokenizer)
-        phrase_matches = []
-        phrase_candidate_tokens = defaultdict(list)
-        for token in tokens:
-            if token.n in self.phrase_model.token_in_phrase:
-                for phrase in self.phrase_model.token_in_phrase[token.n]:
-                    phrase_candidate_tokens[phrase].append(token)
-                phrases = self.phrase_model.token_in_phrase[token.n]
-            skip_matches = self.find_skipgram_matches(token.normalised_string)
-
-        # TODO: token match: many-to-one and one-to-many mapping of text tokens and
-        #  phrase tokens (and many-to-many?)
-        #  from skip matches to token matches to phrase matches
-        #  1. get skip matches per text token
-        #  2. filter on completish text tokens or phrase tokens
-        #  3. merge sequences of text tokens that represent a single phrase token
-        return phrase_matches
+        start = time.time()
+        doc = get_tokenized_doc(text, self.tokenizer)
+        token_matches = self.find_skipgram_token_matches_in_text(doc, debug=debug)
+        if debug > 0:
+            print('find_phrase_matches - number of token_matches:', len(token_matches))
+        if debug > 1:
+            print('find_phrase_matches - number of token_matches:', len(token_matches))
+            step1 = time.time()
+            print(f'step 1 took: {step1 - start: >.2f} seconds')
+        if debug > 1:
+            for tm in token_matches:
+                print('find_phrase_matches - token_match:', tm)
+        candidate_phrases = get_partial_phrases(token_matches, self)
+        if debug > 1:
+            print('find_phrase_matches - number of candidate phrases:', len(candidate_phrases))
+            print('find_phrase_matches - number of partial phrases:', sum([len(candidate_phrases[phrase]) for phrase in candidate_phrases]))
+            step2 = time.time()
+            print(f'step 2 took: {step2 - step1: >.2f} seconds')
+        phrases = self._pick_best_candidates(doc, candidate_phrases, debug=debug)
+        if debug > 1:
+            step3 = time.time()
+            print(f'step 3 took: {step3 - step2: >.2f} seconds')
+        return phrases
 
 
 def get_token_skip_match_type(text_token_string: str, text_token_num_skips: int,
@@ -441,8 +583,8 @@ def get_token_skip_match_type(text_token_string: str, text_token_num_skips: int,
                               token_searcher: FuzzyTokenSearcher, debug: int = 0) -> MatchType:
     first = skip_matches.match_skipgrams[phrase_token_match][0]
     last = skip_matches.match_skipgrams[phrase_token_match][-1]
-    overlap_start = first.offset
-    overlap_end = last.offset + last.length
+    overlap_start = first.start_offset
+    overlap_end = last.start_offset + last.length
     num_skip_matches = len(skip_matches.match_set[phrase_token_match])
     text_token_skip_overlap = num_skip_matches / text_token_num_skips
     phrase_token_skip_overlap = num_skip_matches / token_searcher.token_num_skips[phrase_token_match]

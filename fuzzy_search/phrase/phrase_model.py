@@ -187,6 +187,25 @@ class PhraseModel:
         self._index_phrase_words(distractor_phrase)
         self._index_phrase_tokens(distractor_phrase)
 
+    def get_phrase(self, phrase_string: str):
+        """
+        Return the indexed phrase object for a given phrase string,
+        or None if no phrase has that phrase string.
+
+        :param phrase_string: a string representation of an indexed phrase
+        :type phrase_string: str
+        :return: the phrase object that has the given phrase
+        :rtype: Union[Phrase, None]
+        """
+        if phrase_string in self.phrase_index:
+            return self.phrase_index[phrase_string]
+        elif phrase_string in self.variant_index:
+            return self.variant_index[phrase_string]
+        elif phrase_string in self.distractor_index:
+            return self.distractor_index[phrase_string]
+        else:
+            return None
+
     def remove_phrase(self, phrase: Phrase):
         """Remove a main phrase from the model, including its connections to any variant and distractor phrases.
 
@@ -656,8 +675,8 @@ class PhraseModel:
     def _index_phrase_tokens(self, phrase: Phrase, tokenizer: Tokenizer = None):
         tokenizer = self._get_tokenizer(tokenizer)
         if tokenizer:
-            tokens = tokenizer.tokenize(phrase.phrase_string, doc_id=phrase.phrase_string)
-            for token in tokens:
+            phrase.tokens = tokenizer.tokenize(phrase.phrase_string, doc_id=phrase.phrase_string)
+            for token in phrase.tokens:
                 self.token_in_phrase[token.n].add(phrase.phrase_string)
 
     def has_token(self, token: Union[str, Token]):

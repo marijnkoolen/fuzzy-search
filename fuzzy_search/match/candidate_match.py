@@ -63,11 +63,11 @@ class Candidate:
         self.skipgram_list.append(skipgram)
         if self.match_start_offset is None or self.match_start_offset < 0:
             self.match_start_offset = self.get_match_start_offset()
-        if skipgram.offset + skipgram.length > self.match_end_offset:
-            self.match_end_offset = skipgram.offset + skipgram.length
+        if skipgram.start_offset + skipgram.length > self.match_end_offset:
+            self.match_end_offset = skipgram.start_offset + skipgram.length
         self.skipgram_count.update([skipgram.string])
         if self.debug > 2:
-            print("\tadd - skipgram:", skipgram.string, skipgram.offset)
+            print("\tadd - skipgram:", skipgram.string, skipgram.start_offset)
             print("\tadd - match length:", self.skip_match_length())
             print("\tadd - list:", [skip.string for skip in self.skipgram_list])
         # check if the candidate string is too long to match the phrase
@@ -92,16 +92,16 @@ class Candidate:
         if self.skip_match_length() <= len(self.phrase.phrase_string):
             return False
         start_skip = self.skipgram_list[0]
-        start_phrase_offset = self.skipgram_index[start_skip.string][0].offset
+        start_phrase_offset = self.skipgram_index[start_skip.string][0].start_offset
         best_start_phrase_offset = start_phrase_offset
         best_start_index = 0
         best_start_skip = start_skip
         for si, skip in enumerate(self.skipgram_list):
-            skip_phrase_offset = self.skipgram_index[skip.string][0].offset
-            if skip.offset - start_skip.offset > self.skip_match_length() - len(self.phrase.phrase_string):
+            skip_phrase_offset = self.skipgram_index[skip.string][0].start_offset
+            if skip.start_offset - start_skip.start_offset > self.skip_match_length() - len(self.phrase.phrase_string):
                 # stop looking for better start when remaining skips result in too short match length
                 break
-            if skip.offset > best_start_skip.offset and skip_phrase_offset <= best_start_phrase_offset:
+            if skip.start_offset > best_start_skip.start_offset and skip_phrase_offset <= best_start_phrase_offset:
                 best_start_index = si
                 best_start_skip = skip
                 best_start_phrase_offset = skip_phrase_offset
@@ -216,10 +216,11 @@ class Candidate:
             return None
         first_skip = self.skipgram_list[0]
         first_skip_in_phrase = self.skipgram_index[first_skip.string][0]
-        match_start_offset = self.skipgram_list[0].offset - first_skip_in_phrase.offset
+        match_start_offset = self.skipgram_list[0].start_offset - first_skip_in_phrase.start_offset
         if self.debug > 3:
-            print("\tget_match_start_offset - in match:", first_skip.string, first_skip.offset)
-            print("\tget_match_start_offset - in phrase:", first_skip_in_phrase.string, first_skip_in_phrase.offset)
+            print("\tget_match_start_offset - in match:", first_skip.string, first_skip.start_offset)
+            print("\tget_match_start_offset - in phrase:",
+                  first_skip_in_phrase.string, first_skip_in_phrase.start_offset)
             print("\tget_match_start_offset - match_start_offset:", match_start_offset)
         return 0 if match_start_offset < 0 else match_start_offset
 

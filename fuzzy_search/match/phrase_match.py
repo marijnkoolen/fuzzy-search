@@ -5,6 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Union
 
+import fuzzy_search
 import fuzzy_search.tokenization.string as fuzzy_string
 from fuzzy_search.match.candidate_match import Candidate
 from fuzzy_search.phrase.phrase import Phrase
@@ -144,20 +145,20 @@ def adjust_match_end_offset(phrase_string: str, candidate_string: str,
     :rtype: Union[int, None]
     """
     # ugly hack: if phrase string ends with punctuation, use only whitespace as word end boundary
-    if debug > 0:
+    if debug > 2:
         print('\tadjust_match_end_offset - start')
     whitespace_only = True if phrase_string[-1] in punctuation else False
-    if debug > 0:
+    if debug > 2:
         print('\tadjust_match_end_offset - whitespace_only:', whitespace_only)
     phrase_end = map_string(phrase_string[-3:], punctuation)
-    if debug > 0:
+    if debug > 2:
         print('\tadjust_match_end_offset - prhase_end:', phrase_end)
     match_end = map_string(candidate_string[-3:], punctuation, whitespace_only=whitespace_only)
-    if debug > 0:
+    if debug > 2:
         print('\tadjust_match_end_offset - match_end:', match_end)
     text_suffix = map_string(text["text"][end_offset:end_offset+3], punctuation,
                              whitespace_only=whitespace_only, debug=debug)
-    if debug > 0:
+    if debug > 2:
         print('\tadjust_match_end_offset - text_suffix:', text_suffix)
         print(f"\tadjust_match_end_offset - match_end: {candidate_string[-3:]: <4}\ttext_suffix: {text['text'][end_offset:end_offset+3]: >4}")
         print(f"\tadjust_match_end_offset - mapped suffixes - match_end: #{match_end}#\ttext_suffix: #{text_suffix}#")
@@ -188,21 +189,21 @@ def adjust_match_offsets(phrase_string: str, candidate_string: str,
     :return: the adjusted offset or None if the required adjustment is too big
     :rtype: Union[int, None]
     """
-    if debug > 0:
+    if debug > 2:
         print("\tadjust_match_offset - phrase string:", phrase_string)
         print("\tadjust_match_offset - adjusting candidate string:", candidate_string)
     if punctuation is None:
         punctuation = string.punctuation
-    if debug > 0:
+    if debug > 2:
         print("\tadjust_match_offset - candidate_start_offset:", candidate_start_offset)
     match_start_offset = adjust_match_start_offset(text, candidate_string, candidate_start_offset)
-    if debug > 0:
+    if debug > 2:
         print("\tadjust_match_offset - match_start_offset:", match_start_offset)
     if match_start_offset is None:
         return None
     match_end_offset = adjust_match_end_offset(phrase_string, candidate_string,
                                                text, candidate_end_offset, punctuation, debug=debug)
-    if debug > 0:
+    if debug > 2:
         print("\tadjust_match_offset - match_end_offset:", match_end_offset)
     if match_end_offset is None:
         return None
@@ -398,7 +399,7 @@ class PhraseMatch:
     def __init__(self, match_phrase: Phrase, match_variant: Phrase, match_string: str,
                  match_offset: int, ignorecase: bool = False, text_id: Union[None, str] = None,
                  match_scores: dict = None, match_label: Union[str, List[str]] = None,
-                 match_id: str = None):
+                 match_id: str = None, levenshtein_similarity: float = None):
         """
 
         :param match_phrase: a phrase object for which a matching string is found in the text
@@ -428,7 +429,7 @@ class PhraseMatch:
         self.character_overlap: Union[None, float] = None
         self.ngram_overlap: Union[None, float] = None
         self.skipgram_overlap: Union[None, float] = None
-        self.levenshtein_similarity: Union[None, float] = None
+        self.levenshtein_similarity: Union[None, float] = levenshtein_similarity
         if match_scores:
             self.character_overlap = match_scores['char_match']
             self.ngram_overlap = match_scores['ngram_match']
@@ -598,7 +599,7 @@ class PhraseMatch:
             "generator": {
                 "id": "https://github.com/marijnkoolen/fuzzy-search",
                 "type": "Software",
-                "name": f"fuzzy-search"
+                "name": f"fuzzy-search v{fuzzy_search.__version__}"
             },
             "target": {
                 "source": self.text_id,

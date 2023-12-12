@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.match package &mdash; fuzzy-search 0.3.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="fuzzy_search.pattern package" href="fuzzy_search.pattern.html" />
+    <link rel="prev" title="fuzzy_search package" href="fuzzy_search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="fuzzy_search.html">fuzzy_search package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="fuzzy_search.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">fuzzy_search.match package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.match.candidate_match">fuzzy_search.match.candidate_match module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.match.exact_match">fuzzy_search.match.exact_match module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.match.phrase_match">fuzzy_search.match.phrase_match module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.match.skip_match">fuzzy_search.match.skip_match module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.match">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html">fuzzy_search.pattern package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.phrase.html">fuzzy_search.phrase package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html">fuzzy_search.search package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html">fuzzy_search.tokenization package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.html#module-fuzzy_search.fuzzy_searcher">fuzzy_search.fuzzy_searcher module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.html#module-fuzzy_search.similarity">fuzzy_search.similarity module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.html#module-fuzzy_search">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="fuzzy_search.html">fuzzy_search package</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.match package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/source/fuzzy_search.match.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fuzzy-search-match-package">
+<h1>fuzzy_search.match package<a class="headerlink" href="#fuzzy-search-match-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-fuzzy_search.match.candidate_match">
+<span id="fuzzy-search-match-candidate-match-module"></span><h2>fuzzy_search.match.candidate_match module<a class="headerlink" href="#module-fuzzy_search.match.candidate_match" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.match.candidate_match.Candidate">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.candidate_match.</span></span><span class="sig-name descname"><span class="pre">Candidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><span class="pre">Phrase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_variance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.candidate_match.Candidate" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.candidate_match.Candidate.add_skip_match">
+<span class="sig-name descname"><span class="pre">add_skip_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skipgram</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram" title="fuzzy_search.tokenization.string.SkipGram"><span class="pre">SkipGram</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#fuzzy_search.match.candidate_match.Candidate.add_skip_match" title="Permalink to this definition"></a></dt>
+<dd><p>Add a skipgram match between a text and a phrase ot the candidate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>skipgram</strong> (<a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram" title="fuzzy_search.tokenization.string.SkipGram"><em>SkipGram</em></a>) – a matching skipgram</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.candidate_match.Candidate.get_match_start_offset">
+<span class="sig-name descname"><span class="pre">get_match_start_offset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.candidate_match.Candidate.get_match_start_offset" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the start offset of the match.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the start offset of the match</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.candidate_match.Candidate.get_match_string">
+<span class="sig-name descname"><span class="pre">get_match_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.candidate_match.Candidate.get_match_string" title="Permalink to this definition"></a></dt>
+<dd><p>Find the matching string of a candidate fuzzy match between a text and a phrase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>any</em><em>]</em>) – the text object from which the candidate was derived</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the matching string</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.candidate_match.Candidate.get_skip_count_overlap">
+<span class="sig-name descname"><span class="pre">get_skip_count_overlap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#fuzzy_search.match.candidate_match.Candidate.get_skip_count_overlap" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate deviation of candidate skipgrams from phrase skipgrams.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the skipgram overlap (-inf, 1.0]</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.candidate_match.Candidate.get_skip_set_overlap">
+<span class="sig-name descname"><span class="pre">get_skip_set_overlap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#fuzzy_search.match.candidate_match.Candidate.get_skip_set_overlap" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate and set skipgram overlap between text and phrase skipgram matches.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the skipgram overlap</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.candidate_match.Candidate.is_match">
+<span class="sig-name descname"><span class="pre">is_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skipgram_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.candidate_match.Candidate.is_match" title="Permalink to this definition"></a></dt>
+<dd><p>Check if the candidate is a likely match for its corresponding phrase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>skipgram_threshold</strong> (<em>float</em>) – the threshold to for how many skipgrams have to match between candidate and phrase</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a boolean whether this candidate is a likely match for the phrase</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.candidate_match.Candidate.remove_first_skip">
+<span class="sig-name descname"><span class="pre">remove_first_skip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#fuzzy_search.match.candidate_match.Candidate.remove_first_skip" title="Permalink to this definition"></a></dt>
+<dd><p>Remove the first matching skipgram from the list and update the count and set.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.candidate_match.Candidate.same_candidate">
+<span class="sig-name descname"><span class="pre">same_candidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.match.candidate_match.Candidate" title="fuzzy_search.match.candidate_match.Candidate"><span class="pre">Candidate</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.candidate_match.Candidate.same_candidate" title="Permalink to this definition"></a></dt>
+<dd><p>Check if this candidate has the same start and end offsets as another candidate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#fuzzy_search.match.candidate_match.Candidate" title="fuzzy_search.match.candidate_match.Candidate"><em>Candidate</em></a>) – another candidate for the same phrase and text.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>this candidate match has the same offsets as the other candidate</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.candidate_match.Candidate.shift_start_skip">
+<span class="sig-name descname"><span class="pre">shift_start_skip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#fuzzy_search.match.candidate_match.Candidate.shift_start_skip" title="Permalink to this definition"></a></dt>
+<dd><p>Check if there is a later skip that is a better start.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.candidate_match.Candidate.skip_match_length">
+<span class="sig-name descname"><span class="pre">skip_match_length</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#fuzzy_search.match.candidate_match.Candidate.skip_match_length" title="Permalink to this definition"></a></dt>
+<dd><p>Return the length of the matching string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>difference between start and end offset</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-fuzzy_search.match.exact_match">
+<span id="fuzzy-search-match-exact-match-module"></span><h2>fuzzy_search.match.exact_match module<a class="headerlink" href="#module-fuzzy_search.match.exact_match" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.exact_match.add_exact_match_score">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.exact_match.</span></span><span class="sig-name descname"><span class="pre">add_exact_match_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><span class="pre">PhraseMatch</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><span class="pre">PhraseMatch</span></a></span></span><a class="headerlink" href="#fuzzy_search.match.exact_match.add_exact_match_score" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.exact_match.get_exact_match_ranges">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.exact_match.</span></span><span class="sig-name descname"><span class="pre">get_exact_match_ranges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exact_matches</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><span class="pre">PhraseMatch</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.exact_match.get_exact_match_ranges" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.exact_match.get_known_word_offsets">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.exact_match.</span></span><span class="sig-name descname"><span class="pre">get_known_word_offsets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">match_ranges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_doc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.exact_match.get_known_word_offsets" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.exact_match.index_known_word_offsets">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.exact_match.</span></span><span class="sig-name descname"><span class="pre">index_known_word_offsets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exact_matches</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><span class="pre">PhraseMatch</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.exact_match.index_known_word_offsets" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.exact_match.search_exact">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.exact_match.</span></span><span class="sig-name descname"><span class="pre">search_exact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><span class="pre">Phrase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_word_boundaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.exact_match.search_exact" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.exact_match.search_exact_phrases">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.exact_match.</span></span><span class="sig-name descname"><span class="pre">search_exact_phrases</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel" title="fuzzy_search.phrase.phrase_model.PhraseModel"><span class="pre">PhraseModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_word_boundaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_variants</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.exact_match.search_exact_phrases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.exact_match.search_exact_phrases_with_word_boundaries">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.exact_match.</span></span><span class="sig-name descname"><span class="pre">search_exact_phrases_with_word_boundaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel" title="fuzzy_search.phrase.phrase_model.PhraseModel"><span class="pre">PhraseModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_variants</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.exact_match.search_exact_phrases_with_word_boundaries" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.exact_match.search_exact_phrases_without_word_boundaries">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.exact_match.</span></span><span class="sig-name descname"><span class="pre">search_exact_phrases_without_word_boundaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel" title="fuzzy_search.phrase.phrase_model.PhraseModel"><span class="pre">PhraseModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_variants</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.exact_match.search_exact_phrases_without_word_boundaries" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-fuzzy_search.match.phrase_match">
+<span id="fuzzy-search-match-phrase-match-module"></span><h2>fuzzy_search.match.phrase_match module<a class="headerlink" href="#module-fuzzy_search.match.phrase_match" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.phrase_match.</span></span><span class="sig-name descname"><span class="pre">PhraseMatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">match_phrase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><span class="pre">Phrase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_variant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><span class="pre">Phrase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_scores</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levenshtein_similarity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Attributes</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatch.add_scores">
+<span class="sig-name descname"><span class="pre">add_scores</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skipgram_overlap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatch.add_scores" title="Permalink to this definition"></a></dt>
+<dd><p>Compute overlap and similarity scores between the match variant and the match string
+and add these to the match object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>skipgram_overlap</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>None</em><em>]</em>) – the overlap in skipgrams between match string and match variant</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatch.as_web_anno">
+<span class="sig-name descname"><span class="pre">as_web_anno</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatch.as_web_anno" title="Permalink to this definition"></a></dt>
+<dd><p>Turn match object into a W3C Web Annotation representation</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatch.has_label">
+<span class="sig-name descname"><span class="pre">has_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatch.has_label" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatch.json">
+<span class="sig-name descname"><span class="pre">json</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatch.json" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatch.label_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">label_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatch.label_list" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatch.overlaps">
+<span class="sig-name descname"><span class="pre">overlaps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><span class="pre">PhraseMatch</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatch.overlaps" title="Permalink to this definition"></a></dt>
+<dd><p>Check if the match string of this match object overlaps with the match string of another match object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><em>PhraseMatch</em></a>) – another match object</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a boolean indicating whether the match_strings of the two objects overlap in the source text</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatch.score_character_overlap">
+<span class="sig-name descname"><span class="pre">score_character_overlap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatch.score_character_overlap" title="Permalink to this definition"></a></dt>
+<dd><p>Return the character overlap between the variant phrase_string and the match_string</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the character overlap as proportion of the variant phrase string</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatch.score_levenshtein_similarity">
+<span class="sig-name descname"><span class="pre">score_levenshtein_similarity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatch.score_levenshtein_similarity" title="Permalink to this definition"></a></dt>
+<dd><p>Return the levenshtein similarity between the variant phrase_string and the match_string</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the levenshtein similarity as proportion of the variant phrase string</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatch.score_ngram_overlap">
+<span class="sig-name descname"><span class="pre">score_ngram_overlap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatch.score_ngram_overlap" title="Permalink to this definition"></a></dt>
+<dd><p>Return the ngram overlap between the variant phrase_string and the match_string</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the ngram overlap as proportion of the variant phrase string</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatchInContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.phrase_match.</span></span><span class="sig-name descname"><span class="pre">PhraseMatchInContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><span class="pre">PhraseMatch</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_end</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatchInContext" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><code class="xref py py-class docutils literal notranslate"><span class="pre">PhraseMatch</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatchInContext.as_web_anno">
+<span class="sig-name descname"><span class="pre">as_web_anno</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatchInContext.as_web_anno" title="Permalink to this definition"></a></dt>
+<dd><p>Turn match object into a W3C Web Annotation representation</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.PhraseMatchInContext.json">
+<span class="sig-name descname"><span class="pre">json</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.phrase_match.PhraseMatchInContext.json" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.adjust_match_end_offset">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.phrase_match.</span></span><span class="sig-name descname"><span class="pre">adjust_match_end_offset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">punctuation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.adjust_match_end_offset" title="Permalink to this definition"></a></dt>
+<dd><p>Adjust the end offset if it is not at a word boundary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phrase_string</strong> (<em>str</em>) – the phrase string</p></li>
+<li><p><strong>candidate_string</strong> (<em>str</em>) – the candidate match string</p></li>
+<li><p><strong>text</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>any</em><em>]</em>) – the text object that contains the candidate match string</p></li>
+<li><p><strong>end_offset</strong> (<em>int</em>) – the text offset of the candidate match string</p></li>
+<li><p><strong>punctuation</strong> (<em>str</em>) – the set of characters to treat as punctuation</p></li>
+<li><p><strong>debug</strong> (<em>int</em>) – level to show debug information</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the adjusted offset or None if the required adjustment is too big</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Union[int, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.adjust_match_offsets">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.phrase_match.</span></span><span class="sig-name descname"><span class="pre">adjust_match_offsets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate_start_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate_end_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">punctuation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'!&quot;#$%&amp;\'()*+,-./:;&lt;=&gt;?&#64;[\\]^_`{|}~'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.adjust_match_offsets" title="Permalink to this definition"></a></dt>
+<dd><p>Adjust the end offset if it is not at a word boundary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phrase_string</strong> (<em>str</em>) – the phrase string</p></li>
+<li><p><strong>candidate_string</strong> (<em>str</em>) – the candidate match string</p></li>
+<li><p><strong>text</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>any</em><em>]</em>) – the text object that contains the candidate match string</p></li>
+<li><p><strong>candidate_start_offset</strong> (<em>int</em>) – the text offset of the start of the candidate match string</p></li>
+<li><p><strong>candidate_end_offset</strong> (<em>int</em>) – the text offset of the end of the candidate match string</p></li>
+<li><p><strong>punctuation</strong> (<em>str</em>) – the set of characters to treat as punctuation (defaults to string.punctuation)</p></li>
+<li><p><strong>debug</strong> (<em>int</em>) – level to show debug information</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the adjusted offset or None if the required adjustment is too big</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Union[int, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.adjust_match_start_offset">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.phrase_match.</span></span><span class="sig-name descname"><span class="pre">adjust_match_start_offset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.adjust_match_start_offset" title="Permalink to this definition"></a></dt>
+<dd><p>Adjust the start offset if it is not at a word boundary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>any</em><em>]</em>) – the text object that contains the candidate match string</p></li>
+<li><p><strong>match_string</strong> (<em>str</em>) – the candidate match string</p></li>
+<li><p><strong>match_offset</strong> (<em>int</em>) – the text offset of the candidate match string</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the adjusted offset or None if the required adjustment is too big</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Union[int, None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.calculate_end_shift">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.phrase_match.</span></span><span class="sig-name descname"><span class="pre">calculate_end_shift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase_end</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_end</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_suffix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.phrase_match.calculate_end_shift" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.candidates_to_matches">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.phrase_match.</span></span><span class="sig-name descname"><span class="pre">candidates_to_matches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">candidates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.match.candidate_match.Candidate" title="fuzzy_search.match.candidate_match.Candidate"><span class="pre">Candidate</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel" title="fuzzy_search.phrase.phrase_model.PhraseModel"><span class="pre">PhraseModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><span class="pre">PhraseMatch</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.candidates_to_matches" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.filter_matches_by_overlap">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.phrase_match.</span></span><span class="sig-name descname"><span class="pre">filter_matches_by_overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filtered_matches</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><span class="pre">PhraseMatch</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><span class="pre">PhraseMatch</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.filter_matches_by_overlap" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.map_string">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.phrase_match.</span></span><span class="sig-name descname"><span class="pre">map_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">affix_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">punctuation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whitespace_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.map_string" title="Permalink to this definition"></a></dt>
+<dd><p>Turn affix string into type char representation. Types are ‘w’ for non-whitespace char,
+and ‘s’ for whitespace char.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>affix_string</strong> – a string</p></li>
+<li><p><strong>punctuation</strong> (<em>str</em>) – the set of characters to treat as punctuation</p></li>
+<li><p><strong>whitespace_only</strong> (<em>bool</em>) – whether to treat only whitespace as word boundary or also include (some) punctuation</p></li>
+<li><p><strong>debug</strong> (<em>int</em>) – level to show debug information</p></li>
+</ul>
+</dd>
+<dt class="field-even">Type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the type char representation</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.phrase_match_from_json">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.phrase_match.</span></span><span class="sig-name descname"><span class="pre">phrase_match_from_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">match_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fuzzy_search.match.phrase_match.PhraseMatch" title="fuzzy_search.match.phrase_match.PhraseMatch"><span class="pre">PhraseMatch</span></a></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.phrase_match_from_json" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.phrase_match.validate_match_props">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.phrase_match.</span></span><span class="sig-name descname"><span class="pre">validate_match_props</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">match_phrase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><span class="pre">Phrase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_variant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><span class="pre">Phrase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#fuzzy_search.match.phrase_match.validate_match_props" title="Permalink to this definition"></a></dt>
+<dd><p>Validate match properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>match_phrase</strong> (<a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><em>Phrase</em></a>) – the phrase that has been matched</p></li>
+<li><p><strong>match_variant</strong> (<a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><em>Phrase</em></a>) – the variant of the phrase that the match is based on</p></li>
+<li><p><strong>match_string</strong> (<em>str</em>) – the text string that matches the variant phrase</p></li>
+<li><p><strong>match_offset</strong> (<em>int</em>) – the offset of the match string in the text</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-fuzzy_search.match.skip_match">
+<span id="fuzzy-search-match-skip-match-module"></span><h2>fuzzy_search.match.skip_match module<a class="headerlink" href="#module-fuzzy_search.match.skip_match" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.match.skip_match.SkipMatches">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.skip_match.</span></span><span class="sig-name descname"><span class="pre">SkipMatches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ngram_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.match.skip_match.SkipMatches" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.match.skip_match.SkipMatches.add_skip_match">
+<span class="sig-name descname"><span class="pre">add_skip_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skipgram</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram" title="fuzzy_search.tokenization.string.SkipGram"><span class="pre">SkipGram</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><span class="pre">Phrase</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#fuzzy_search.match.skip_match.SkipMatches.add_skip_match" title="Permalink to this definition"></a></dt>
+<dd><p>Add a skipgram from a text that matches a phrase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>skipgram</strong> (<a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram" title="fuzzy_search.tokenization.string.SkipGram"><em>SkipGram</em></a>) – a skipgram from a text</p></li>
+<li><p><strong>phrase</strong> (<a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><em>Phrase</em></a>) – a phrase object that matches the skipgram</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.skip_match.filter_overlapping_phrase_candidates">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.skip_match.</span></span><span class="sig-name descname"><span class="pre">filter_overlapping_phrase_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase_candidates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.match.candidate_match.Candidate" title="fuzzy_search.match.candidate_match.Candidate"><span class="pre">Candidate</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.match.candidate_match.Candidate" title="fuzzy_search.match.candidate_match.Candidate"><span class="pre">Candidate</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.skip_match.filter_overlapping_phrase_candidates" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.skip_match.filter_skipgram_threshold">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.skip_match.</span></span><span class="sig-name descname"><span class="pre">filter_skipgram_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skip_matches</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.match.skip_match.SkipMatches" title="fuzzy_search.match.skip_match.SkipMatches"><span class="pre">SkipMatches</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><span class="pre">Phrase</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.skip_match.filter_skipgram_threshold" title="Permalink to this definition"></a></dt>
+<dd><p>Filter the skipgram matches based on the skipgram overlap threshold.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>skip_matches</strong> (<a class="reference internal" href="#fuzzy_search.match.skip_match.SkipMatches" title="fuzzy_search.match.skip_match.SkipMatches"><em>SkipMatches</em></a>) – the phrases that matches the text</p></li>
+<li><p><strong>skip_threshold</strong> (<em>float</em>) – the threshold for the skipgram overlap between a text and a phrase</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the list of phrases with a skipgram overlap that meets the threshold</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase">Phrase</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.skip_match.get_skipmatch_candidates">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.skip_match.</span></span><span class="sig-name descname"><span class="pre">get_skipmatch_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_matches</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.match.skip_match.SkipMatches" title="fuzzy_search.match.skip_match.SkipMatches"><span class="pre">SkipMatches</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">skipgram_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel" title="fuzzy_search.phrase.phrase_model.PhraseModel"><span class="pre">PhraseModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_variance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.match.candidate_match.Candidate" title="fuzzy_search.match.candidate_match.Candidate"><span class="pre">Candidate</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.skip_match.get_skipmatch_candidates" title="Permalink to this definition"></a></dt>
+<dd><p>Find all candidate matches for the phrases in a SkipMatches object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>any</em><em>]</em>) – the text object to match with phrases</p></li>
+<li><p><strong>skip_matches</strong> (<a class="reference internal" href="#fuzzy_search.match.skip_match.SkipMatches" title="fuzzy_search.match.skip_match.SkipMatches"><em>SkipMatches</em></a>) – a SkipMatches object with matches between a text and a list of phrases</p></li>
+<li><p><strong>skipgram_threshold</strong> (<em>float</em>) – a threshold for how many skipgrams should match between a phrase and a candidate</p></li>
+<li><p><strong>phrase_model</strong> (<a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel" title="fuzzy_search.phrase.phrase_model.PhraseModel"><em>PhraseModel</em></a>) – a phrase model, either as dictionary or as PhraseModel object</p></li>
+<li><p><strong>max_length_variance</strong> (<em>int</em>) – the maximum difference in length between candidate and phrase</p></li>
+<li><p><strong>ignorecase</strong> (<em>bool</em>) – whether to ignore case when matching skip grams</p></li>
+<li><p><strong>debug</strong> (<em>int</em>) – level to show debug information</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a list of candidate matches</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#fuzzy_search.match.candidate_match.Candidate" title="fuzzy_search.match.candidate_match.Candidate">Candidate</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.skip_match.get_skipmatch_phrase_candidates">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.skip_match.</span></span><span class="sig-name descname"><span class="pre">get_skipmatch_phrase_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><span class="pre">Phrase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_matches</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.match.skip_match.SkipMatches" title="fuzzy_search.match.skip_match.SkipMatches"><span class="pre">SkipMatches</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">skipgram_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_variance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.match.candidate_match.Candidate" title="fuzzy_search.match.candidate_match.Candidate"><span class="pre">Candidate</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.match.skip_match.get_skipmatch_phrase_candidates" title="Permalink to this definition"></a></dt>
+<dd><p>Find all candidate matches for a given phrase and SkipMatches object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>any</em><em>]</em>) – the text object to match with phrases</p></li>
+<li><p><strong>phrase</strong> (<a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><em>Phrase</em></a>) – a phrase to find candidate matches for</p></li>
+<li><p><strong>skip_matches</strong> (<a class="reference internal" href="#fuzzy_search.match.skip_match.SkipMatches" title="fuzzy_search.match.skip_match.SkipMatches"><em>SkipMatches</em></a>) – a Skipmatches object with matches between a text and a list of phrases</p></li>
+<li><p><strong>skipgram_threshold</strong> (<em>float</em>) – a threshold for how many skipgrams should match between a phrase and a candidate</p></li>
+<li><p><strong>max_length_variance</strong> (<em>int</em>) – the maximum difference in length between candidate and phrase</p></li>
+<li><p><strong>ignorecase</strong> (<em>bool</em>) – whether to ignore case when matching skip grams</p></li>
+<li><p><strong>debug</strong> (<em>int</em>) – level to show debug information</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a list of candidate matches</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#fuzzy_search.match.candidate_match.Candidate" title="fuzzy_search.match.candidate_match.Candidate">Candidate</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.match.skip_match.get_skipset_overlap">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.match.skip_match.</span></span><span class="sig-name descname"><span class="pre">get_skipset_overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><span class="pre">Phrase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_matches</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.match.skip_match.SkipMatches" title="fuzzy_search.match.skip_match.SkipMatches"><span class="pre">SkipMatches</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#fuzzy_search.match.skip_match.get_skipset_overlap" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the overlap between the set of skipgrams of a text and the skipgrams of a phrase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phrase</strong> (<a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase" title="fuzzy_search.phrase.phrase.Phrase"><em>Phrase</em></a>) – a phrase object that has been matched against a text</p></li>
+<li><p><strong>skip_matches</strong> (<a class="reference internal" href="#fuzzy_search.match.skip_match.SkipMatches" title="fuzzy_search.match.skip_match.SkipMatches"><em>SkipMatches</em></a>) – a SkipMatches object containing the skipgram matches between a text and a list of phrases</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the fraction of skipgrams in the phrase that overlaps with the text</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-fuzzy_search.match">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-fuzzy_search.match" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fuzzy_search.html" class="btn btn-neutral float-left" title="fuzzy_search package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fuzzy_search.pattern.html" class="btn btn-neutral float-right" title="fuzzy_search.pattern package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

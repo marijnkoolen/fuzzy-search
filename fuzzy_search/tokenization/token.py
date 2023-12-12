@@ -86,12 +86,23 @@ class Doc:
         self.text = text
         self.id = doc_id
         self.tokens = tokens
+        self.token_orig_set = {}
+        self.token_norm_set = {}
         self.label_token_index = defaultdict(set)
         for token in tokens:
             for label in token.label:
                 self.label_token_index[label].add(token)
         self.metadata = metadata if metadata else {}
         self.annotations: List[Annotation] = []
+        for token in tokens:
+            if token.t not in self.token_orig_set:
+                self.token_orig_set[token.t] = [token]
+            else:
+                self.token_orig_set[token.t].append(token)
+            if token.n not in self.token_norm_set:
+                self.token_norm_set[token.n] = [token]
+            else:
+                self.token_norm_set[token.n].append(token)
 
     def __repr__(self):
         return f"Doc(id='{self.id}', metadata={self.metadata}, text=\"{self.text}\", tokens={self.tokens}"
@@ -105,6 +116,30 @@ class Doc:
     def __iter__(self):
         for token in self.tokens:
             yield token
+
+    def _has_original_token(self, token: str) -> bool:
+        return token in self.token_orig_set
+
+    def _has_normalised_token(self, token: str) -> bool:
+        return token in self.token_norm_set
+
+    def has_token(self, token: Union[str, Token]) -> bool:
+        if isinstance(token, str):
+            token = self.get_token(token)
+            return token is not None
+        else:
+            return self._has_original_token(token.t) or self._has_normalised_token(token.n)
+
+    def get_token(self, token_string: str) -> Union[Token, List[Token]]:
+        if token_string in self.token_orig_set:
+            token = self.token_orig_set[token_string]
+        elif token_string in self.token_norm_set:
+            token = self.token_norm_set[token_string]
+        else:
+            token = None
+        if isinstance(token, List) and len(token) == 1:
+            token = token[0]
+        return token
 
     def add_annotations(self, annotations: List[Annotation]):
         self.annotations = annotations

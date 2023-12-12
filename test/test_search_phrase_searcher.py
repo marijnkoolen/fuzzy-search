@@ -5,6 +5,7 @@ from fuzzy_search.phrase.phrase_model import PhraseModel
 from fuzzy_search.search.phrase_searcher import FuzzyPhraseSearcher
 from fuzzy_search.match.skip_match import filter_skipgram_threshold
 from fuzzy_search.match.skip_match import get_skipmatch_candidates
+from fuzzy_search.tokenization.token import Tokenizer
 
 
 class TestFuzzyPhraseSearcher(TestCase):
@@ -122,6 +123,20 @@ class TestFuzzyPhraseSearcher(TestCase):
         phrase = "Makelaars"
         searcher = FuzzyPhraseSearcher(phrase_list=[phrase])
         self.assertEqual(1, len(searcher.phrases))
+
+    def test_searcher_accepts_tokenized_document(self):
+        phrase = "Makelaars"
+        self.searcher.index_phrases(phrases=[phrase])
+        text = 'door de Alakei&ers by na gecompletecrt'
+        tokenizer = Tokenizer()
+        doc = tokenizer.tokenize(text)
+        error = None
+        try:
+            matches = self.searcher.find_matches(doc)
+        except TypeError as err:
+            error = err
+        self.assertEqual(None, error)
+        self.assertEqual(1, len(matches))
 
 
 class TestFuzzySearchVariants(TestCase):

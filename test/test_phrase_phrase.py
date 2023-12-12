@@ -2,13 +2,10 @@ from typing import Generator
 from unittest import TestCase
 
 from fuzzy_search.phrase.phrase import text2skipgrams, Phrase
-from fuzzy_search.tokenization.token import Token
 from fuzzy_search.tokenization.token import Tokenizer
 
 
 class Test(TestCase):
-
-    # text2skipgrams
 
     def test_text2skipgrams_rejects_negative_ngram_size(self):
         error = None
@@ -45,18 +42,18 @@ class TestFuzzyPhrase(TestCase):
         phrase = Phrase({"phrase": "some phrase"})
         self.assertEqual(phrase.phrase_string, "some phrase")
 
-    def test_fuzzy_phrase_can_set_max_offset(self):
-        phrase = Phrase({"phrase": "some phrase", "max_offset": 3})
-        self.assertEqual(phrase.max_offset, 3)
+    def test_fuzzy_phrase_can_set_max_start_offset(self):
+        phrase = Phrase({"phrase": "some phrase", "max_start_offset": 3})
+        self.assertEqual(phrase.max_start_offset, 3)
 
-    def test_fuzzy_phrase_can_set_max_end(self):
-        phrase = Phrase({"phrase": "some phrase", "max_offset": 3})
-        self.assertEqual(phrase.max_end, 3 + len("some_phrase"))
+    def test_fuzzy_phrase_can_set_max_start_end(self):
+        phrase = Phrase({"phrase": "some phrase", "max_start_offset": 3})
+        self.assertEqual(phrase.max_start_end, 3 + len("some_phrase"))
 
-    def test_fuzzy_phrase_cannot_set_negative_max_offset(self):
+    def test_fuzzy_phrase_cannot_set_negative_max_start_offset(self):
         error = None
         try:
-            Phrase({"phrase": "some phrase", "max_offset": -3})
+            Phrase({"phrase": "some phrase", "max_start_offset": -3})
         except ValueError as err:
             error = err
         self.assertNotEqual(error, None)
@@ -77,6 +74,10 @@ class TestFuzzyPhrase(TestCase):
         except ValueError as err:
             error = err
         self.assertNotEqual(error, None)
+
+    def test_fuzzy_phrase_can_set_metadata(self):
+        phrase = Phrase({"phrase": "some phrase", "metadata": {"lang": "en"}})
+        self.assertEqual('en', phrase.metadata['lang'])
 
 
 class TestPhraseTokens(TestCase):

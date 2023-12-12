@@ -255,15 +255,15 @@ class FuzzySearcher(object):
 
     def find_skipgram_matches(self, text: Dict[str, Union[str, int, float, list]],
                               include_variants: Union[None, bool] = None,
-                              known_word_offset: Dict[int, Dict[str, any]] = None) -> SkipMatches:
+                              known_word_start_offset: Dict[int, Dict[str, any]] = None) -> SkipMatches:
         """Find all skipgram matches between text and phrases.
 
         :param text: the text object to match with phrases
         :type text: Dict[str, Union[str, int, float, list]]
         :param include_variants: boolean flag for whether to include phrase variants for finding matches
         :type include_variants: bool
-        :param known_word_offset: a dictionary of known words and their text offsets based on exact matches
-        :type known_word_offset: Dict[int, Dict[str, any]]
+        :param known_word_start_offset: a dictionary of known words and their text start_offsets based on exact matches
+        :type known_word_start_offset: Dict[int, Dict[str, any]]
         :return: a SkipMatches object contain all skipgram matches
         :rtype: SkipMatches
         """
@@ -272,24 +272,29 @@ class FuzzySearcher(object):
         known_word = None
         if include_variants is None:
             include_variants = self.include_variants
-        if known_word_offset is None:
-            known_word_offset = {}
-        # print(known_word_offset)
+        if known_word_start_offset is None:
+            known_word_start_offset = {}
+        # print(known_word_start_offset)
         skip_matches = SkipMatches(self.ngram_size, self.skip_size)
         text_string = text['text'].lower() if self.ignorecase else text['text']
         for skipgram in text2skipgrams(text_string, self.ngram_size, self.skip_size):
-            # print(skipgram.offset, skipgram.string)
+            # print(skipgram.start_offset, skipgram.string)
             # print("skipgram:", skipgram.string)
-            if skipgram.offset in known_word_offset:
-                known_word = known_word_offset[skipgram.offset]
-                # print("known word offset reached:", known_word)
-            if known_word and skipgram.offset == known_word["end"]:
-                # print("end of known word offset reached:", known_word)
+            if skipgram.start_offset in known_word_start_offset:
+                known_word = known_word_start_offset[skipgram.start_offset]
+                # print("known word start_offset reached:", known_word)
+            if known_word and skipgram.start_offset == known_word["end"]:
+                # print("end of known word start_offset reached:", known_word)
                 known_word = None
             for phrase in self.skipgram_index[skipgram.string]:
-                if phrase.max_offset > 0 and phrase.max_end < skipgram.offset + \
+                if phrase.max_start_offset > 0 and phrase.max_start_end < skipgram.start_offset + \
                         skipgram.length + self.max_length_variance:
-                    # print(skipgram.offset, phrase.max_offset, phrase.max_end, phrase.phrase_string)
+                    # print(skipgram.offset, phrase.max_start_offset, phrase.max_start_end, phrase.phrase_string)
+                    # print(f"skipping phrase {phrase.phrase_string} at offset", skipgram.offset)
+                    continue
+                if phrase.max_end_offset > 0 and phrase.max_end_end < skipgram.end_offset + \
+                        skipgram.length + self.max_length_variance:
+                    # print(skipgram.offset, phrase.max_end_offset, phrase.max_end_end, phrase.phrase_string)
                     # print(f"skipping phrase {phrase.phrase_string} at offset", skipgram.offset)
                     continue
                 if known_word:

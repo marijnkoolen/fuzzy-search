@@ -14,9 +14,10 @@ from fuzzy_search.search.searcher import FuzzySearcher
 from fuzzy_search.search.token_searcher import FuzzyTokenSearcher
 from fuzzy_search.tokenization.string import score_levenshtein_similarity_ratio
 from fuzzy_search.tokenization.token import Tokenizer
+from fuzzy_search.tokenization.token import Doc
 
 
-def get_text_dict(text: Union[str, dict], ignorecase: bool = False) -> dict:
+def get_text_dict(text: Union[str, dict, Doc], ignorecase: bool = False) -> dict:
     """Check that text is in a dictionary with an id property, so that passing a long text
     goes by reference instead of copying the long text string.
 
@@ -29,6 +30,8 @@ def get_text_dict(text: Union[str, dict], ignorecase: bool = False) -> dict:
     """
     if isinstance(text, str):
         text = {"text": text, "id": None, 'text_lower': text.lower()}
+    elif isinstance(text, Doc):
+        text = {'text': text.text, 'id': text.id}
     if "id" not in text:
         text["id"] = None
     return text
@@ -73,7 +76,7 @@ class FuzzyPhraseSearcher(FuzzySearcher):
 
     def find_candidates(self, text: dict, use_word_boundaries: bool,
                         include_variants: Union[None, bool] = None,
-                        known_word_offset: Dict[int, Dict[str, any]] = None,
+                        known_word_start_offset: Dict[int, Dict[str, any]] = None,
                         debug: int = 0) -> List[Candidate]:
         """Find candidate fuzzy matches for a given text.
 
@@ -83,37 +86,37 @@ class FuzzyPhraseSearcher(FuzzySearcher):
         :type use_word_boundaries: bool
         :param include_variants: boolean flag for whether to include phrase variants for finding matches
         :type include_variants: bool
-        :param known_word_offset: a dictionary of known words and their text offsets based on exact matches
-        :type known_word_offset: Dict[int, Dict[str, any]]
+        :param known_word_start_offset: a dictionary of known words and their text offsets based on exact matches
+        :type known_word_start_offset: Dict[int, Dict[str, any]]
         :param debug: level to show debug information
         :type debug: int
         :return: a list of candidate matches
         :rtype: List[Candidate]
         """
         skip_matches = self.find_skipgram_matches(text, include_variants=include_variants,
-                                                  known_word_offset=known_word_offset)
+                                                  known_word_start_offset=known_word_start_offset)
         candidates = get_skipmatch_candidates(text, skip_matches, self.skipgram_threshold, self.phrase_model,
                                               max_length_variance=self.max_length_variance,
                                               ignorecase=self.ignorecase, debug=debug)
-        if debug > 0:
+        if debug > 2:
             print('find_candidates - candidates:', candidates)
         filtered = []
         use_word_boundaries = use_word_boundaries if use_word_boundaries is not None else self.use_word_boundaries
-        if debug > 0:
-            print('find_candidates - start filtereing candidates')
+        if debug > 1:
+            print('find_candidates - start filtering candidates')
         for candidate in candidates:
             if debug > 1:
                 print()
                 print('find_candidates - candidate:', candidate)
-            if debug > 0:
+            if debug > 1:
                 print('find_candidates - use_word_boundaries:', use_word_boundaries)
             if use_word_boundaries:
-                if debug > 0:
+                if debug > 1:
                     print('find_candidates - adjusting match offsets')
                 adjusted_match = adjust_match_offsets(candidate.phrase.phrase_string, candidate.match_string,
                                                       text, candidate.match_start_offset, candidate.match_end_offset,
                                                       self.punctuation, debug=debug)
-                if debug > 0:
+                if debug > 1:
                     print('done adjusting match')
                     print("find_candidates - adjusted_match:", adjusted_match)
                 if not adjusted_match:
@@ -121,12 +124,12 @@ class FuzzyPhraseSearcher(FuzzySearcher):
                 candidate.match_start_offset = adjusted_match["match_start_offset"]
                 candidate.match_end_offset = adjusted_match["match_end_offset"]
                 candidate.match_string = adjusted_match["match_string"]
-                if debug > 0:
+                if debug > 1:
                     print("find_candidates - new match string:", candidate.match_string)
-            if debug:
+            if debug > 1:
                 print('find_candidates - appending candidate:', candidate)
             filtered.append(candidate)
-        if debug > 0:
+        if debug > 1:
             print('find_candidates - returning candidates:', filtered)
         return filtered
 
@@ -159,7 +162,7 @@ class FuzzyPhraseSearcher(FuzzySearcher):
             filtered.append(match)
         return filtered
 
-    def find_matches(self, text: Union[str, Dict[str, str]],
+    def find_matches(self, text: Union[str, Dict[str, str], Doc],
                      use_word_boundaries: Union[None, bool] = None,
                      allow_overlapping_matches: Union[None, bool] = None,
                      include_variants: Union[None, bool] = None,
@@ -202,7 +205,7 @@ class FuzzyPhraseSearcher(FuzzySearcher):
                 print("find_matches - running exact matching")
             exact_matches = self.find_exact_matches(text, use_word_boundaries=use_word_boundaries,
                                                     include_variants=include_variants)
-            known_word_offset = index_known_word_offsets(exact_matches)
+            known_word_start_offset = index_known_word_offsets(exact_matches)
         else:
             if debug > 0:
                 time_step()
@@ -214,15 +217,18 @@ class FuzzyPhraseSearcher(FuzzySearcher):
             print('find_matches - number of exact matches:', len(exact_matches))
         candidates = self.find_candidates(text, use_word_boundaries=use_word_boundaries,
                                           include_variants=include_variants,
-                                          known_word_offset=known_word_offset, debug=debug)
+                                          known_word_start_offset=known_word_start_offset, debug=debug)
         if debug > 0:
-            print('find_matches - received from find_candidates:', candidates)
+            print('find_matches - received from find_candidates:', len(candidates))
         if debug > 0:
             time_step()
+        if debug > 1:
             print('find_matches - candidates:', candidates)
         matches = candidates_to_matches(candidates, text, self.phrase_model, ignorecase=self.ignorecase)
         if debug > 0:
             time_step()
+            print('find_macthes - matches:', len(matches))
+        if debug > 1:
             print('find_macthes - matches:', matches)
         filtered_matches = self.filter_matches_by_threshold(matches)
         if filter_distractors is None:
