@@ -3,6 +3,7 @@ import uuid
 import string
 from collections import defaultdict
 from datetime import datetime
+from enum import Enum
 from typing import Dict, List, Union
 
 import fuzzy_search
@@ -10,20 +11,43 @@ import fuzzy_search.tokenization.string as fuzzy_string
 from fuzzy_search.match.candidate_match import Candidate
 from fuzzy_search.phrase.phrase import Phrase
 from fuzzy_search.phrase.phrase_model import PhraseModel
+from fuzzy_search.tokenization.token import Token
 
 
-def filter_matches_by_overlap(filtered_matches: List[PhraseMatch]) -> List[PhraseMatch]:
+def filter_matches_by_overlap(filtered_matches: List[PhraseMatch], first_best: bool = False,
+                              debug: int = 0) -> List[PhraseMatch]:
+    """Filter matches by overlapping match string offsets. When there are multiple phrases matching
+    with the same character range in the input text, only pick the matches with the highest
+    similarity scores. By default, all matches with the highest similarity score are returned.
+    Use 'first_best=True' to return only the first best scoring match.
+    """
     sorted_matches = sorted(filtered_matches, key=lambda x: (x.offset, len(x.string)))
     filtered_matches = []
-    overlapping = defaultdict(list)
+    overlapping = defaultdict(list[PhraseMatch])
+    if debug > 1:
+        print(f"phrase_match.filter_matches_by_overlap - using first_best: {first_best}")
     for match in sorted_matches:
         overlapping[(match.offset, len(match.string))].append(match)
     for offset_length in overlapping:
         if len(overlapping[offset_length]) == 1:
             filtered_matches.extend(overlapping[offset_length])
         else:
-            best = max(overlapping[offset_length], key=lambda item: item.levenshtein_similarity)
-            filtered_matches.append(best)
+            if first_best is True:
+                first_best = max(overlapping[offset_length], key=lambda item: item.levenshtein_similarity)
+                filtered_matches.append(first_best)
+            else:
+                sorted_matches = sorted(overlapping[offset_length], key=lambda item: item.levenshtein_similarity,
+                                        reverse=True)
+                best_sim = sorted_matches[0].levenshtein_similarity
+                if debug > 1:
+                    print(f"phrase_match.filter_matches_by_overlap - best similarity score: {best_sim}")
+                for best_match in sorted_matches:
+                    if best_match.levenshtein_similarity < best_sim:
+                        break
+                    if debug > 1:
+                        print(f"phrase_match.filter_matches_by_overlap - best match: "
+                              f"({offset_length})\t{best_match.phrase.phrase_string}")
+                    filtered_matches.append(best_match)
     return filtered_matches
 
 
@@ -699,3 +723,127 @@ def phrase_match_from_json(match_json: dict) -> PhraseMatch:
                                             context_start=match_json['context_start'],
                                             context_end=match_json['context_end'])
     return phrase_match
+
+
+class MatchType(Enum):
+    NONE = 0
+    PARTIAL_OF_PHRASE_TOKEN = 0.5
+    FULL = 1
+    PARTIAL_OF_TEXT_TOKEN = 1.5
+
+
+class TokenMatch:
+
+    def __init__(self, text_tokens: Union[Token, List[Token]],
+                 phrase_tokens: Union[str, List[str]],
+                 match_type: MatchType):
+        if isinstance(text_tokens, Token):
+            text_tokens = (text_tokens, )
+        elif isinstance(text_tokens, list):
+            text_tokens = tuple(text_tokens)
+        if isinstance(phrase_tokens, str):
+            phrase_tokens = (phrase_tokens, )
+        elif isinstance(phrase_tokens, list):
+            phrase_tokens = tuple(phrase_tokens)
+        self.text_tokens = text_tokens
+        self.phrase_tokens = phrase_tokens
+        self.match_type = match_type
+        self.first = text_tokens[0]
+        self.last = text_tokens[-1]
+        self.text_start = self.first.char_index
+        self.text_end = self.last.char_index + len(self.last)
+        self.text_length = self.text_end - self.text_start
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(match_type={self.match_type}, " \
+               f"text_tokens={self.text_tokens}, phrase_tokens={self.phrase_tokens})"
+
+
+class PartialPhraseMatch:
+
+    def __init__(self, phrase: Phrase, token_matches: List[TokenMatch] = None, max_char_gap: int = 20,
+                 max_token_gap: int = 1):
+        # create a new list instead of pointing to original list
+        self.token_matches = []
+        self.phrase = phrase
+        self.text_tokens = []
+        self.phrase_tokens = []
+        self.text_phrase_map = defaultdict(list)
+        self.missing_tokens = [token.n for token in phrase.tokens]
+        self.redundant_tokens = []
+        self.max_char_gap = max_char_gap
+        self.max_token_gap = max_token_gap
+        self.text_start = -1
+        self.text_end = -1
+        self.text_length = 0
+        self.match_string = None
+        self.first_text_token = None
+        self.last_text_token = None
+        self.first_phrase_token = None
+        self.last_phrase_token = None
+        self.levenshtein_score = None
+        if token_matches is not None:
+            self.add_tokens(token_matches)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(phrase={self.phrase}, token_matches={self.token_matches}, " \
+               f"text_tokens={self.text_tokens}, phrase_tokens={self.phrase_tokens}," \
+               f", missing_tokens={self.missing_tokens})"
+
+    def _update(self):
+        text_tokens = []
+        prev_match = None
+        for match in self.token_matches:
+            if prev_match is None:
+                text_tokens.extend(match.text_tokens)
+            elif match.text_start == prev_match.text_start:
+                continue
+            elif match.text_start >= prev_match.text_end:
+                text_tokens.extend(match.text_tokens)
+            else:
+                print('TO DO: figure out how to filter text tokens in partially overlapping token matches')
+            # print('_update - match.text_start', match.text_start)
+            prev_match = match
+        # print('text_tokens:', text_tokens)
+        self.text_tokens = tuple(text_tokens)
+        # self.text_tokens = tuple([token for match in self.token_matches for token in match.text_tokens])
+        self.phrase_tokens = tuple([token for match in self.token_matches for token in match.phrase_tokens])
+        self.first = self.text_tokens[0]
+        self.last = self.text_tokens[-1]
+        self.text_start = self.first.char_index
+        self.text_end = self.last.char_index + len(self.last)
+        self.text_length = self.text_end - self.text_start
+
+    def pop(self):
+        self.token_matches.pop(0)
+        self._update()
+
+    def _check_gap(self, token_match: TokenMatch):
+        token_gap = token_match.text_tokens[0].index - self.text_tokens[-1].index
+        char_gap = token_match.text_tokens[0].char_index - self.text_end
+        if token_gap > self.max_token_gap or char_gap > self.max_char_gap:
+            self.__init__(phrase=self.phrase)
+
+    def push(self, token_match: TokenMatch):
+        self.token_matches.append(token_match)
+        if len(self.text_tokens) > 0:
+            self._check_gap(token_match)
+        for text_token in token_match.text_tokens:
+            self.text_tokens.append(text_token)
+            self.text_phrase_map[text_token].extend(list(token_match.phrase_tokens))
+        for phrase_token in token_match.phrase_tokens:
+            self.phrase_tokens.append(phrase_token)
+            if phrase_token in self.missing_tokens:
+                self.missing_tokens.remove(phrase_token)
+            else:
+                self.redundant_tokens.append(phrase_token)
+
+    def add_tokens(self, token_matches: Union[List[TokenMatch], TokenMatch]):
+        if isinstance(token_matches, TokenMatch):
+            token_matches = [token_matches]
+        for token_match in token_matches:
+            for phrase_token in token_match.phrase_tokens:
+                if phrase_token in self.missing_tokens:
+                    self.missing_tokens.remove(phrase_token)
+        self.token_matches.extend(token_matches)
+        self._update()

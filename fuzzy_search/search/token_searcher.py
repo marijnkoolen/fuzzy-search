@@ -1,11 +1,13 @@
 from __future__ import annotations
 import time
 from collections import defaultdict
-from enum import Enum
 from typing import Dict, List, Union
 
 from fuzzy_search.phrase.phrase import Phrase
 from fuzzy_search.match.phrase_match import PhraseMatch
+from fuzzy_search.match.phrase_match import MatchType
+from fuzzy_search.match.phrase_match import TokenMatch
+from fuzzy_search.match.phrase_match import PartialPhraseMatch
 from fuzzy_search.match.skip_match import SkipMatches
 from fuzzy_search.phrase.phrase_model import PhraseModel
 from fuzzy_search.search.searcher import FuzzySearcher
@@ -16,130 +18,6 @@ from fuzzy_search.tokenization.token import Doc
 from fuzzy_search.tokenization.token import Token
 from fuzzy_search.tokenization.token import Tokenizer
 from fuzzy_search.tokenization.vocabulary import Vocabulary
-
-
-class MatchType(Enum):
-    NONE = 0
-    PARTIAL_OF_PHRASE_TOKEN = 0.5
-    FULL = 1
-    PARTIAL_OF_TEXT_TOKEN = 1.5
-
-
-class TokenMatch:
-
-    def __init__(self, text_tokens: Union[Token, List[Token]],
-                 phrase_tokens: Union[str, List[str]],
-                 match_type: MatchType):
-        if isinstance(text_tokens, Token):
-            text_tokens = (text_tokens, )
-        elif isinstance(text_tokens, list):
-            text_tokens = tuple(text_tokens)
-        if isinstance(phrase_tokens, str):
-            phrase_tokens = (phrase_tokens, )
-        elif isinstance(phrase_tokens, list):
-            phrase_tokens = tuple(phrase_tokens)
-        self.text_tokens = text_tokens
-        self.phrase_tokens = phrase_tokens
-        self.match_type = match_type
-        self.first = text_tokens[0]
-        self.last = text_tokens[-1]
-        self.text_start = self.first.char_index
-        self.text_end = self.last.char_index + len(self.last)
-        self.text_length = self.text_end - self.text_start
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(match_type={self.match_type}, " \
-               f"text_tokens={self.text_tokens}, phrase_tokens={self.phrase_tokens})"
-
-
-class PartialPhraseMatch:
-
-    def __init__(self, phrase: Phrase, token_matches: List[TokenMatch] = None, max_char_gap: int = 20,
-                 max_token_gap: int = 1):
-        # create a new list instead of pointing to original list
-        self.token_matches = []
-        self.phrase = phrase
-        self.text_tokens = []
-        self.phrase_tokens = []
-        self.text_phrase_map = defaultdict(list)
-        self.missing_tokens = [token.n for token in phrase.tokens]
-        self.redundant_tokens = []
-        self.max_char_gap = max_char_gap
-        self.max_token_gap = max_token_gap
-        self.text_start = -1
-        self.text_end = -1
-        self.text_length = 0
-        self.match_string = None
-        self.first_text_token = None
-        self.last_text_token = None
-        self.first_phrase_token = None
-        self.last_phrase_token = None
-        self.levenshtein_score = None
-        if token_matches is not None:
-            self.add_tokens(token_matches)
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(phrase={self.phrase}, token_matches={self.token_matches}, " \
-               f"text_tokens={self.text_tokens}, phrase_tokens={self.phrase_tokens}," \
-               f", missing_tokens={self.missing_tokens})"
-
-    def _update(self):
-        text_tokens = []
-        prev_match = None
-        for match in self.token_matches:
-            if prev_match is None:
-                text_tokens.extend(match.text_tokens)
-            elif match.text_start == prev_match.text_start:
-                continue
-            elif match.text_start >= prev_match.text_end:
-                text_tokens.extend(match.text_tokens)
-            else:
-                print('TO DO: figure out how to filter text tokens in partially overlapping token matches')
-            # print('_update - match.text_start', match.text_start)
-            prev_match = match
-        # print('text_tokens:', text_tokens)
-        self.text_tokens = tuple(text_tokens)
-        # self.text_tokens = tuple([token for match in self.token_matches for token in match.text_tokens])
-        self.phrase_tokens = tuple([token for match in self.token_matches for token in match.phrase_tokens])
-        self.first = self.text_tokens[0]
-        self.last = self.text_tokens[-1]
-        self.text_start = self.first.char_index
-        self.text_end = self.last.char_index + len(self.last)
-        self.text_length = self.text_end - self.text_start
-
-    def pop(self):
-        self.token_matches.pop(0)
-        self._update()
-
-    def _check_gap(self, token_match: TokenMatch):
-        token_gap = token_match.text_tokens[0].index - self.text_tokens[-1].index
-        char_gap = token_match.text_tokens[0].char_index - self.text_end
-        if token_gap > self.max_token_gap or char_gap > self.max_char_gap:
-            self.__init__(phrase=self.phrase)
-
-    def push(self, token_match: TokenMatch):
-        self.token_matches.append(token_match)
-        if len(self.text_tokens) > 0:
-            self._check_gap(token_match)
-        for text_token in token_match.text_tokens:
-            self.text_tokens.append(text_token)
-            self.text_phrase_map[text_token].extend(list(token_match.phrase_tokens))
-        for phrase_token in token_match.phrase_tokens:
-            self.phrase_tokens.append(phrase_token)
-            if phrase_token in self.missing_tokens:
-                self.missing_tokens.remove(phrase_token)
-            else:
-                self.redundant_tokens.append(phrase_token)
-
-    def add_tokens(self, token_matches: Union[List[TokenMatch], TokenMatch]):
-        if isinstance(token_matches, TokenMatch):
-            token_matches = [token_matches]
-        for token_match in token_matches:
-            for phrase_token in token_match.phrase_tokens:
-                if phrase_token in self.missing_tokens:
-                    self.missing_tokens.remove(phrase_token)
-        self.token_matches.extend(token_matches)
-        self._update()
 
 
 def map_text_tokens_to_phrase_tokens(partial_match: PartialPhraseMatch) -> Union[Dict[str, List[str]], None]:
@@ -448,15 +326,19 @@ class FuzzyTokenSearcher(FuzzySearcher):
                     if text_token.char_index - (last_partial.char_index + len(last_partial)) > 4:
                         if debug > 2:
                             print(f'\t\t\tfind_skipgram_token_matches - text_token.char_index: {text_token.char_index}')
-                            print(f'\t\t\tfind_skipgram_token_matches - end of last_partial: {last_partial.char_index + len(last_partial)}')
-                            print(f'\t\t\tfind_skipgram_token_matches - removing partial_match for phrase token: {phrase_token_match}')
+                            print(f'\t\t\tfind_skipgram_token_matches - end of last_partial: '
+                                  f'{last_partial.char_index + len(last_partial)}')
+                            print(f'\t\t\tfind_skipgram_token_matches - removing partial_match for phrase token: '
+                                  f'{phrase_token_match}')
                         del partial_matches[phrase_token_match]
                 if debug > 2:
-                    print(f'\t\tfind_skipgram_token_matches - adding partial "{text_token}" of phrase token "{phrase_token_match}"')
+                    print(f'\t\tfind_skipgram_token_matches - adding partial "{text_token}" '
+                          f'of phrase token "{phrase_token_match}"')
                 partial_matches[phrase_token_match].append(text_token)
                 if len(partial_matches[phrase_token_match]) > 1:
                     if debug > 2:
-                        print(f'\t\t\tfind_skipgram_token_matches - checking if partial_matches align with phrase token: {partial_matches[phrase_token_match]}')
+                        print(f'\t\t\tfind_skipgram_token_matches - checking if partial_matches align with '
+                              f'phrase token: {partial_matches[phrase_token_match]}')
                     first_partial = partial_matches[phrase_token_match][0]
                     last_partial = partial_matches[phrase_token_match][-1]
                     partial_length = last_partial.char_index + len(last_partial) - first_partial.char_index

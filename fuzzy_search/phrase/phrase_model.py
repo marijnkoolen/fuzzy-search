@@ -85,7 +85,7 @@ class PhraseModel:
         self.first_token_in_phrase: Dict[str, Dict[str, int]] = defaultdict(dict)
         self.phrase_type: Dict[str, Set[str]] = defaultdict(set)
         self.phrase_string_map: Dict[str, Phrase] = {}
-        self.tokenizer = tokenizer
+        self.tokenizer = tokenizer if tokenizer is not None else Tokenizer()
         if phrases:
             self.add_phrases(phrases)
         if variants:

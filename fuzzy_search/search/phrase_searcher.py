@@ -99,38 +99,39 @@ class FuzzyPhraseSearcher(FuzzySearcher):
                                               max_length_variance=self.max_length_variance,
                                               ignorecase=self.ignorecase, debug=debug)
         if debug > 2:
-            print('find_candidates - candidates:', candidates)
+            print('find_candidates - candidates:')
+            for candidate in candidates:
+                print(f"\t{candidate.phrase}\t-\t{candidate.match_string}")
         filtered = []
         use_word_boundaries = use_word_boundaries if use_word_boundaries is not None else self.use_word_boundaries
-        if debug > 1:
-            print('find_candidates - start filtering candidates')
-        for candidate in candidates:
+        if not use_word_boundaries:
+            filtered = candidates
+        else:
             if debug > 1:
-                print()
-                print('find_candidates - candidate:', candidate)
-            if debug > 1:
-                print('find_candidates - use_word_boundaries:', use_word_boundaries)
-            if use_word_boundaries:
-                if debug > 1:
-                    print('find_candidates - adjusting match offsets')
+                print('find_candidates - start word boundary filtering candidates')
+            for candidate in candidates:
+                if debug > 3:
+                    print()
+                    print('find_candidates - candidate:', candidate)
                 adjusted_match = adjust_match_offsets(candidate.phrase.phrase_string, candidate.match_string,
                                                       text, candidate.match_start_offset, candidate.match_end_offset,
                                                       self.punctuation, debug=debug)
-                if debug > 1:
-                    print('done adjusting match')
+                if debug > 3:
                     print("find_candidates - adjusted_match:", adjusted_match)
                 if not adjusted_match:
+                    if debug > 2:
+                        print(f"find_candidates - removing candidate '{candidate.phrase}'\t-\t'{candidate.match_string}'")
                     continue
                 candidate.match_start_offset = adjusted_match["match_start_offset"]
                 candidate.match_end_offset = adjusted_match["match_end_offset"]
                 candidate.match_string = adjusted_match["match_string"]
-                if debug > 1:
+                if debug > 3:
                     print("find_candidates - new match string:", candidate.match_string)
-            if debug > 1:
-                print('find_candidates - appending candidate:', candidate)
-            filtered.append(candidate)
+                filtered.append(candidate)
         if debug > 1:
-            print('find_candidates - returning candidates:', filtered)
+            print('find_candidates - returning word boundary filtered candidates:')
+            for candidate in filtered:
+                print(f"\t{candidate.phrase.phrase_string}\t-\t{candidate.match_string}")
         return filtered
 
     def filter_matches_by_distractors(self, matches: List[PhraseMatch]) -> List[PhraseMatch]:
@@ -150,9 +151,6 @@ class FuzzyPhraseSearcher(FuzzySearcher):
     def filter_matches_by_threshold(self, matches: List[PhraseMatch]) -> List[PhraseMatch]:
         filtered: List[PhraseMatch] = []
         for match in matches:
-            # print('match.character_overlap:', match.character_overlap)
-            # print('match.ngram_overlap:', match.ngram_overlap)
-            # print('match.levenshtein_similarity:', match.levenshtein_similarity)
             if match.character_overlap < self.char_match_threshold:
                 continue
             if match.ngram_overlap < self.ngram_threshold:
@@ -168,6 +166,7 @@ class FuzzyPhraseSearcher(FuzzySearcher):
                      include_variants: Union[None, bool] = None,
                      filter_distractors: Union[None, bool] = None,
                      skip_exact_matching: bool = None,
+                     first_best: bool = False,
                      debug: int = 0) -> List[PhraseMatch]:
         """Find all fuzzy matching phrases for a given text. By default, a first pass of exact matching is conducted
         to find exact occurrences of phrases. This is to speed up the fuzzy matching pass
@@ -175,23 +174,25 @@ class FuzzyPhraseSearcher(FuzzySearcher):
         :param text: the text (string or dictionary with 'text' property) to find fuzzy matching phrases in.
         :type text: Union[str, Dict[str, str]]
         :param use_word_boundaries: use word boundaries in determining match boundaries
-        :type use_word_boundaries: Union[None, bool]
+        :type use_word_boundaries: bool
         :param allow_overlapping_matches: boolean flag for whether to allow matches to overlap in their text ranges
-        :type allow_overlapping_matches: Union[None, bool]
+        :type allow_overlapping_matches: bool
         :param include_variants: boolean flag for whether to include phrase variants for finding matches
-        :type include_variants: Union[None, bool]
+        :type include_variants: bool
         :param filter_distractors: boolean flag for whether to remove phrase matches that better match distractors
-        :type filter_distractors: Union[None, bool]
+        :type filter_distractors: bool
         :param skip_exact_matching: boolean flag whether to skip the exact matching step
-        :type skip_exact_matching: Union[None, bool]
+        :type skip_exact_matching: bool
         :return: a list of phrases matches
+        :type first_best: bool
+        :return: whether to return only the first match with the best score, or all matches
         :param debug: level to show debug information
         :type debug: int
         :rtype: PhraseMatch
         """
+        time_step = make_step_timer()
         if debug > 0:
             print('find_matches - getting text dict')
-            time_step = step_timer()
         if self.phrase_model is None:
             raise ValueError("No phrase model indexed")
         text = get_text_dict(text, ignorecase=self.ignorecase)
@@ -219,27 +220,34 @@ class FuzzyPhraseSearcher(FuzzySearcher):
                                           include_variants=include_variants,
                                           known_word_start_offset=known_word_start_offset, debug=debug)
         if debug > 0:
-            print('find_matches - received from find_candidates:', len(candidates))
+            print('find_matches - number of candidates received from find_candidates:', len(candidates))
         if debug > 0:
             time_step()
-        if debug > 1:
-            print('find_matches - candidates:', candidates)
+        if debug > 2:
+            for candidate in candidates:
+                print(f"\t{candidate.phrase.phrase_string}\t-\t{candidate.match_string}")
         matches = candidates_to_matches(candidates, text, self.phrase_model, ignorecase=self.ignorecase)
         if debug > 0:
             time_step()
-            print('find_macthes - matches:', len(matches))
-        if debug > 1:
-            print('find_macthes - matches:', matches)
+            print('find_macthes - number of matches:', len(matches))
+        if debug > 2:
+            print('find_macthes - matches:')
+            for match in matches:
+                print(f"\tmatch phrase_string: {match.phrase.phrase_string}\tmatch_string: {match.string}")
         filtered_matches = self.filter_matches_by_threshold(matches)
         if filter_distractors is None:
             filter_distractors = self.filter_distractors
         if filter_distractors:
             filtered_matches = self.filter_matches_by_distractors(filtered_matches)
+            if debug > 1:
+                print('find_macthes - number of matches after filtering by distractors:', len(matches))
         if allow_overlapping_matches is None:
             allow_overlapping_matches = self.allow_overlapping_matches
         filtered_matches = filtered_matches + exact_matches
         if not allow_overlapping_matches:
-            filtered_matches = filter_matches_by_overlap(filtered_matches)
+            filtered_matches = filter_matches_by_overlap(filtered_matches, first_best=first_best, debug=debug)
+            if debug > 1:
+                print('find_macthes - number of matches after filtering by overlap:', len(filtered_matches))
         # print(exact_matches)
         if debug > 0:
             time_step()
@@ -278,7 +286,7 @@ class FuzzyPhraseSearcher(FuzzySearcher):
         return exact_matches
 
 
-def step_timer():
+def make_step_timer():
 
     first_step = time.time()
     prev_step = first_step

@@ -123,18 +123,18 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
     candidates: List[Candidate] = []
     candidate = Candidate(phrase, max_length_variance=max_length_variance, ignorecase=ignorecase, debug=debug)
     last_index = len(skip_matches.match_start_offsets[phrase]) - 1
-    if debug > 1:
+    if debug > 3:
         print(f"get_skipmatch_phrase_candidates - finding candidates for phrase "
               f"({len(phrase.phrase_string)}):", phrase.phrase_string)
         print('\t', skip_matches.match_start_offsets[phrase])
     for ci, curr_start_offset in enumerate(skip_matches.match_start_offsets[phrase]):
         next_start_offset = None if ci == last_index else skip_matches.match_start_offsets[phrase][ci + 1]
-        if debug > 1:
+        if debug > 4:
             print('\t', ci, 'curr offset:', curr_start_offset, '\tskip:',
                   skip_matches.match_skipgrams[phrase][ci].string, '\tnext offset:', next_start_offset)
         # add current skipgram to the candidate
         candidate.add_skip_match(skip_matches.match_skipgrams[phrase][ci])
-        if debug > 1 and abs(candidate.skip_match_length() - len(candidate.phrase.phrase_string)) < max_length_variance:
+        if debug > 3 and abs(candidate.skip_match_length() - len(candidate.phrase.phrase_string)) < max_length_variance:
             skip = skip_matches.match_skipgrams[phrase][ci]
             print('\t', ci, curr_start_offset, "adding skip match:", skip.string, skip.start_offset, skip.length)
             print("\tcandidate skips:", [skip.string for skip in candidate.skipgram_list],
@@ -143,7 +143,7 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
         # check if the current candidate is a potential match for the phrase
         if candidate.is_match(skipgram_threshold):
             candidate.match_string = candidate.get_match_string(text)
-            if debug > 1:
+            if debug > 3:
                 print("\tmeets threshold:", candidate.match_string)
             # if this candidate has enough skipgram overlap, yield it as a candidate match
             if len(candidates) == 0 or not candidate.same_candidate(candidates[-1]):
@@ -157,13 +157,13 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
             # if the gap between the current skipgram and the next is larger than an entire skipgram
             # the next skipgram does not belong to this candidate
             # start a new candidate for the next skipgram
-            if debug > 1:
+            if debug > 3:
                 print('\tcurr_start_offset:', curr_start_offset, '\tnext_start_offset:', next_start_offset)
                 print('\tstarting a new candidate')
             candidate = Candidate(phrase, max_length_variance=max_length_variance,
                                   ignorecase=ignorecase, debug=debug)
     # end of skipgrams reached, check if remaining candidate is a match
-    if debug > 1:
+    if debug > 3:
         print('get_skipmatch_phrase_candidates - checking if final candidate is match:', candidate.is_match(skipgram_threshold))
     if candidate.is_match(skipgram_threshold):
         if len(candidates) == 0 or not candidate.same_candidate(candidates[-1]):
@@ -174,8 +174,12 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
             # a better candidate and if so, add that as well
             candidate.match_string = candidate.get_match_string(text)
             candidates.append(copy.deepcopy(candidate))
-    if debug > 1:
-        print(f'get_skipmatch_phrase_candidates - returning {len(candidates)} candidates')
+    if debug > 2:
+        print(f'get_skipmatch_phrase_candidates - returning {len(candidates)} candidates '
+              f'for phrase "{phrase.phrase_string}"')
+    if debug > 3:
+        for candidate in candidates:
+            print('\tCandidate:', candidate)
     return candidates
 
 
@@ -205,10 +209,10 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
     phrase_candidates = defaultdict(list)
     candidates: List[Candidate] = []
     for phrase in skip_matches.matches:
-        if debug > 1:
+        if debug > 2:
             print("get_skipmatch_candidates - phrase:", phrase.phrase_string)
         if get_skipset_overlap(phrase, skip_matches) < skipgram_threshold:
-            if debug > 1:
+            if debug > 2:
                 print('get_skipmatch_candidates - below skipgram_threshold:', get_skipset_overlap(phrase, skip_matches))
             continue
         if phrase.phrase_string in phrase_model.is_variant_of:
@@ -219,12 +223,18 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
                                                                            skipgram_threshold,
                                                                            max_length_variance=max_length_variance,
                                                                            ignorecase=ignorecase, debug=debug)
+    if debug > 1:
+        print(f"get_skipmatch_candidates - phrases with candidate matches:")
+        for phrase_string in phrase_candidates:
+            if len(phrase_candidates[phrase_string]) > 0:
+                print(f"\tphrase_string: {phrase_string}\tnum candidates: {len(phrase_candidates[phrase_string])}")
+
+    if debug > 1:
+        print(f"get_skipmatch_candidates - phrases with overlap filtered candidates:")
     for phrase_string in phrase_candidates:
-        if debug > 1:
-            print(f"get_skipmatch_candidates - phrase_candidates for phrase {phrase_string}:", len(phrase_candidates[phrase_string]))
         filtered_candidates = filter_overlapping_phrase_candidates(phrase_candidates[phrase_string])
-        if debug > 1:
-            print(f"get_skipmatch_candidates - filtered_candidates for phrase {phrase_string}:", len(filtered_candidates))
+        if debug > 1 and len(filtered_candidates) > 0:
+            print(f"\tphrase_string: {phrase_string}\tnum overlap filtered candidates: {len(filtered_candidates)}")
             if debug > 2:
                 for candidate in filtered_candidates:
                     print('\t', candidate.match_string, candidate.match_start_offset, candidate.match_end_offset)
