@@ -37,6 +37,23 @@ def get_text_dict(text: Union[str, dict, Doc], ignorecase: bool = False) -> dict
     return text
 
 
+def combine_fuzzy_and_exact_matches(filtered_matches: List[PhraseMatch],
+                                    exact_matches: List[PhraseMatch],
+                                    debug: int = 0):
+    combined_matches = [em for em in exact_matches]
+    exact_phrases = {(em.offset, em.phrase.phrase_string): em for em in exact_matches}
+    if debug > 2:
+        print('combine_fuzzy_and_exact_matches - exact_phrases.keys():', exact_phrases.keys())
+    for fm in filtered_matches:
+        if (fm.offset, fm.phrase.phrase_string) in exact_phrases:
+            if debug > 2:
+                print('skipping fuzzy match because there is a better exact match:', fm)
+            continue
+        else:
+            combined_matches.append(fm)
+    return sorted(combined_matches, key=lambda m: m.offset)
+
+
 class FuzzyPhraseSearcher(FuzzySearcher):
 
     def __init__(self, phrase_list: List[any] = None,
@@ -212,7 +229,7 @@ class FuzzyPhraseSearcher(FuzzySearcher):
                 time_step()
                 print("find_matches - skipping exact matching")
             exact_matches = []
-            known_word_offset = {}
+            known_word_start_offset = {}
         if debug > 0:
             time_step()
             print('find_matches - number of exact matches:', len(exact_matches))
@@ -243,7 +260,18 @@ class FuzzyPhraseSearcher(FuzzySearcher):
                 print('find_macthes - number of matches after filtering by distractors:', len(matches))
         if allow_overlapping_matches is None:
             allow_overlapping_matches = self.allow_overlapping_matches
-        filtered_matches = filtered_matches + exact_matches
+        if debug > 1:
+            print(len(filtered_matches), len(exact_matches))
+            print([fm.levenshtein_similarity for fm in filtered_matches])
+            print([em.levenshtein_similarity for em in exact_matches])
+            for fm in filtered_matches:
+                print(fm)
+        filtered_matches = combine_fuzzy_and_exact_matches(filtered_matches, exact_matches)
+        if debug > 1:
+            print('find_macthes - number of matches after combining fuzzy and exact matches:', len(filtered_matches))
+        filtered_matches = self.filter_matches_by_offset_threshold(filtered_matches, debug=debug)
+        if debug > 1:
+            print('find_macthes - number of matches after filtering by offset threshold:', len(filtered_matches))
         if not allow_overlapping_matches:
             filtered_matches = filter_matches_by_overlap(filtered_matches, first_best=first_best, debug=debug)
             if debug > 1:

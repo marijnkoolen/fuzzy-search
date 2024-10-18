@@ -21,8 +21,12 @@ def filter_matches_by_overlap(filtered_matches: List[PhraseMatch], first_best: b
     similarity scores. By default, all matches with the highest similarity score are returned.
     Use 'first_best=True' to return only the first best scoring match.
     """
+    if debug > 1:
+        print(f"phrase_match.filter_matches_by_overlap - filtered_matches: {len(filtered_matches)}")
     sorted_matches = sorted(filtered_matches, key=lambda x: (x.offset, len(x.string)))
     filtered_matches = []
+    if debug > 1:
+        print(f"phrase_match.filter_matches_by_overlap - sorted_matches: {len(sorted_matches)}")
     overlapping = defaultdict(list[PhraseMatch])
     if debug > 1:
         print(f"phrase_match.filter_matches_by_overlap - using first_best: {first_best}")
@@ -63,7 +67,9 @@ def candidates_to_matches(candidates: List[Candidate], text: dict, phrase_model:
         # print('candidates_to_matches - ignorecase:', ignorecase)
         match = PhraseMatch(match_phrase, candidate.phrase,
                             candidate.match_string, candidate.match_start_offset, text_id=text["id"],
-                            ignorecase=ignorecase)
+                            ignorecase=ignorecase,
+                            # match_label=match_phrase.label
+                            )
         match.add_scores(skipgram_overlap=candidate.get_skip_count_overlap())
         matches.append(match)
     return matches
@@ -443,6 +449,9 @@ class PhraseMatch:
         self.label = match_phrase.label
         if match_label:
             self.label = match_label
+        # if self.label is None:
+        #     print(f'PhraseMatch - self.label is None - match_phrase: {match_phrase}')
+        #     print(f'PhraseMatch - self.label is None - match_phrase.label: {match_phrase.label}')
         self.metadata = {}
         self.variant = match_variant
         self.string = match_string
@@ -478,6 +487,8 @@ class PhraseMatch:
     def has_label(self, label: str):
         if isinstance(self.label, str):
             return label == self.label
+        elif isinstance(self.label, list):
+            return label in self.label
         else:
             return label in self.label
 
@@ -500,6 +511,15 @@ class PhraseMatch:
         if "label" in self.phrase.metadata:
             data["label"] = self.phrase.metadata["label"]
         return data
+
+    @staticmethod
+    def from_json(match_json):
+        match_phrase = Phrase(phrase=match_json['phrase'])
+        match_variant = Phrase(phrase=match_json['variant'])
+        return PhraseMatch(match_phrase=match_phrase, match_variant=match_variant,
+                           match_string=match_json['string'], match_offset=match_json['offset'],
+                           text_id=match_json['text_id'], match_scores=match_json['match_scores'],
+                           match_label=match_json['label'], ignorecase=match_json['ignorecase'])
 
     def add_scores(self, skipgram_overlap: Union[None, float] = None) -> None:
         """Compute overlap and similarity scores between the match variant and the match string

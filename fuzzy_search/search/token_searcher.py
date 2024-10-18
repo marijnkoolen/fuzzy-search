@@ -453,11 +453,12 @@ class FuzzyTokenSearcher(FuzzySearcher):
             print('find_phrase_matches - number of partial phrases:', sum([len(candidate_phrases[phrase]) for phrase in candidate_phrases]))
             step2 = time.time()
             print(f'step 2 took: {step2 - step1: >.2f} seconds')
-        phrases = self._pick_best_candidates(doc, candidate_phrases, debug=debug)
+        matches = self._pick_best_candidates(doc, candidate_phrases, debug=debug)
+        filtered_matches = self.filter_matches_by_offset_threshold(matches)
         if debug > 1:
             step3 = time.time()
             print(f'step 3 took: {step3 - step2: >.2f} seconds')
-        return phrases
+        return matches
 
 
 def get_token_skip_match_type(text_token_string: str, text_token_num_skips: int,

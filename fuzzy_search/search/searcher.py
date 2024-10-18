@@ -5,6 +5,7 @@ from typing import Dict, List, Set, Union
 
 import fuzzy_search
 from fuzzy_search.match.skip_match import SkipMatches
+from fuzzy_search.match.phrase_match import PhraseMatch
 from fuzzy_search.phrase.phrase import Phrase
 from fuzzy_search.phrase.phrase_model import PhraseModel
 from fuzzy_search.search.config import default_config
@@ -320,3 +321,24 @@ class FuzzySearcher(object):
                     skip_matches.add_skip_match(skipgram, phrase)
         # print("final skipmatch count:", skipmatch_count)
         return skip_matches
+
+    @staticmethod
+    def filter_matches_by_offset_threshold(matches: List[PhraseMatch], debug: int = 0):
+        filtered_matches = []
+        for match in matches:
+            if debug > 1:
+                print('searcher.filter_matches_by_offset_threshold - match:\n\t', match.phrase.phrase_string,
+                      match.phrase.max_start_offset, match.offset)
+            if match.phrase.max_start_offset is None or match.phrase.max_start_offset == -1:
+                if debug > 1:
+                    print('no max start')
+                filtered_matches.append(match)
+            elif match.phrase.max_start_offset >= match.offset:
+                if debug > 1:
+                    print('lower than max start')
+                filtered_matches.append(match)
+            else:
+                if debug > 1:
+                    print('skipping')
+                continue
+        return filtered_matches
