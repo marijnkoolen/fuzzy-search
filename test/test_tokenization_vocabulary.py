@@ -10,7 +10,7 @@ class TestVocabulary(TestCase):
         self.words = ['This', 'is', 'a', 'list', 'of', 'words']
         text = ' '.join(self.words)
         tokenizer = Tokenizer()
-        self.doc = tokenizer.tokenize(text)
+        self.doc = tokenizer.tokenize_doc(text)
 
     def test_vocabulary_can_be_initialised_empty(self):
         vocab = Vocabulary()

@@ -124,9 +124,9 @@ def get_tokenized_doc(text: Union[str, Dict[str, any], Doc], tokenizer: Tokenize
     if isinstance(text, Doc):
         return text
     elif isinstance(text, dict):
-        return tokenizer.tokenize(text['text'], doc_id=text['id'])
+        return tokenizer.tokenize_doc(text['text'], doc_id=text['id'])
     elif isinstance(text, str):
-        return tokenizer.tokenize(text)
+        return tokenizer.tokenize_doc(text)
     else:
         raise TypeError(f"text must be str, dict (with 'text' and 'id' properties) or Doc, not {type(text)}")
 
@@ -170,7 +170,8 @@ def get_token_skipgram_matches(text_token_skips: List[SkipGram], token_searcher:
 
 class FuzzyTokenSearcher(FuzzySearcher):
 
-    def __init__(self, phrase_list: List[any] = None, phrase_model: Union[Dict[str, any], PhraseModel] = None,
+    def __init__(self, phrase_list: List[any] = None,
+                 phrase_model: Union[Dict[str, any], List[Dict[str, any]], PhraseModel] = None,
                  config: Union[None, Dict[str, Union[str, int, float]]] = None, tokenizer: Tokenizer = None,
                  vocabulary: Vocabulary = None, max_char_gap: int = 20, max_token_gap: int = 1):
         """This class represents the basic fuzzy searcher. You can pass a list of phrases or a phrase model and

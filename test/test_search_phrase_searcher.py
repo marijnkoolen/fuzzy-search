@@ -129,7 +129,7 @@ class TestFuzzyPhraseSearcher(TestCase):
         self.searcher.index_phrases(phrases=[phrase])
         text = 'door de Alakei&ers by na gecompletecrt'
         tokenizer = Tokenizer()
-        doc = tokenizer.tokenize(text)
+        doc = tokenizer.tokenize_doc(text)
         error = None
         try:
             matches = self.searcher.find_matches(doc)

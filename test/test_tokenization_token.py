@@ -3,6 +3,7 @@ from unittest import TestCase
 from fuzzy_search.tokenization.token import Token
 from fuzzy_search.tokenization.token import Doc
 from fuzzy_search.tokenization.token import Tokenizer
+from fuzzy_search.tokenization.token import CustomTokenizer
 
 
 class TestToken(TestCase):
@@ -47,10 +48,17 @@ class TestTokenizer(TestToken):
     def setUp(self) -> None:
         self.text = 'This is an example sentence.'
 
-    def test_tokenizer_returns_a_document_object(self):
+    def test_tokenize_returns_a_list_of_tokens(self):
         tokenizer = Tokenizer(include_boundary_tokens=False)
         tokens = tokenizer.tokenize(self.text)
-        self.assertEqual(True, isinstance(tokens, Doc))
+        for ti, token in enumerate(tokens):
+            with self.subTest(ti):
+                self.assertEqual(True, isinstance(token, Token))
+
+    def test_tokenize_doc_returns_a_document_object(self):
+        tokenizer = Tokenizer(include_boundary_tokens=False)
+        doc = tokenizer.tokenize_doc(self.text)
+        self.assertEqual(True, isinstance(doc, Doc))
 
     def test_tokenizer_tracks_char_index(self):
         tokenizer = Tokenizer(include_boundary_tokens=False)
@@ -77,3 +85,19 @@ class TestTokenizer(TestToken):
         tokenizer = Tokenizer(ignorecase=True)
         tokens = tokenizer.tokenize(self.text)
         self.assertEqual(True, tokens[0].normalised_string == 'this')
+
+
+class TestCustomTokenizer(TestCase):
+
+    def setUp(self) -> None:
+        self.text = 'This is an example sentence.'
+
+    def test_any_string_tokenizing_func_returns_doc(self):
+        def tokenize_func(text):
+            return text.split(' ')
+        tokenizer = CustomTokenizer(tokenizer_func=tokenize_func)
+        tokens = tokenize_func(self.text)
+        custom_tokens = tokenizer.tokenize(self.text)
+        for ti, token in enumerate(tokens):
+            with self.subTest(ti):
+                self.assertEqual(token, custom_tokens[ti].t)

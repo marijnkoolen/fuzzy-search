@@ -27,7 +27,7 @@ def filter_matches_by_overlap(filtered_matches: List[PhraseMatch], first_best: b
     filtered_matches = []
     if debug > 1:
         print(f"phrase_match.filter_matches_by_overlap - sorted_matches: {len(sorted_matches)}")
-    overlapping = defaultdict(list[PhraseMatch])
+    overlapping = defaultdict(list)
     if debug > 1:
         print(f"phrase_match.filter_matches_by_overlap - using first_best: {first_best}")
     for match in sorted_matches:

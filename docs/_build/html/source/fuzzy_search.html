@@ -169,9 +169,23 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.match.html#module-fuzzy_search.match.phrase_match">fuzzy_search.match.phrase_match module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType"><code class="docutils literal notranslate"><span class="pre">MatchType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType.FULL"><code class="docutils literal notranslate"><span class="pre">MatchType.FULL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType.NONE"><code class="docutils literal notranslate"><span class="pre">MatchType.NONE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType.PARTIAL_OF_PHRASE_TOKEN"><code class="docutils literal notranslate"><span class="pre">MatchType.PARTIAL_OF_PHRASE_TOKEN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType.PARTIAL_OF_TEXT_TOKEN"><code class="docutils literal notranslate"><span class="pre">MatchType.PARTIAL_OF_TEXT_TOKEN</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch.add_tokens"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.add_tokens()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch.pop"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.pop()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch.push"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.push()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch"><code class="docutils literal notranslate"><span class="pre">PhraseMatch</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.add_scores"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.add_scores()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.as_web_anno"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.as_web_anno()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.from_json"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.from_json()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.has_label"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.has_label()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.json"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.json()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.label_list"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.label_list</span></code></a></li>
@@ -186,6 +200,7 @@
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatchInContext.json"><code class="docutils literal notranslate"><span class="pre">PhraseMatchInContext.json()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.TokenMatch"><code class="docutils literal notranslate"><span class="pre">TokenMatch</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.adjust_match_end_offset"><code class="docutils literal notranslate"><span class="pre">adjust_match_end_offset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.adjust_match_offsets"><code class="docutils literal notranslate"><span class="pre">adjust_match_offsets()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.adjust_match_start_offset"><code class="docutils literal notranslate"><span class="pre">adjust_match_start_offset()</span></code></a></li>
@@ -336,13 +351,15 @@
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.find_matches"><code class="docutils literal notranslate"><span class="pre">FuzzyPhraseSearcher.find_matches()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.combine_fuzzy_and_exact_matches"><code class="docutils literal notranslate"><span class="pre">combine_fuzzy_and_exact_matches()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.get_text_dict"><code class="docutils literal notranslate"><span class="pre">get_text_dict()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.step_timer"><code class="docutils literal notranslate"><span class="pre">step_timer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.make_step_timer"><code class="docutils literal notranslate"><span class="pre">make_step_timer()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.search.html#module-fuzzy_search.search.searcher">fuzzy_search.search.searcher module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.configure"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.configure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.filter_matches_by_offset_threshold"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.filter_matches_by_offset_threshold()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.find_skipgram_matches"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.find_skipgram_matches()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.index_distractors"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.index_distractors()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.index_phrase_model"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.index_phrase_model()</span></code></a></li>
@@ -383,20 +400,6 @@
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.FuzzyTokenSearcher.index_token_skipgrams"><code class="docutils literal notranslate"><span class="pre">FuzzyTokenSearcher.index_token_skipgrams()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.MatchType"><code class="docutils literal notranslate"><span class="pre">MatchType</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.MatchType.FULL"><code class="docutils literal notranslate"><span class="pre">MatchType.FULL</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.MatchType.NONE"><code class="docutils literal notranslate"><span class="pre">MatchType.NONE</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.MatchType.PARTIAL_OF_PHRASE_TOKEN"><code class="docutils literal notranslate"><span class="pre">MatchType.PARTIAL_OF_PHRASE_TOKEN</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.MatchType.PARTIAL_OF_TEXT_TOKEN"><code class="docutils literal notranslate"><span class="pre">MatchType.PARTIAL_OF_TEXT_TOKEN</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch.add_tokens"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.add_tokens()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch.pop"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.pop()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch.push"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.push()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.TokenMatch"><code class="docutils literal notranslate"><span class="pre">TokenMatch</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.get_partial_phrases"><code class="docutils literal notranslate"><span class="pre">get_partial_phrases()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.get_text_string"><code class="docutils literal notranslate"><span class="pre">get_text_string()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.get_text_tokens"><code class="docutils literal notranslate"><span class="pre">get_text_tokens()</span></code></a></li>

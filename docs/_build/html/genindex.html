@@ -132,7 +132,7 @@
       </ul></li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.add_terms">add_terms() (fuzzy_search.tokenization.vocabulary.Vocabulary method)</a>
 </li>
-      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch.add_tokens">add_tokens() (fuzzy_search.search.token_searcher.PartialPhraseMatch method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch.add_tokens">add_tokens() (fuzzy_search.match.phrase_match.PartialPhraseMatch method)</a>
 </li>
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_variant">add_variant() (fuzzy_search.phrase.phrase_model.PhraseModel method)</a>
 </li>
@@ -167,6 +167,8 @@
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate">Candidate (class in fuzzy_search.match.candidate_match)</a>
 </li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.candidates_to_matches">candidates_to_matches() (in module fuzzy_search.match.phrase_match)</a>
+</li>
+      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.combine_fuzzy_and_exact_matches">combine_fuzzy_and_exact_matches() (in module fuzzy_search.search.phrase_searcher)</a>
 </li>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.configure">configure() (fuzzy_search.search.searcher.FuzzySearcher method)</a>
 
@@ -223,6 +225,8 @@
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_levenshtein_candidates">filter_levenshtein_candidates() (fuzzy_search.fuzzy_searcher.FuzzySearcher method)</a>
 </li>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.filter_matches_by_distractors">filter_matches_by_distractors() (fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher method)</a>
+</li>
+      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.filter_matches_by_offset_threshold">filter_matches_by_offset_threshold() (fuzzy_search.search.searcher.FuzzySearcher static method)</a>
 </li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.filter_matches_by_overlap">filter_matches_by_overlap() (in module fuzzy_search.match.phrase_match)</a>
 </li>
@@ -282,7 +286,9 @@
 </li>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.FuzzyTokenSearcher.find_vocabulary_token_matches_for_token">find_vocabulary_token_matches_for_token() (fuzzy_search.search.token_searcher.FuzzyTokenSearcher method)</a>
 </li>
-      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.MatchType.FULL">FULL (fuzzy_search.search.token_searcher.MatchType attribute)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.from_json">from_json() (fuzzy_search.match.phrase_match.PhraseMatch static method)</a>
+</li>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType.FULL">FULL (fuzzy_search.match.phrase_match.MatchType attribute)</a>
 </li>
       <li>
     fuzzy_search
@@ -719,11 +725,13 @@
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.make_searcher">make_searcher() (in module fuzzy_search)</a>
 </li>
+      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.make_step_timer">make_step_timer() (in module fuzzy_search.search.phrase_searcher)</a>
+</li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.map_string">map_string() (in module fuzzy_search.match.phrase_match)</a>
 </li>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.map_text_tokens_to_phrase_tokens">map_text_tokens_to_phrase_tokens() (in module fuzzy_search.search.token_searcher)</a>
 </li>
-      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.MatchType">MatchType (class in fuzzy_search.search.token_searcher)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType">MatchType (class in fuzzy_search.match.phrase_match)</a>
 </li>
       <li>
     module
@@ -824,7 +832,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.MatchType.NONE">NONE (fuzzy_search.search.token_searcher.MatchType attribute)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType.NONE">NONE (fuzzy_search.match.phrase_match.MatchType attribute)</a>
 </li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.normalized">normalized (fuzzy_search.tokenization.token.Doc property)</a>
 </li>
@@ -850,11 +858,11 @@
 </li>
       <li><a href="source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.parse_label_element">parse_label_element() (fuzzy_search.pattern.fuzzy_template.FuzzyTemplate method)</a>
 </li>
-      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.MatchType.PARTIAL_OF_PHRASE_TOKEN">PARTIAL_OF_PHRASE_TOKEN (fuzzy_search.search.token_searcher.MatchType attribute)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType.PARTIAL_OF_PHRASE_TOKEN">PARTIAL_OF_PHRASE_TOKEN (fuzzy_search.match.phrase_match.MatchType attribute)</a>
 </li>
-      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.MatchType.PARTIAL_OF_TEXT_TOKEN">PARTIAL_OF_TEXT_TOKEN (fuzzy_search.search.token_searcher.MatchType attribute)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType.PARTIAL_OF_TEXT_TOKEN">PARTIAL_OF_TEXT_TOKEN (fuzzy_search.match.phrase_match.MatchType attribute)</a>
 </li>
-      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch">PartialPhraseMatch (class in fuzzy_search.search.token_searcher)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch">PartialPhraseMatch (class in fuzzy_search.match.phrase_match)</a>
 </li>
       <li><a href="source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_patterns.pattern_before_context">pattern_before_context() (in module fuzzy_search.pattern.fuzzy_patterns)</a>
 </li>
@@ -872,11 +880,11 @@
 </li>
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel">PhraseModel (class in fuzzy_search.phrase.phrase_model)</a>
 </li>
-      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch.pop">pop() (fuzzy_search.search.token_searcher.PartialPhraseMatch method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch.pop">pop() (fuzzy_search.match.phrase_match.PartialPhraseMatch method)</a>
 </li>
       <li><a href="source/test.html#test.test_search_template_searcher.TestFuzzyTemplateSearcherWithRealData.prep_test">prep_test() (test.test_search_template_searcher.TestFuzzyTemplateSearcherWithRealData method)</a>
 </li>
-      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch.push">push() (fuzzy_search.search.token_searcher.PartialPhraseMatch method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch.push">push() (fuzzy_search.match.phrase_match.PartialPhraseMatch method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1052,8 +1060,6 @@
       <li><a href="source/fuzzy_search.html#fuzzy_search.similarity.SkipgramSimilarity">SkipgramSimilarity (class in fuzzy_search.similarity)</a>
 </li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.skip_match.SkipMatches">SkipMatches (class in fuzzy_search.match.skip_match)</a>
-</li>
-      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.step_timer">step_timer() (in module fuzzy_search.search.phrase_searcher)</a>
 </li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.strip_prefix">strip_prefix() (in module fuzzy_search.tokenization.string)</a>
 </li>
@@ -1693,7 +1699,7 @@
 </li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer">Tokenizer (class in fuzzy_search.tokenization.token)</a>
 </li>
-      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.TokenMatch">TokenMatch (class in fuzzy_search.search.token_searcher)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.TokenMatch">TokenMatch (class in fuzzy_search.match.phrase_match)</a>
 </li>
   </ul></td>
 </tr></table>

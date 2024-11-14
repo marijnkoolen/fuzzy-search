@@ -662,6 +662,10 @@ class PhraseModel:
         tokens = tokenizer.tokenize(phrase.phrase_string)
         for ti, token in enumerate(tokens):
             if ti == 0:
+                if token.n not in self.first_token_in_phrase:
+                    print(f"phrase_model._remove_phrase_tokens - token not in first_token_in_phrase index")
+                    print(f"    token: {token.n}")
+                    print(f"    first_token_in_phrase.keys(): {self.first_token_in_phrase.keys()}")
                 del self.first_token_in_phrase[token.n][phrase.phrase_string]
                 if len(self.first_token_in_phrase[token.n].keys()) == 0:
                     del self.first_token_in_phrase[token.n]
@@ -676,7 +680,9 @@ class PhraseModel:
         tokenizer = self._get_tokenizer(tokenizer)
         if tokenizer:
             phrase.tokens = tokenizer.tokenize(phrase.phrase_string, doc_id=phrase.phrase_string)
-            for token in phrase.tokens:
+            for ti, token in enumerate(phrase.tokens):
+                if ti == 0:
+                    self.first_token_in_phrase[token.n][phrase.phrase_string] = token.char_index
                 self.token_in_phrase[token.n].add(phrase.phrase_string)
 
     def has_token(self, token: Union[str, Token]):

@@ -85,7 +85,7 @@ class TestPhraseTokens(TestCase):
     def setUp(self) -> None:
         self.phrase = "some phrase"
         self.tokenizer = Tokenizer()
-        self.doc = self.tokenizer.tokenize(self.phrase)
+        self.doc = self.tokenizer.tokenize_doc(self.phrase)
 
     def test_phrase_can_take_tokens(self):
         phrase = Phrase(self.phrase, tokens=self.doc.tokens)
