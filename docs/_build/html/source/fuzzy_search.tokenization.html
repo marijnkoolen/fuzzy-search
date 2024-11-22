@@ -327,7 +327,7 @@ of the first term</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>text</strong> (<em>str</em>) – an text string</p></li>
+<li><p><strong>text</strong> (<em>str</em>) – a text string</p></li>
 <li><p><strong>ngram_size</strong> (<em>int</em>) – an integer indicating the number of characters in the ngram</p></li>
 <li><p><strong>skip_size</strong> (<em>int</em>) – an integer indicating how many skip characters in the ngrams</p></li>
 </ul>
@@ -348,42 +348,98 @@ of the first term</p>
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Annotation">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.tokenization.token.</span></span><span class="sig-name descname"><span class="pre">Annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.Annotation" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents an annotation in a document.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><p>tag_type (str): The type of the tag.
+text (str): The text of the annotation.
+offset (int): The starting index of the annotation.
+end (int): The ending index of the annotation (offset + length of the text).
+doc_id (str, optional): The ID of the document the annotation belongs to.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.CustomTokenizer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.tokenization.token.</span></span><span class="sig-name descname"><span class="pre">CustomTokenizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tokenizer_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.CustomTokenizer" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#fuzzy_search.tokenization.token.Tokenizer" title="fuzzy_search.tokenization.token.Tokenizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tokenizer</span></code></a></p>
+<p>A tokenizer that uses a custom tokenizer function provided by the user.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><p>tokenizer_func (Callable): A user-defined function for tokenizing text.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Doc">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.tokenization.token.</span></span><span class="sig-name descname"><span class="pre">Doc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.Doc" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a document containing a list of tokens.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><p>text (str): The text of the document.
+id (str): The ID of the document.
+tokens (list): A list of Token objects representing the document’s tokens.
+token_orig_set (dict): A dictionary mapping original token strings to lists of tokens.
+token_norm_set (dict): A dictionary mapping normalized token strings to lists of tokens.
+label_token_index (defaultdict): A dictionary mapping labels to sets of tokens.
+metadata (dict): Metadata associated with the document.
+annotations (list): A list of annotations associated with the document.</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Doc.add_annotations">
-<span class="sig-name descname"><span class="pre">add_annotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">annotations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.tokenization.token.Annotation" title="fuzzy_search.tokenization.token.Annotation"><span class="pre">Annotation</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.Doc.add_annotations" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">add_annotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">annotations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.tokenization.token.Annotation" title="fuzzy_search.tokenization.token.Annotation"><span class="pre">Annotation</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.Doc.add_annotations" title="Permalink to this definition"></a></dt>
+<dd><p>Adds annotations to the document.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>annotations (List[Annotation]): A list of Annotation objects to add.
+replace (bool): whether to replace existing annotation or add (default is False).</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Doc.get_token">
 <span class="sig-name descname"><span class="pre">get_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.Doc.get_token" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Retrieves a token (or tokens) from the document based on the token string.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>token_string (str): The token string to look up.</p>
+</dd>
+<dt>Returns:</dt><dd><p>Union[Token, List[Token]]: A Token object or a list of Token objects that match the token string.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Doc.has_token">
 <span class="sig-name descname"><span class="pre">has_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.Doc.has_token" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Checks if the document contains a specific token.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>token (Union[str, Token]): A token string or a Token object.</p>
+</dd>
+<dt>Returns:</dt><dd><p>bool: True if the token exists in the document, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Doc.normalized">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">normalized</span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.Doc.normalized" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Retrieves a list of normalized tokens in the document.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>List[str]: A list of the normalized tokens.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Doc.original">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">original</span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.Doc.original" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Retrieves a list of original tokens in the document.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>List[str]: A list of the original tokens.</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -391,52 +447,113 @@ of the first term</p>
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.RegExTokenizer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.tokenization.token.</span></span><span class="sig-name descname"><span class="pre">RegExTokenizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_boundary_tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split_pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'\\b'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.RegExTokenizer" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#fuzzy_search.tokenization.token.Tokenizer" title="fuzzy_search.tokenization.token.Tokenizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tokenizer</span></code></a></p>
+<p>A tokenizer that splits text into tokens using a regular expression pattern.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><p>split_pattern (str): The regular expression pattern used to split the text into tokens.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Tag">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.tokenization.token.</span></span><span class="sig-name descname"><span class="pre">Tag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.Tag" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a tag in a document, containing both the tag’s type and text.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><p>type (str): The type of the tag.
+text (str): The text content of the tag.
+offset (int): The starting index of the tag in the document.
+tag_string (str): The full tag string, including opening and closing tags.
+end (int): The ending index of the tag (offset + length of the tag string).
+doc_id (str, optional): The ID of the document the tag belongs to.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Token">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.tokenization.token.</span></span><span class="sig-name descname"><span class="pre">Token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">char_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalised_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.Token" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a token in a document.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><p>string (str): The original string of the token.
+index (int): The index of the token in the document.
+char_index (int): The character index of the token in the document.
+doc_id (str, optional): The ID of the document the token belongs to.
+metadata (dict, optional): Additional metadata associated with the token.
+normalised_string (str): The normalized version of the token.
+label (set): A set of labels assigned to the token.</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Token.has_label">
 <span class="sig-name descname"><span class="pre">has_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.Token.has_label" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Checks if the token has a specific label.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>label (str): The label to check for.</p>
+</dd>
+<dt>Returns:</dt><dd><p>bool: True if the token has the label, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Token.i">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">i</span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.Token.i" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Gets the index of the token.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>int: The index of the token.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Token.l">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">l</span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.Token.l" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Gets the labels associated with the token.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>set: A set of labels associated with the token.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Token.lower">
 <span class="sig-name descname"><span class="pre">lower</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.Token.lower" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Converts the normalized string of the token to lowercase.</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Token.n">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">n</span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.Token.n" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Gets the normalized string of the token.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>str: The normalized string of the token.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Token.t">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">t</span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.Token.t" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Gets the original string of the token.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>str: The original string of the token.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Token.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">normalised_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.Token.update" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">normalised_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a></span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.Token.update" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a new token with an updated normalized string.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>normalised_string (str): The updated normalized string.</p>
+</dd>
+<dt>Returns:</dt><dd><p>Token: A new token with the updated normalized string.</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -444,17 +561,50 @@ of the first term</p>
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Tokenizer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.tokenization.token.</span></span><span class="sig-name descname"><span class="pre">Tokenizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_boundary_tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_punctuation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.Tokenizer" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A base class for tokenizing a document into tokens.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><p>ignorecase (bool): Flag indicating whether to ignore case when tokenizing.
+include_boundary_tokens (bool): Flag indicating whether to include boundary tokens.
+remove_punctuation (bool): Flag indicating whether to remove punctuation from tokens.</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Tokenizer.tokenize">
-<span class="sig-name descname"><span class="pre">tokenize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fuzzy_search.tokenization.token.Doc" title="fuzzy_search.tokenization.token.Doc"><span class="pre">Doc</span></a></span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.Tokenizer.tokenize" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">tokenize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.Tokenizer.tokenize" title="Permalink to this definition"></a></dt>
+<dd><p>Tokenizes the input document text and returns a Doc object.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>doc_text (str): The text of the document to tokenize.
+doc_id (str, optional): The ID of the document. Defaults to None.</p>
+</dd>
+<dt>Returns:</dt><dd><p>Doc: A Doc object containing the tokenized text.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.tokenization.token.Tokenizer.tokenize_doc">
+<span class="sig-name descname"><span class="pre">tokenize_doc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.tokenization.token.Tokenizer.tokenize_doc" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.tokenization.token.tokens2string">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.tokenization.token.</span></span><span class="sig-name descname"><span class="pre">tokens2string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.tokens2string" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="fuzzy_search.tokenization.token.update_token">
 <span class="sig-prename descclassname"><span class="pre">fuzzy_search.tokenization.token.</span></span><span class="sig-name descname"><span class="pre">update_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_normalised</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a></span></span><a class="headerlink" href="#fuzzy_search.tokenization.token.update_token" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Creates a new Token instance by updating the normalization string of an existing token.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>token (Token): The original Token object to be updated.
+new_normalised (str): The new normalized string for the token.</p>
+</dd>
+<dt>Returns:</dt><dd><p>Token: A new Token object with the updated normalization string.</p>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 <section id="module-fuzzy_search.tokenization.vocabulary">

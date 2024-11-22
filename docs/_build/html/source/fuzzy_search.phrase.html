@@ -157,6 +157,16 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.phrase.phrase.Phrase.has_max_end_offset">
+<span class="sig-name descname"><span class="pre">has_max_end_offset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#fuzzy_search.phrase.phrase.Phrase.has_max_end_offset" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.phrase.phrase.Phrase.has_max_start_offset">
+<span class="sig-name descname"><span class="pre">has_max_start_offset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#fuzzy_search.phrase.phrase.Phrase.has_max_start_offset" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="fuzzy_search.phrase.phrase.Phrase.has_skipgram">
 <span class="sig-name descname"><span class="pre">has_skipgram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skipgram</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#fuzzy_search.phrase.phrase.Phrase.has_skipgram" title="Permalink to this definition"></a></dt>
 <dd><p>For a given skipgram, return boolean whether it is in the index</p>
@@ -659,6 +669,20 @@ variant of.</p>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.phrase.phrase_model.PhraseModel.set_phrase_token_max_end_offsets">
+<span class="sig-name descname"><span class="pre">set_phrase_token_max_end_offsets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.phrase.phrase_model.PhraseModel.set_phrase_token_max_end_offsets" title="Permalink to this definition"></a></dt>
+<dd><p>Check if a token only occurs in phrases with a max end offset, and if so
+set its max.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.phrase.phrase_model.PhraseModel.set_phrase_token_max_start_offsets">
+<span class="sig-name descname"><span class="pre">set_phrase_token_max_start_offsets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.phrase.phrase_model.PhraseModel.set_phrase_token_max_start_offsets" title="Permalink to this definition"></a></dt>
+<dd><p>Check if a token only occurs in phrases with a max start offset, and if so
+set its max.</p>
 </dd></dl>
 
 <dl class="py method">

@@ -184,6 +184,8 @@
 </li>
       <li><a href="source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_patterns.context_then_pattern">context_then_pattern() (in module fuzzy_search.pattern.fuzzy_patterns)</a>
 </li>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.copy_partial_match">copy_partial_match() (in module fuzzy_search.match.phrase_match)</a>
+</li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_searcher.create_term_match">create_term_match() (in module fuzzy_search.fuzzy_searcher)</a>
 </li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.CustomTokenizer">CustomTokenizer (class in fuzzy_search.tokenization.token)</a>
@@ -605,8 +607,20 @@
         <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.has_label">(fuzzy_search.tokenization.token.Token method)</a>
 </li>
       </ul></li>
+      <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase.has_max_end_offset">has_max_end_offset() (fuzzy_search.phrase.phrase.Phrase method)</a>
+
+      <ul>
+        <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.has_max_end_offset">(in module fuzzy_search.search.token_searcher)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase.has_max_start_offset">has_max_start_offset() (fuzzy_search.phrase.phrase.Phrase method)</a>
+
+      <ul>
+        <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.has_max_start_offset">(in module fuzzy_search.search.token_searcher)</a>
+</li>
+      </ul></li>
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.has_phrase">has_phrase() (fuzzy_search.phrase.phrase_model.PhraseModel method)</a>
 </li>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.has_required_matches">has_required_matches() (in module fuzzy_search.search.template_searcher)</a>
@@ -991,6 +1005,10 @@
 </li>
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase.set_label">set_label() (fuzzy_search.phrase.phrase.Phrase method)</a>
 </li>
+      <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.set_phrase_token_max_end_offsets">set_phrase_token_max_end_offsets() (fuzzy_search.phrase.phrase_model.PhraseModel method)</a>
+</li>
+      <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.set_phrase_token_max_start_offsets">set_phrase_token_max_start_offsets() (fuzzy_search.phrase.phrase_model.PhraseModel method)</a>
+</li>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.set_template">set_template() (fuzzy_search.search.template_searcher.FuzzyTemplateSearcher method)</a>
 </li>
       <li><a href="source/test.html#test.test_match_phrase.TestMatchAnnotation.setUp">setUp() (test.test_match_phrase.TestMatchAnnotation method)</a>
@@ -1037,6 +1055,10 @@
         <li><a href="source/test.html#test.test_search_token_searcher.TestTokenSearcherVocabulary.setUp">(test.test_search_token_searcher.TestTokenSearcherVocabulary method)</a>
 </li>
         <li><a href="source/test.html#test.test_similarity.TestKeywordList.setUp">(test.test_similarity.TestKeywordList method)</a>
+</li>
+        <li><a href="source/test.html#test.test_tokenization_token.TestCustomTokenizer.setUp">(test.test_tokenization_token.TestCustomTokenizer method)</a>
+</li>
+        <li><a href="source/test.html#test.test_tokenization_token.TestToken2String.setUp">(test.test_tokenization_token.TestToken2String method)</a>
 </li>
         <li><a href="source/test.html#test.test_tokenization_token.TestTokenizer.setUp">(test.test_tokenization_token.TestTokenizer method)</a>
 </li>
@@ -1233,6 +1255,8 @@
 </li>
       <li><a href="source/test.html#test.test_match_phrase.TestFuzzyMatch.test_adjust_start_shifts_to_second_previous_characters">test_adjust_start_shifts_to_second_previous_characters() (test.test_match_phrase.TestFuzzyMatch method)</a>
 </li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestCustomTokenizer.test_any_string_tokenizing_func_returns_doc">test_any_string_tokenizing_func_returns_doc() (test.test_tokenization_token.TestCustomTokenizer method)</a>
+</li>
       <li><a href="source/test.html#test.test_phrase_phrase_model.Test.test_can_add_custom_key_value_pairs_to_phrase">test_can_add_custom_key_value_pairs_to_phrase() (test.test_phrase_phrase_model.Test method)</a>
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase_model.Test.test_can_add_distractors">test_can_add_distractors() (test.test_phrase_phrase_model.Test method)</a>
@@ -1311,6 +1335,10 @@
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase.TestFuzzyPhrase.test_fuzzy_phrase_accepts_phrase_with_valid_string_label">test_fuzzy_phrase_accepts_phrase_with_valid_string_label() (test.test_phrase_phrase.TestFuzzyPhrase method)</a>
 </li>
+      <li><a href="source/test.html#test.test_phrase_phrase.TestFuzzyPhrase.test_fuzzy_phrase_can_check_if_max_end_offset">test_fuzzy_phrase_can_check_if_max_end_offset() (test.test_phrase_phrase.TestFuzzyPhrase method)</a>
+</li>
+      <li><a href="source/test.html#test.test_phrase_phrase.TestFuzzyPhrase.test_fuzzy_phrase_can_check_if_max_start_offset">test_fuzzy_phrase_can_check_if_max_start_offset() (test.test_phrase_phrase.TestFuzzyPhrase method)</a>
+</li>
       <li><a href="source/test.html#test.test_phrase_phrase.TestFuzzyPhrase.test_fuzzy_phrase_can_set_max_start_end">test_fuzzy_phrase_can_set_max_start_end() (test.test_phrase_phrase.TestFuzzyPhrase method)</a>
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase.TestFuzzyPhrase.test_fuzzy_phrase_can_set_max_start_offset">test_fuzzy_phrase_can_set_max_start_offset() (test.test_phrase_phrase.TestFuzzyPhrase method)</a>
@@ -1359,6 +1387,10 @@
 </li>
       <li><a href="source/test.html#test.test_search_token_searcher.TestTokenSearcherMatchType.test_get_match_type_finds_same_text_token_match_for_multi_phrase_tokens">test_get_match_type_finds_same_text_token_match_for_multi_phrase_tokens() (test.test_search_token_searcher.TestTokenSearcherMatchType method)</a>
 </li>
+      <li><a href="source/test.html#test.test_search_token_searcher.TestFindMatches.test_get_token_skipgram_matches_does_not_skip_before_max_start">test_get_token_skipgram_matches_does_not_skip_before_max_start() (test.test_search_token_searcher.TestFindMatches method)</a>
+</li>
+      <li><a href="source/test.html#test.test_search_token_searcher.TestFindMatches.test_get_token_skipgram_matches_skips_beyond_max_start">test_get_token_skipgram_matches_skips_beyond_max_start() (test.test_search_token_searcher.TestFindMatches method)</a>
+</li>
       <li><a href="source/test.html#test.test_similarity.TestKeywordList.test_keyword_list_accepts_list_of_string">test_keyword_list_accepts_list_of_string() (test.test_similarity.TestKeywordList method)</a>
 </li>
       <li><a href="source/test.html#test.test_similarity.TestKeywordList.test_keyword_list_does_not_accept_list_of_dicts">test_keyword_list_does_not_accept_list_of_dicts() (test.test_similarity.TestKeywordList method)</a>
@@ -1384,6 +1416,8 @@
       <li><a href="source/test.html#test.test_tokenization_string.Test.test_make_ngrams_rejects_non_integer_size">test_make_ngrams_rejects_non_integer_size() (test.test_tokenization_string.Test method)</a>
 </li>
       <li><a href="source/test.html#test.test_tokenization_string.Test.test_make_ngrams_rejects_non_string_text">test_make_ngrams_rejects_non_string_text() (test.test_tokenization_string.Test method)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_string.Test.test_make_ngrams_rejects_zero_size">test_make_ngrams_rejects_zero_size() (test.test_tokenization_string.Test method)</a>
 </li>
       <li><a href="source/test.html#test.test_search_token_searcher.TestPartialPhraseMatch.test_making_candidate_phrases_can_detect_term_swap">test_making_candidate_phrases_can_detect_term_swap() (test.test_search_token_searcher.TestPartialPhraseMatch method)</a>
 </li>
@@ -1411,8 +1445,6 @@
 </li>
       <li><a href="source/test.html#test.test_match_phrase.TestFuzzyMatch.test_map_string_maps_mixed_string">test_map_string_maps_mixed_string() (test.test_match_phrase.TestFuzzyMatch method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/test.html#test.test_match_phrase.TestFuzzyMatch.test_map_string_maps_space_string">test_map_string_maps_space_string() (test.test_match_phrase.TestFuzzyMatch method)</a>
 </li>
       <li><a href="source/test.html#test.test_match_phrase.TestFuzzyMatch.test_map_string_maps_word_string">test_map_string_maps_word_string() (test.test_match_phrase.TestFuzzyMatch method)</a>
@@ -1425,6 +1457,8 @@
 </li>
       <li><a href="source/test.html#test.test_match_phrase.TestMatchAnnotation.test_match_in_context_as_web_anno_has_multiple_selectors">test_match_in_context_as_web_anno_has_multiple_selectors() (test.test_match_phrase.TestMatchAnnotation method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/test.html#test.test_match_phrase.TestMatchAnnotation.test_match_in_context_as_web_anno_has_text_quote_selector">test_match_in_context_as_web_anno_has_text_quote_selector() (test.test_match_phrase.TestMatchAnnotation method)</a>
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase.TestPhraseTokens.test_phrase_can_take_tokenizer">test_phrase_can_take_tokenizer() (test.test_phrase_phrase.TestPhraseTokens method)</a>
@@ -1434,6 +1468,18 @@
       <li><a href="source/test.html#test.test_phrase_phrase_model.Test.test_phrase_model_can_add_phrase">test_phrase_model_can_add_phrase() (test.test_phrase_phrase_model.Test method)</a>
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase_model.Test.test_phrase_model_can_remove_phrase">test_phrase_model_can_remove_phrase() (test.test_phrase_phrase_model.Test method)</a>
+</li>
+      <li><a href="source/test.html#test.test_phrase_phrase_model.TestPhraseModelTokenizer.test_phrase_model_indexes_no_phrase_token_max_end_offset">test_phrase_model_indexes_no_phrase_token_max_end_offset() (test.test_phrase_phrase_model.TestPhraseModelTokenizer method)</a>
+</li>
+      <li><a href="source/test.html#test.test_phrase_phrase_model.TestPhraseModelTokenizer.test_phrase_model_indexes_no_phrase_token_max_start_offset">test_phrase_model_indexes_no_phrase_token_max_start_offset() (test.test_phrase_phrase_model.TestPhraseModelTokenizer method)</a>
+</li>
+      <li><a href="source/test.html#test.test_phrase_phrase_model.TestPhraseModelTokenizer.test_phrase_model_indexes_phrase_token_max_end_offset">test_phrase_model_indexes_phrase_token_max_end_offset() (test.test_phrase_phrase_model.TestPhraseModelTokenizer method)</a>
+</li>
+      <li><a href="source/test.html#test.test_phrase_phrase_model.TestPhraseModelTokenizer.test_phrase_model_indexes_phrase_token_max_offset">test_phrase_model_indexes_phrase_token_max_offset() (test.test_phrase_phrase_model.TestPhraseModelTokenizer method)</a>
+</li>
+      <li><a href="source/test.html#test.test_phrase_phrase_model.TestPhraseModelTokenizer.test_phrase_model_indexes_phrase_token_max_start_offset">test_phrase_model_indexes_phrase_token_max_start_offset() (test.test_phrase_phrase_model.TestPhraseModelTokenizer method)</a>
+</li>
+      <li><a href="source/test.html#test.test_phrase_phrase_model.TestPhraseModelTokenizer.test_phrase_model_indexes_phrase_token_min_offset">test_phrase_model_indexes_phrase_token_min_offset() (test.test_phrase_phrase_model.TestPhraseModelTokenizer method)</a>
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase_model.Test.test_phrase_model_indexes_phrase_words">test_phrase_model_indexes_phrase_words() (test.test_phrase_phrase_model.Test method)</a>
 </li>
@@ -1567,11 +1613,21 @@
 </li>
       <li><a href="source/test.html#test.test_pattern_template.TestFuzzyTemplate.test_template_returns_all_required_elements">test_template_returns_all_required_elements() (test.test_pattern_template.TestFuzzyTemplate method)</a>
 </li>
+      <li><a href="source/test.html#test.test_tokenization_string.TestText2SkipGrams.test_text2skipgrams_accepts_n_1">test_text2skipgrams_accepts_n_1() (test.test_tokenization_string.TestText2SkipGrams method)</a>
+</li>
       <li><a href="source/test.html#test.test_phrase_phrase.Test.test_text2skipgrams_accepts_positive_ngram_size">test_text2skipgrams_accepts_positive_ngram_size() (test.test_phrase_phrase.Test method)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_string.TestText2SkipGrams.test_text2skipgrams_rejects_n_below_1">test_text2skipgrams_rejects_n_below_1() (test.test_tokenization_string.TestText2SkipGrams method)</a>
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase.Test.test_text2skipgrams_rejects_negative_ngram_size">test_text2skipgrams_rejects_negative_ngram_size() (test.test_phrase_phrase.Test method)</a>
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase.Test.test_text2skipgrams_rejects_negative_skip_size">test_text2skipgrams_rejects_negative_skip_size() (test.test_phrase_phrase.Test method)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_string.TestText2SkipGrams.test_text2skipgrams_returns_string_if_equal_ngram_size">test_text2skipgrams_returns_string_if_equal_ngram_size() (test.test_tokenization_string.TestText2SkipGrams method)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_string.TestText2SkipGrams.test_text2skipgrams_returns_string_if_smaller_than_ngram_size">test_text2skipgrams_returns_string_if_smaller_than_ngram_size() (test.test_tokenization_string.TestText2SkipGrams method)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestToken2String.test_text2string_can_reconstruct_original_string">test_text2string_can_reconstruct_original_string() (test.test_tokenization_token.TestToken2String method)</a>
 </li>
       <li><a href="source/test.html#test.test_search_phrase_searcher.TestFuzzySearchExactMatch.test_text_split">test_text_split() (test.test_search_phrase_searcher.TestFuzzySearchExactMatch method)</a>
 </li>
@@ -1585,6 +1641,10 @@
 </li>
       <li><a href="source/test.html#test.test_search_token_searcher.TestTokenSearcher.test_token_searcher_has_token_skipgram_index">test_token_searcher_has_token_skipgram_index() (test.test_search_token_searcher.TestTokenSearcher method)</a>
 </li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestTokenizer.test_tokenize_doc_returns_a_document_object">test_tokenize_doc_returns_a_document_object() (test.test_tokenization_token.TestTokenizer method)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestTokenizer.test_tokenize_returns_a_list_of_tokens">test_tokenize_returns_a_list_of_tokens() (test.test_tokenization_token.TestTokenizer method)</a>
+</li>
       <li><a href="source/test.html#test.test_tokenization_token.TestTokenizer.test_tokenizer_can_add_boundaries">test_tokenizer_can_add_boundaries() (test.test_tokenization_token.TestTokenizer method)</a>
 </li>
       <li><a href="source/test.html#test.test_tokenization_token.TestTokenizer.test_tokenizer_defaults_to_no_boundary_tokens">test_tokenizer_defaults_to_no_boundary_tokens() (test.test_tokenization_token.TestTokenizer method)</a>
@@ -1594,8 +1654,6 @@
       <li><a href="source/test.html#test.test_tokenization_token.TestTokenizer.test_tokenizer_ignorecase_lowercases_normalised_string">test_tokenizer_ignorecase_lowercases_normalised_string() (test.test_tokenization_token.TestTokenizer method)</a>
 </li>
       <li><a href="source/test.html#test.test_tokenization_token.TestToken.test_tokenizer_lower_affects_normalised_string">test_tokenizer_lower_affects_normalised_string() (test.test_tokenization_token.TestToken method)</a>
-</li>
-      <li><a href="source/test.html#test.test_tokenization_token.TestTokenizer.test_tokenizer_returns_a_document_object">test_tokenizer_returns_a_document_object() (test.test_tokenization_token.TestTokenizer method)</a>
 </li>
       <li><a href="source/test.html#test.test_tokenization_token.TestToken.test_tokenizer_token_can_check_has_label">test_tokenizer_token_can_check_has_label() (test.test_tokenization_token.TestToken method)</a>
 </li>
@@ -1628,6 +1686,8 @@
       <li><a href="source/test.html#test.test_tokenization_vocabulary.TestVocabulary.test_vocabulary_represents_words_by_integer">test_vocabulary_represents_words_by_integer() (test.test_tokenization_vocabulary.TestVocabulary method)</a>
 </li>
       <li><a href="source/test.html#test.test_match_candidate.TestCandidate">TestCandidate (class in test.test_match_candidate)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestCustomTokenizer">TestCustomTokenizer (class in test.test_tokenization_token)</a>
 </li>
       <li><a href="source/test.html#test.test_search_token_searcher.TestFindMatches">TestFindMatches (class in test.test_search_token_searcher)</a>
 </li>
@@ -1677,7 +1737,11 @@
 </li>
       <li><a href="source/test.html#test.test_match_skip.TestSkipMatches">TestSkipMatches (class in test.test_match_skip)</a>
 </li>
+      <li><a href="source/test.html#test.test_tokenization_string.TestText2SkipGrams">TestText2SkipGrams (class in test.test_tokenization_string)</a>
+</li>
       <li><a href="source/test.html#test.test_tokenization_token.TestToken">TestToken (class in test.test_tokenization_token)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestToken2String">TestToken2String (class in test.test_tokenization_token)</a>
 </li>
       <li><a href="source/test.html#test.test_tokenization_token.TestTokenizer">TestTokenizer (class in test.test_tokenization_token)</a>
 </li>
@@ -1695,11 +1759,17 @@
 </li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token">Token (class in fuzzy_search.tokenization.token)</a>
 </li>
+      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.token_is_out_of_phrase_range">token_is_out_of_phrase_range() (in module fuzzy_search.search.token_searcher)</a>
+</li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.tokenize">tokenize() (fuzzy_search.tokenization.token.Tokenizer method)</a>
+</li>
+      <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.tokenize_doc">tokenize_doc() (fuzzy_search.tokenization.token.Tokenizer method)</a>
 </li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer">Tokenizer (class in fuzzy_search.tokenization.token)</a>
 </li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.TokenMatch">TokenMatch (class in fuzzy_search.match.phrase_match)</a>
+</li>
+      <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.tokens2string">tokens2string() (in module fuzzy_search.tokenization.token)</a>
 </li>
   </ul></td>
 </tr></table>
