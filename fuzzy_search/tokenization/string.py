@@ -154,6 +154,10 @@ class SkipGram:
         self.end_offset = end_offset
         self.length = skipgram_length
 
+    def __repr__(self):
+        return (f"{self.__class__.__name__}(string='{self.string}', start_offset={self.start_offset}, "
+                f"end_offset={self.end_offset}, length={self.length}")
+
 
 def insert_skips(window: str, skipgram_combinations: List[List[int]]):
     """For a given skip gram window, return all skip grams for a given configuration."""
@@ -170,7 +174,7 @@ def insert_skips(window: str, skipgram_combinations: List[List[int]]):
 def text2skipgrams(text: str, ngram_size: int = 2, skip_size: int = 2) -> Generator[SkipGram, None, None]:
     """Turn a text string into a list of skipgrams.
 
-    :param text: an text string
+    :param text: a text string
     :type text: str
     :param ngram_size: an integer indicating the number of characters in the ngram
     :type ngram_size: int
@@ -180,13 +184,19 @@ def text2skipgrams(text: str, ngram_size: int = 2, skip_size: int = 2) -> Genera
     :rtype: Generator[tuple]"""
     if ngram_size <= 0 or skip_size < 0:
         raise ValueError('ngram_size must be a positive integer, skip_size must be a positive integer or zero')
-    indexes = [i for i in range(0, ngram_size+skip_size)]
-    skipgram_combinations = [combination for combination in combinations(indexes[1:], ngram_size-1)]
-    for start_offset in range(0, len(text)-1):
-        end_offset = len(text) - start_offset
-        window = text[start_offset:start_offset+ngram_size+skip_size]
-        for skipgram, skipgram_length in insert_skips(window, skipgram_combinations):
-            yield SkipGram(skipgram, start_offset, end_offset, skipgram_length)
+    if ngram_size == 1:
+        for char in text:
+            yield SkipGram(char, 0, 1, 1)
+    elif len(text) <= ngram_size:
+        yield SkipGram(text, 0, len(text), len(text))
+    else:
+        indexes = [i for i in range(0, ngram_size + skip_size)]
+        skipgram_combinations = [combination for combination in combinations(indexes[1:], ngram_size - 1)]
+        for start_offset in range(0, len(text)):
+            end_offset = len(text) - start_offset
+            window = text[start_offset:start_offset+ngram_size+skip_size]
+            for skipgram, skipgram_length in insert_skips(window, skipgram_combinations):
+                yield SkipGram(skipgram, start_offset, end_offset, skipgram_length)
 
 
 non_word_affixes_2 = {

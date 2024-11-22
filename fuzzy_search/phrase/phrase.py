@@ -190,6 +190,12 @@ class Phrase:
         self.max_end_offset = max_end_offset
         self.max_end_start = self.max_end_offset - len(self.phrase_string)
 
+    def has_max_start_offset(self) -> bool:
+        return self.max_start_offset is not None and self.max_start_offset >= 0
+
+    def has_max_end_offset(self) -> bool:
+        return self.max_end_offset is not None and self.max_end_offset >= 0
+
     def has_skipgram(self, skipgram: str) -> bool:
         """For a given skipgram, return boolean whether it is in the index
 

@@ -88,11 +88,45 @@ class TestPhraseModelTokenizer(TestCase):
 
     def setUp(self) -> None:
         self.tokenizer = Tokenizer()
-        self.phrase = 'this is a test'
-        self.phrases = [{"phrase": "this is a test"}]
+        self.phrase = 'this is a test with a repetition of test'
+        self.phrases = [{"phrase": self.phrase}]
         self.phrase_model = PhraseModel(phrases=self.phrases, tokenizer=self.tokenizer)
 
     def test_can_add_tokenizer_at_init(self):
         phrase_model = PhraseModel(phrases=self.phrases, tokenizer=self.tokenizer)
         tokens = self.tokenizer.tokenize(self.phrase)
         self.assertEqual(True, phrase_model.has_token(tokens[0]))
+
+    def test_phrase_model_indexes_phrase_token_min_offset(self):
+        tokens = self.tokenizer.tokenize(self.phrase)
+        test_token = tokens[3]
+        self.assertEqual(test_token.char_index, self.phrase_model.min_token_offset_in_phrase[test_token.n][self.phrase])
+
+    def test_phrase_model_indexes_phrase_token_max_offset(self):
+        tokens = self.tokenizer.tokenize(self.phrase)
+        test_token = tokens[8]
+        self.assertEqual(test_token.char_index, self.phrase_model.max_token_offset_in_phrase[test_token.n][self.phrase])
+
+    def test_phrase_model_indexes_no_phrase_token_max_start_offset(self):
+        tokens = self.tokenizer.tokenize(self.phrase)
+        test_token = tokens[8]
+        self.assertEqual(False, test_token.n in self.phrase_model.phrase_token_max_start_offset)
+
+    def test_phrase_model_indexes_phrase_token_max_start_offset(self):
+        phrases = [{"phrase": self.phrase, 'max_start_offset': 10}]
+        phrase_model = PhraseModel(phrases=phrases, tokenizer=self.tokenizer)
+        tokens = self.tokenizer.tokenize(self.phrase)
+        test_token = tokens[8]
+        self.assertEqual(True, test_token.n in phrase_model.phrase_token_max_start_offset)
+
+    def test_phrase_model_indexes_no_phrase_token_max_end_offset(self):
+        tokens = self.tokenizer.tokenize(self.phrase)
+        test_token = tokens[8]
+        self.assertEqual(False, test_token.n in self.phrase_model.phrase_token_max_end_offset)
+
+    def test_phrase_model_indexes_phrase_token_max_end_offset(self):
+        phrases = [{"phrase": self.phrase, 'max_end_offset': 10}]
+        phrase_model = PhraseModel(phrases=phrases, tokenizer=self.tokenizer)
+        tokens = self.tokenizer.tokenize(self.phrase)
+        test_token = tokens[8]
+        self.assertEqual(True, test_token.n in phrase_model.phrase_token_max_end_offset)

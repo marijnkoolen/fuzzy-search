@@ -91,15 +91,15 @@ def validate_match_props(match_phrase: Phrase, match_variant: Phrase,
     :rtype: None
     """
     if not isinstance(match_phrase, Phrase):
-        print(match_phrase)
-        print(type(match_phrase))
+        print(f"match_phrase: {match_phrase}")
+        print(f"type: {type(match_phrase)}")
         raise TypeError('match_phrase MUST be of class Phrase')
     if not isinstance(match_variant, Phrase):
         raise TypeError('match_variant MUST be of class Phrase')
     if not isinstance(match_string, str):
         raise TypeError('match string MUST be a string')
     if len(match_string) == 0:
-        print(match_phrase)
+        print(f"match_phrase: {match_phrase}")
         raise ValueError('match string cannot be empty string')
     if not isinstance(match_offset, int):
         raise TypeError('match_offset must be an integer')
@@ -828,10 +828,10 @@ class PartialPhraseMatch:
         self.text_tokens = tuple(text_tokens)
         # self.text_tokens = tuple([token for match in self.token_matches for token in match.text_tokens])
         self.phrase_tokens = tuple([token for match in self.token_matches for token in match.phrase_tokens])
-        self.first = self.text_tokens[0]
-        self.last = self.text_tokens[-1]
-        self.text_start = self.first.char_index
-        self.text_end = self.last.char_index + len(self.last)
+        self.first_text_token = self.text_tokens[0]
+        self.last_text_token = self.text_tokens[-1]
+        self.text_start = self.first_text_token.char_index
+        self.text_end = self.last_text_token.char_index + len(self.last_text_token)
         self.text_length = self.text_end - self.text_start
 
     def pop(self):
@@ -867,3 +867,20 @@ class PartialPhraseMatch:
                     self.missing_tokens.remove(phrase_token)
         self.token_matches.extend(token_matches)
         self._update()
+
+
+def copy_partial_match(partial_match: PartialPhraseMatch):
+    new_pm = PartialPhraseMatch(phrase=partial_match.phrase, token_matches=None,
+                                max_char_gap=partial_match.max_char_gap,
+                                max_token_gap=partial_match.max_token_gap)
+    new_pm.token_matches = [tm for tm in partial_match.token_matches]
+    new_pm.missing_tokens = [token for token in partial_match.missing_tokens]
+    new_pm.text_tokens = [token for token in partial_match.text_tokens]
+    new_pm.phrase_tokens = [token for token in partial_match.phrase_tokens]
+    new_pm.redundant_tokens = [token for token in partial_match.redundant_tokens]
+    new_pm.first_text_token = partial_match.first_text_token
+    new_pm.last_text_token = partial_match.last_text_token
+    new_pm.text_start = partial_match.text_start
+    new_pm.text_end = partial_match.text_end
+    new_pm.text_length = partial_match.text_length
+    return new_pm

@@ -2,6 +2,7 @@ from unittest import TestCase
 from fuzzy_search.tokenization.string import make_ngrams, score_char_overlap
 from fuzzy_search.tokenization.string import score_ngram_overlap
 from fuzzy_search.tokenization.string import score_levenshtein_similarity_ratio
+from fuzzy_search.tokenization.string import text2skipgrams
 
 
 class Test(TestCase):
@@ -30,6 +31,14 @@ class Test(TestCase):
         error = None
         try:
             make_ngrams('test', -1)
+        except ValueError as err:
+            error = err
+        self.assertNotEqual(error, None)
+
+    def test_make_ngrams_rejects_zero_size(self):
+        error = None
+        try:
+            make_ngrams('test', 0)
         except ValueError as err:
             error = err
         self.assertNotEqual(error, None)
@@ -99,3 +108,26 @@ class Test(TestCase):
         text = 'test'
         similarity = score_levenshtein_similarity_ratio(text, text)
         self.assertEqual(similarity, 1)
+
+
+class TestText2SkipGrams(TestCase):
+
+    def test_text2skipgrams_rejects_n_below_1(self):
+        error = None
+        try:
+            _ = [_ for _ in text2skipgrams('test', ngram_size=0)]
+        except ValueError as err:
+            error = err
+        self.assertNotEqual(None, error)
+
+    def test_text2skipgrams_accepts_n_1(self):
+        skips = [sg for sg in text2skipgrams('test', ngram_size=1)]
+        self.assertEqual(4, len(skips))
+
+    def test_text2skipgrams_returns_string_if_smaller_than_ngram_size(self):
+        skips = [sg for sg in text2skipgrams('t', ngram_size=2)]
+        self.assertEqual(1, len(skips))
+
+    def test_text2skipgrams_returns_string_if_equal_ngram_size(self):
+        skips = [sg for sg in text2skipgrams('te', ngram_size=2)]
+        self.assertEqual(1, len(skips))

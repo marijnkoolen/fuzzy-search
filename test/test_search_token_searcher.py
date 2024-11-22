@@ -30,12 +30,12 @@ def get_token_match_types(text_token, token_searcher):
                                                                 token_searcher.ngram_size,
                                                                 token_searcher.skip_size)]
     text_token_num_skips = len(text_token_skips)
-    token_skip_matches = get_token_skipgram_matches(text_token_skips, token_searcher)
+    token_skip_matches = get_token_skipgram_matches(text_token, text_token_skips, token_searcher)
     match_types = []
     for match in token_skip_matches.match_start_offsets:
         print('text_token:', text_token, '\tmatch:', match)
         match_type = get_token_skip_match_type(text_token.normalised_string, text_token_num_skips,
-                                               token_skip_matches, match, token_searcher, debug=2)
+                                               token_skip_matches, match, token_searcher, debug=0)
         match_types.append(match_type)
     return match_types
 
@@ -71,7 +71,7 @@ class TestTokenSearcherMatchType(TestCase):
     def test_token_searcher_finds_partial_phrase_token_match(self):
         self.token_searcher = FuzzyTokenSearcher(phrase_list=['test'], tokenizer=self.tokenizer)
         self.doc = self.tokenizer.tokenize_doc(doc_text='The purpose is testing')
-        token_matches = self.token_searcher.find_skipgram_token_matches_in_text(self.doc, debug=3)
+        token_matches = self.token_searcher.find_skipgram_token_matches_in_text(self.doc, debug=0)
         self.assertEqual(MatchType.PARTIAL_OF_TEXT_TOKEN, token_matches[0].match_type)
 
     def test_get_match_type_finds_multi_text_token_match(self):
@@ -157,7 +157,7 @@ class TestPartialPhraseMatch(TestCase):
         phrase = Phrase(text, tokenizer=self.tokenizer)
         self.token_searcher = FuzzyTokenSearcher(phrase_list=['test case'], tokenizer=self.tokenizer)
         doc = self.tokenizer.tokenize_doc(doc_text=text)
-        token_matches = self.token_searcher.find_skipgram_token_matches_in_text(doc, debug=3)
+        token_matches = self.token_searcher.find_skipgram_token_matches_in_text(doc, debug=0)
         for tm in token_matches:
             print(tm)
         partial_match = PartialPhraseMatch(phrase, token_matches)
@@ -170,7 +170,7 @@ class TestPartialPhraseMatch(TestCase):
         token_matches = self.token_searcher.find_skipgram_token_matches_in_text(doc)
         for tm in token_matches:
             print(tm)
-        candidates = get_partial_phrases(token_matches, self.token_searcher)
+        candidates = get_partial_phrases(token_matches, self.token_searcher, debug=0)
         for pi, phrase in enumerate(candidates):
             print('test_search_token_searcher - phrase:', phrase)
             with self.subTest(pi):
@@ -226,7 +226,7 @@ class TestFindMatches(TestCase):
     def test_find_phrase_matches_finds_best_option_per_text_range(self):
         self.token_searcher = FuzzyTokenSearcher(phrase_list=['best test case'], tokenizer=self.tokenizer)
         doc = self.tokenizer.tokenize_doc(doc_text='this is a best test case to test best case matching')
-        phrase_matches = self.token_searcher.find_matches(doc, debug=1)
+        phrase_matches = self.token_searcher.find_matches(doc, debug=0)
         for pi, phrase_match in enumerate(phrase_matches):
             print('test_search_token_searcher - phrase_match:', phrase_match)
             print('\t', phrase_match.levenshtein_similarity)
@@ -237,7 +237,7 @@ class TestFindMatches(TestCase):
         self.token_searcher = FuzzyTokenSearcher(phrase_list=['best test case'], tokenizer=self.tokenizer)
         doc = self.tokenizer.tokenize_doc(doc_text='this is a best test case to test best case matching')
         self.token_searcher.config['levenshtein_threshold'] = 0.9
-        phrase_matches = self.token_searcher.find_matches(doc, debug=1)
+        phrase_matches = self.token_searcher.find_matches(doc, debug=0)
         for pi, phrase_match in enumerate(phrase_matches):
             print('test_search_token_searcher - phrase_match:', phrase_match)
             print('\t', phrase_match.levenshtein_similarity)
@@ -245,6 +245,24 @@ class TestFindMatches(TestCase):
         for pi, pm in enumerate(phrase_matches):
             with self.subTest(pi):
                 self.assertEqual(True, pm.levenshtein_similarity >= self.token_searcher.config['levenshtein_threshold'])
+
+    def test_get_token_skipgram_matches_skips_beyond_max_start(self):
+        phrase = {'phrase': 'test', 'max_start_offset': 1}
+        self.token_searcher = FuzzyTokenSearcher(phrase_list=[phrase], tokenizer=self.tokenizer)
+        doc = self.tokenizer.tokenize_doc(doc_text='a document for a test')
+        text_token = doc.tokens[4]
+        text_token_skips = [sg for sg in text2skipgrams(text_token.normalised_string)]
+        token_skip_matches = get_token_skipgram_matches(text_token, text_token_skips, self.token_searcher)
+        self.assertEqual(0, len(token_skip_matches.matches))
+
+    def test_get_token_skipgram_matches_does_not_skip_before_max_start(self):
+        phrase = {'phrase': 'test', 'max_start_offset': 25}
+        token_searcher = FuzzyTokenSearcher(phrase_list=[phrase], tokenizer=self.tokenizer)
+        doc = self.tokenizer.tokenize_doc(doc_text='a document for a test')
+        text_token = doc.tokens[4]
+        text_token_skips = [sg for sg in text2skipgrams(text_token.normalised_string)]
+        token_skip_matches = get_token_skipgram_matches(text_token, text_token_skips, token_searcher)
+        self.assertEqual(1, len(token_skip_matches.matches))
 
 
 class TestTokenSearcherVocabulary(unittest.TestCase):
@@ -269,17 +287,20 @@ class TestTokenSearcherVocabulary(unittest.TestCase):
 class TestTokenSearcherVariants(unittest.TestCase):
 
     def setUp(self) -> None:
-        phrase_model = [
+        self.tokenizer = Tokenizer()
+        self.phrase_model = [
             {
                 'phrase': 'best',
                 'variants': ['rest']
             }
         ]
-        self.searcher = FuzzyTokenSearcher(phrase_model=phrase_model)
+        self.searcher = FuzzyTokenSearcher(phrase_model=self.phrase_model)
 
     def test_searcher_can_match_phrase_variants(self):
         # TO DO: check that variants are matched and returned with their main phrase as match phrase
-        self.assertEqual(True, False)
+        doc = self.tokenizer.tokenize_doc('this is a time to rest')
+        matches = self.searcher.find_matches(doc)
+        self.assertEqual(('best', 'rest'), (matches[0].phrase.phrase_string, matches[0].variant.phrase_string))
 
     """
 """

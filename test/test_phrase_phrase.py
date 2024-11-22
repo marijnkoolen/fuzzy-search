@@ -46,9 +46,17 @@ class TestFuzzyPhrase(TestCase):
         phrase = Phrase({"phrase": "some phrase", "max_start_offset": 3})
         self.assertEqual(phrase.max_start_offset, 3)
 
+    def test_fuzzy_phrase_can_check_if_max_start_offset(self):
+        phrase = Phrase({"phrase": "some phrase", "max_start_offset": 3})
+        self.assertEqual(True, phrase.has_max_start_offset())
+
     def test_fuzzy_phrase_can_set_max_start_end(self):
         phrase = Phrase({"phrase": "some phrase", "max_start_offset": 3})
         self.assertEqual(phrase.max_start_end, 3 + len("some_phrase"))
+
+    def test_fuzzy_phrase_can_check_if_max_end_offset(self):
+        phrase = Phrase({"phrase": "some phrase", "max_end_offset": 3})
+        self.assertEqual(True, phrase.has_max_end_offset())
 
     def test_fuzzy_phrase_cannot_set_negative_max_start_offset(self):
         error = None

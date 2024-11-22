@@ -4,6 +4,7 @@ from fuzzy_search.tokenization.token import Token
 from fuzzy_search.tokenization.token import Doc
 from fuzzy_search.tokenization.token import Tokenizer
 from fuzzy_search.tokenization.token import CustomTokenizer
+from fuzzy_search.tokenization.token import tokens2string
 
 
 class TestToken(TestCase):
@@ -101,3 +102,16 @@ class TestCustomTokenizer(TestCase):
         for ti, token in enumerate(tokens):
             with self.subTest(ti):
                 self.assertEqual(token, custom_tokens[ti].t)
+
+
+class TestToken2String(TestCase):
+
+    def setUp(self) -> None:
+        self.string = "Yeah, well, you know, that's just like, uh, your opinion, man."
+        self.tokenizer = Tokenizer()
+        self.tokens = self.tokenizer.tokenize(self.string)
+
+    def test_text2string_can_reconstruct_original_string(self):
+        new_string = tokens2string(self.tokens)
+        self.assertEqual(new_string, self.string)
+
