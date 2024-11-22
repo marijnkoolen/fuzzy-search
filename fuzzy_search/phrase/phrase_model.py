@@ -83,6 +83,10 @@ class PhraseModel:
         self.token_in_phrase: Dict[str, Set[str]] = defaultdict(set)
         self.first_word_in_phrase: Dict[str, Dict[str, int]] = defaultdict(dict)
         self.first_token_in_phrase: Dict[str, Dict[str, int]] = defaultdict(dict)
+        self.min_token_offset_in_phrase: Dict[str, Dict[str, int]] = defaultdict(dict)
+        self.max_token_offset_in_phrase: Dict[str, Dict[str, int]] = defaultdict(dict)
+        self.phrase_token_max_start_offset: Dict[str, int] = {}
+        self.phrase_token_max_end_offset: Dict[str, int] = {}
         self.phrase_type: Dict[str, Set[str]] = defaultdict(set)
         self.phrase_string_map: Dict[str, Phrase] = {}
         self.tokenizer = tokenizer if tokenizer is not None else Tokenizer()
@@ -98,6 +102,8 @@ class PhraseModel:
             self.add_model(model)
         if custom:
             self.add_custom(custom)
+        self.set_phrase_token_max_start_offsets()
+        self.set_phrase_token_max_end_offsets()
 
     def __repr__(self):
         """A phrase model to support fuzzy searching in OCR/HTR output."""
@@ -670,8 +676,13 @@ class PhraseModel:
                 if len(self.first_token_in_phrase[token.n].keys()) == 0:
                     del self.first_token_in_phrase[token.n]
             self.token_in_phrase[token.n].remove(phrase.phrase_string)
+            del self.min_token_offset_in_phrase[token.n][phrase.phrase_string]
+            del self.max_token_offset_in_phrase[token.n][phrase.phrase_string]
             if len(self.token_in_phrase[token.n]) == 0:
                 del self.token_in_phrase[token.n]
+            if len(self.min_token_offset_in_phrase[token.n]) == 0:
+                del self.min_token_offset_in_phrase[token.n]
+                del self.max_token_offset_in_phrase[token.n]
 
     def _get_tokenizer(self, tokenizer: Tokenizer = None):
         return tokenizer if tokenizer is not None else self.tokenizer
@@ -683,7 +694,49 @@ class PhraseModel:
             for ti, token in enumerate(phrase.tokens):
                 if ti == 0:
                     self.first_token_in_phrase[token.n][phrase.phrase_string] = token.char_index
+                if token.n not in self.min_token_offset_in_phrase or \
+                        phrase.phrase_string not in self.min_token_offset_in_phrase[token.n]:
+                    self.min_token_offset_in_phrase[token.n][phrase.phrase_string] = token.char_index
+                self.max_token_offset_in_phrase[token.n][phrase.phrase_string] = token.char_index
                 self.token_in_phrase[token.n].add(phrase.phrase_string)
 
     def has_token(self, token: Union[str, Token]):
         return token.n in self.token_in_phrase
+
+    def set_phrase_token_max_start_offsets(self):
+        """Check if a token only occurs in phrases with a max start offset, and if so
+        set its max."""
+        for token in self.token_in_phrase:
+            token_has_phrase_with_max_start = False
+            token_has_phrase_without_max_start = False
+            max_start = -1
+            for phrase_string in self.token_in_phrase[token]:
+                phrase = self.get_phrase(phrase_string)
+                if isinstance(phrase, Phrase) and phrase.has_max_start_offset() is True:
+                    token_has_phrase_with_max_start = True
+                    token_max_offset = phrase.max_start_offset + self.max_token_offset_in_phrase[token][phrase_string]
+                    if token_max_offset > max_start:
+                        max_start = token_max_offset
+                if isinstance(phrase, Phrase) and phrase.has_max_start_offset() is False:
+                    token_has_phrase_without_max_start = True
+            if token_has_phrase_with_max_start and not token_has_phrase_without_max_start:
+                self.phrase_token_max_start_offset[token] = max_start
+
+    def set_phrase_token_max_end_offsets(self):
+        """Check if a token only occurs in phrases with a max end offset, and if so
+        set its max."""
+        for token in self.token_in_phrase:
+            token_has_phrase_with_max_end = False
+            token_has_phrase_without_max_end = False
+            max_end = -1
+            for phrase_string in self.token_in_phrase[token]:
+                phrase = self.get_phrase(phrase_string)
+                if isinstance(phrase, Phrase) and phrase.has_max_end_offset() is True:
+                    token_has_phrase_with_max_end = True
+                    token_max_offset = phrase.max_end_offset + self.min_token_offset_in_phrase[token][phrase_string]
+                    if token_max_offset > max_end:
+                        max_end = token_max_offset
+                if isinstance(phrase, Phrase) and phrase.has_max_end_offset() is False:
+                    token_has_phrase_without_max_end = True
+            if token_has_phrase_with_max_end and not token_has_phrase_without_max_end:
+                self.phrase_token_max_end_offset[token] = max_end

@@ -541,3 +541,13 @@ def update_token(token: Token, new_normalised: str) -> Token:
     return Token(string=token.t, index=token.i, char_index=token.char_index,
                  normalised_string=new_normalised,
                  metadata=copy.deepcopy(token.metadata))
+
+
+def tokens2string(tokens: List[Token]) -> str:
+    string = ''
+    for token in tokens:
+        if token.char_index > len(string):
+            diff = token.char_index - len(string)
+            string += ' ' * diff
+        string += token.t
+    return string
