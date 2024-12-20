@@ -1,4 +1,4 @@
 setuptools>=59.1.1
 numpy>=1.22.1
 gensim>=4.0.1
-levenshtein>=0.21.1
+Levenshtein>=0.21.1
