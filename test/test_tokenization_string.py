@@ -3,6 +3,7 @@ from fuzzy_search.tokenization.string import make_ngrams, score_char_overlap
 from fuzzy_search.tokenization.string import score_ngram_overlap
 from fuzzy_search.tokenization.string import score_levenshtein_similarity_ratio
 from fuzzy_search.tokenization.string import text2skipgrams
+from fuzzy_search.tokenization.string import token2skipgrams
 
 
 class Test(TestCase):
@@ -110,6 +111,25 @@ class Test(TestCase):
         self.assertEqual(similarity, 1)
 
 
+class TestToken2SkipGrams(TestCase):
+
+    def test_token2skipgrams_pads_text(self):
+        skips = [sg for sg in token2skipgrams('test', ngram_size=2, skip_size=0)]
+        self.assertEqual('#t', skips[0].string)
+
+    def test_token2skipgrams_returns_string_if_smaller_than_ngram_size_and_no_padding(self):
+        skips = [sg for sg in token2skipgrams('t', ngram_size=2, pad_token=False)]
+        self.assertEqual(1, len(skips))
+
+    def test_token2skipgrams_returns_string_if_equal_ngram_size_and_padding(self):
+        skips = [sg for sg in token2skipgrams('te', ngram_size=2, pad_token=True)]
+        self.assertEqual(5, len(skips))
+
+    def test_token2skipgrams_returns_string_if_equal_ngram_size_and_no_padding(self):
+        skips = [sg for sg in token2skipgrams('te', ngram_size=2, pad_token=False)]
+        self.assertEqual(1, len(skips))
+
+
 class TestText2SkipGrams(TestCase):
 
     def test_text2skipgrams_rejects_n_below_1(self):
@@ -124,10 +144,23 @@ class TestText2SkipGrams(TestCase):
         skips = [sg for sg in text2skipgrams('test', ngram_size=1)]
         self.assertEqual(4, len(skips))
 
+    def test_text2skipgrams_padding_keeps_original_offsets(self):
+        text = 'test'
+        skips = [sg for sg in text2skipgrams(text, ngram_size=3, skip_size=1)]
+        for si, skip in enumerate(skips):
+            with self.subTest(si):
+                # print(skip.string, skip.start_offset, skip.length, skip.start_offset + skip.length <= len(text))
+                self.assertTrue(skip.start_offset + skip.length <= len(text))
+        # self.assertEqual(True, False)
+
+    """
+    """
     def test_text2skipgrams_returns_string_if_smaller_than_ngram_size(self):
         skips = [sg for sg in text2skipgrams('t', ngram_size=2)]
         self.assertEqual(1, len(skips))
 
     def test_text2skipgrams_returns_string_if_equal_ngram_size(self):
         skips = [sg for sg in text2skipgrams('te', ngram_size=2)]
+        # for skip in skips:
+        #     print(skip)
         self.assertEqual(1, len(skips))

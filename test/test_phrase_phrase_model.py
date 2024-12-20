@@ -63,6 +63,26 @@ class Test(TestCase):
         phrase_model.add_variants(phrases)
         self.assertEqual(phrase_model.variant_of("OK").phrase_string, phrases[0]["phrase"])
 
+    def test_can_add_variant_phrase_with_max_start_offset(self):
+        phrase = {"phrase": "okay", "variants": ["OK"], "max_start_offset": 1}
+        phrases = [phrase]
+        phrase_model = PhraseModel(phrases=phrases)
+        phrase_model.add_variants(phrases)
+        for vi, variant_string in enumerate(phrase_model.variant_index):
+            with self.subTest(vi):
+                variant = phrase_model.variant_index[variant_string]
+                self.assertEqual(phrase['max_start_offset'], variant.max_start_offset)
+
+    def test_can_add_distractor_phrase_with_max_start_offset(self):
+        phrase = {"phrase": "okay", "distractors": ["OK"], "max_start_offset": 1}
+        phrases = [phrase]
+        phrase_model = PhraseModel(phrases=phrases)
+        phrase_model.add_distractors(phrases)
+        for vi, distractor_string in enumerate(phrase_model.distractor_index):
+            with self.subTest(vi):
+                distractor = phrase_model.distractor_index[distractor_string]
+                self.assertEqual(phrase['max_start_offset'], distractor.max_start_offset)
+
     def test_can_add_distractors(self):
         phrases = [{"phrase": "okay", "distractors": ["OK"]}]
         phrase_model = PhraseModel(phrases=phrases)

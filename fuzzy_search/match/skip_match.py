@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import Dict, List, Set, Union
 
 from fuzzy_search.match.phrase_match import Candidate
+from fuzzy_search.match.phrase_match import MatchType
 from fuzzy_search.phrase.phrase import Phrase
 from fuzzy_search.phrase.phrase_model import PhraseModel
 from fuzzy_search.tokenization.string import SkipGram
@@ -17,6 +18,7 @@ class SkipMatches:
         self.skip_size = skip_size
         self.skip_length = ngram_size + skip_size
         self.match_set: Dict[Union[Phrase, Token, str], set] = defaultdict(set)
+        self.match_type: Dict[Union[Phrase, Token, str], MatchType] = {}
         self.match_start_offsets = defaultdict(list)
         self.match_end_offsets = defaultdict(list)
         self.match_skipgrams: Dict[Union[Phrase, Token, str], List[SkipGram]] = defaultdict(list)
@@ -37,6 +39,15 @@ class SkipMatches:
         self.match_end_offsets[phrase].append(skipgram.end_offset)
         self.match_skipgrams[phrase].append(skipgram)
         self.matches.add(phrase)
+
+    def remove_phrase(self, phrase: Union[Phrase, Token]):
+        if phrase in self.matches:
+            self.matches.remove(phrase)
+            del self.match_skipgrams[phrase]
+            del self.match_start_offsets[phrase]
+            del self.match_end_offsets[phrase]
+            del self.match_set[phrase]
+            del self.match_type[phrase]
 
 
 def get_skipset_overlap(phrase: Phrase, skip_matches: SkipMatches) -> float:

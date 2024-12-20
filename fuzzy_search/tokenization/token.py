@@ -80,7 +80,7 @@ class Token:
 
     def __init__(self, string: str, index: int, char_index: int, doc_id: str = None,
                  normalised_string: str = None, label: Union[str, Set[str]] = None,
-                 metadata: Dict[str, any] = None):
+                 char_end_index: int = None, metadata: Dict[str, any] = None):
         """
         Initializes the Token instance.
 
@@ -91,11 +91,13 @@ class Token:
             doc_id (str, optional): The ID of the document the token belongs to.
             normalised_string (str, optional): The normalized version of the token.
             label (str, set, list, optional): Labels associated with the token.
+            char_index (int): The character index of the token from the end of the document.
             metadata (dict, optional): Additional metadata associated with the token.
         """
         self.string = string
         self.index = index
         self.char_index = char_index
+        self.char_end_index = char_end_index
         self.doc_id = doc_id
         self.metadata = metadata if metadata else {}
         self.normalised_string = normalised_string if normalised_string else string
@@ -438,11 +440,14 @@ class Tokenizer:
             token_strings = ['<START>'] + token_strings + ['<END>']
         tokens = []
         prefix_text = ''
+        doc_length = len(doc_text)
         for ti, token_string in enumerate(token_strings):
             char_index = dummy_text.index(token_string) + len(prefix_text)
+            char_end_index = doc_length - char_index
             prefix_text += dummy_text[:dummy_text.index(token_string) + len(token_string)]
             dummy_text = dummy_text[dummy_text.index(token_string)+len(token_string):]
-            token = Token(token_string, index=ti, char_index=char_index, doc_id=doc_id)
+            token = Token(token_string, index=ti, char_index=char_index, doc_id=doc_id,
+                          char_end_index=char_end_index)
             if self.ignorecase:
                 if not self.include_boundary_tokens or (ti != 0 and ti != len(token_strings) - 1):
                     token.lower()
@@ -540,7 +545,8 @@ def update_token(token: Token, new_normalised: str) -> Token:
     """
     return Token(string=token.t, index=token.i, char_index=token.char_index,
                  normalised_string=new_normalised,
-                 metadata=copy.deepcopy(token.metadata))
+                 metadata=copy.deepcopy(token.metadata),
+                 char_end_index=token.char_end_index)
 
 
 def tokens2string(tokens: List[Token]) -> str:

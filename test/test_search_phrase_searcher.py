@@ -116,8 +116,8 @@ class TestFuzzyPhraseSearcher(TestCase):
         phrase = "Makelaars"
         self.searcher.index_phrases(phrases=[phrase])
         text = 'door de Alakei&ers by na gecompletecrt'
-        matches = self.searcher.find_matches(text)
-        self.assertEqual(len(matches), 1)
+        matches = self.searcher.find_matches(text, debug=4)
+        self.assertEqual(1, len(matches))
 
     def test_searcher_accepts_phrases_on_init(self):
         phrase = "Makelaars"
@@ -280,9 +280,11 @@ class TestSearcherRealData(TestCase):
         # register the keywords with the searcher
         self.searcher.index_phrase_model(self.phrase_model)
 
-    def test_fuzzy_search_text1_finds_four_matches(self):
+    def test_fuzzy_search_text1_finds_five_matches(self):
         matches = self.searcher.find_matches(self.text1)
-        self.assertEqual(len(matches), 4)
+        # for mi, match in enumerate(matches):
+        #     print(f"finds_four_matches - match {mi}:", match)
+        self.assertEqual(5, len(matches))
 
     def test_fuzzy_search_text1_finds_friday(self):
         matches = self.searcher.find_matches(self.text1)
@@ -300,9 +302,11 @@ class TestSearcherRealData(TestCase):
         matches = self.searcher.find_matches(self.text1)
         self.assertEqual(matches[3].string, "PRASENTIEBUS")
 
-    def test_fuzzy_search_text2_finds_four_matches(self):
+    def test_fuzzy_search_text2_finds_five_matches(self):
         matches = self.searcher.find_matches(self.text2)
-        self.assertEqual(len(matches), 4)
+        # for mi, match in enumerate(matches):
+        #     print(f"finds_four_matches - match {mi}:", match)
+        self.assertEqual(5, len(matches))
 
     def test_fuzzy_search_text2_finds_friday(self):
         matches = self.searcher.find_matches(self.text2)

@@ -4,7 +4,7 @@ import string
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, Iterable, List, Union
 
 import fuzzy_search
 import fuzzy_search.tokenization.string as fuzzy_string
@@ -768,8 +768,8 @@ class TokenMatch:
         self.text_tokens = text_tokens
         self.phrase_tokens = phrase_tokens
         self.match_type = match_type
-        self.first = text_tokens[0]
-        self.last = text_tokens[-1]
+        self.first = text_tokens[0] if isinstance(text_tokens, Iterable) else text_tokens
+        self.last = text_tokens[-1] if isinstance(text_tokens, Iterable) else text_tokens
         self.text_start = self.first.char_index
         self.text_end = self.last.char_index + len(self.last)
         self.text_length = self.text_end - self.text_start
@@ -806,9 +806,9 @@ class PartialPhraseMatch:
             self.add_tokens(token_matches)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(phrase={self.phrase}, token_matches={self.token_matches}, " \
-               f"text_tokens={self.text_tokens}, phrase_tokens={self.phrase_tokens}," \
-               f", missing_tokens={self.missing_tokens})"
+        return f"{self.__class__.__name__}(\n\tphrase={self.phrase}, \n\ttoken_matches={self.token_matches}, " \
+               f"\n\ttext_tokens={self.text_tokens}, \n\tphrase_tokens={self.phrase_tokens}, " \
+               f"\n\tmissing_tokens={self.missing_tokens}\n)"
 
     def _update(self):
         text_tokens = []

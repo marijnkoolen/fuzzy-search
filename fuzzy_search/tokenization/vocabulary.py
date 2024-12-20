@@ -20,12 +20,19 @@ class Vocabulary:
     def __len__(self):
         return len(self.term_id)
 
+    def __contains__(self, item):
+        return self.has_term(item)
+
+    def __iter__(self):
+        for term in self.term_id:
+            yield term
+
     def reset_index(self):
         self.term_id = {}
         self.id_term = {}
         self.term_freq = {}
 
-    def add_terms(self, terms: List[Union[str, Token]], reset_index: bool = True):
+    def add_terms(self, terms: Union[str, Token, List[Union[str, Token]]], reset_index: bool = False):
         """Add a list of terms to the vocabulary. Use 'reset_index=True' to reset
         the vocabulary before adding the terms.
 
@@ -36,6 +43,8 @@ class Vocabulary:
         """
         if reset_index is True:
             self.reset_index()
+        if isinstance(terms, str) or isinstance(terms, Token):
+            terms = [terms]
         for term in terms:
             if isinstance(term, Token):
                 term = term.n

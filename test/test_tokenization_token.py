@@ -67,6 +67,13 @@ class TestTokenizer(TestToken):
         token = tokens[3]
         self.assertEqual(self.text.index(token.t), token.char_index)
 
+    def test_tokenizer_tracks_char_end_index(self):
+        tokenizer = Tokenizer(include_boundary_tokens=False)
+        tokens = tokenizer.tokenize(self.text)
+        token = tokens[3]
+        end_index = len(self.text) - self.text.index(token.t)
+        self.assertEqual(end_index, token.char_end_index)
+
     def test_tokenizer_defaults_to_no_boundary_tokens(self):
         tokenizer = Tokenizer(include_boundary_tokens=False)
         tokens = tokenizer.tokenize(self.text)

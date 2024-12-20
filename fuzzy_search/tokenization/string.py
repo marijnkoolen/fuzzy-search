@@ -1,5 +1,8 @@
-from typing import List, Generator
+from typing import List, Generator, Tuple
 from itertools import combinations
+
+from Levenshtein import distance as score_distance
+from Levenshtein import ratio as score_ratio
 
 
 #################################
@@ -107,19 +110,23 @@ def score_char_overlap(term1: str, term2: str) -> int:
     return num_char_matches
 
 
-def score_levenshtein_similarity_ratio(term1, term2):
+def score_levenshtein_similarity_ratio(term1, term2, score_cutoff: int = None):
     """Score the levenshtein similarity between two terms
 
     :param term1: a term string
     :type term1: str
     :param term2: a term string
     :type term2: str
+    :param score_cutoff: the maximum distance beyond which distance calculation should be cut off
+    :type score_cutoff: int
     :return: the number of overlapping ngrams
     :rtype: int
     """
-    max_distance = max(len(term1), len(term2))
-    distance = score_levenshtein_distance(term1, term2)
-    return 1 - distance / max_distance
+    # max_distance = max(len(term1), len(term2))
+    # distance = score_levenshtein_distance(term1, term2)
+    # distance = score_distance(term1, term2, score_cutoff=score_cutoff)
+    return score_ratio(term1, term2)
+    # return 1 - distance / max_distance
 
 
 def score_levenshtein_distance(term1: str, term2: str) -> int:
@@ -156,17 +163,17 @@ class SkipGram:
 
     def __repr__(self):
         return (f"{self.__class__.__name__}(string='{self.string}', start_offset={self.start_offset}, "
-                f"end_offset={self.end_offset}, length={self.length}")
+                f"end_offset={self.end_offset}, length={self.length})")
 
 
-def insert_skips(window: str, skipgram_combinations: List[List[int]]):
+def insert_skips(window: str, skipgram_combinations: List[Tuple[int]]):
     """For a given skip gram window, return all skip grams for a given configuration."""
     for combination in skipgram_combinations:
         skip_gram = window[0]
         try:
             for index in combination:
                 skip_gram += window[index]
-            yield skip_gram, combination[-1] + 1
+            yield skip_gram, combination[-1] + 1, (0,) + combination
         except IndexError:
             pass
 
@@ -174,7 +181,7 @@ def insert_skips(window: str, skipgram_combinations: List[List[int]]):
 def text2skipgrams(text: str, ngram_size: int = 2, skip_size: int = 2) -> Generator[SkipGram, None, None]:
     """Turn a text string into a list of skipgrams.
 
-    :param text: a text string
+    :param text: an text string
     :type text: str
     :param ngram_size: an integer indicating the number of characters in the ngram
     :type ngram_size: int
@@ -185,18 +192,86 @@ def text2skipgrams(text: str, ngram_size: int = 2, skip_size: int = 2) -> Genera
     if ngram_size <= 0 or skip_size < 0:
         raise ValueError('ngram_size must be a positive integer, skip_size must be a positive integer or zero')
     if ngram_size == 1:
-        for char in text:
-            yield SkipGram(char, 0, 1, 1)
+        for ci, char in enumerate(text):
+            yield SkipGram(skipgram_string=char, start_offset=0,
+                           end_offset=len(text) - ci + 1, skipgram_length=1)
+        return None
     elif len(text) <= ngram_size:
-        yield SkipGram(text, 0, len(text), len(text))
+        yield SkipGram(skipgram_string=text, start_offset=0, end_offset=0, skipgram_length=len(text))
+        return None
+    indexes = [i for i in range(0, ngram_size+skip_size)]
+    skipgram_combinations = [combination for combination in combinations(indexes[1:], ngram_size-1)]
+    for start_offset in range(0, len(text)-1):
+        end_offset = len(text) - start_offset + 1
+        window = text[start_offset:start_offset+ngram_size+skip_size]
+        for skipgram, skipgram_length, combination in insert_skips(window, skipgram_combinations):
+            yield SkipGram(skipgram_string=skipgram, start_offset=start_offset,
+                           end_offset=end_offset, skipgram_length=skipgram_length)
+
+
+def token2skipgrams(token: str, ngram_size: int = 2, skip_size: int = 2,
+                    pad_token: bool = True) -> Generator[SkipGram, None, None]:
+    """Turn a (padded) token string into a list of skipgrams.
+
+    :param token: a token string
+    :type token: str
+    :param ngram_size: an integer indicating the number of characters in the ngram
+    :type ngram_size: int
+    :param skip_size: an integer indicating how many skip characters in the ngrams
+    :type skip_size: int
+    :param pad_token: a boolean flag to indicate whether padding should be included
+                     at the boundaries of the token
+    :type pad_token: bool
+    :return: An iterator returning tuples of skip_gram and offset
+    :rtype: Generator[tuple]"""
+    token_length = len(token)
+    if ngram_size <= 0 or skip_size < 0:
+        raise ValueError('ngram_size must be a positive integer, skip_size must be a positive integer or zero')
+    if pad_token is True:
+        pad_size = ngram_size - 1
+        padded_token = '#' * pad_size + token + '#' * pad_size
+    else:
+        pad_size = 0
+        padded_token = token
+    if ngram_size == 1:
+        for ci, char in enumerate(token):
+            yield SkipGram(skipgram_string=char, start_offset=0,
+                           end_offset=len(token) - ci + 1, skipgram_length=1)
+    elif token_length <= ngram_size and pad_token is False:
+        yield SkipGram(skipgram_string=token, start_offset=0,
+                       end_offset=0, skipgram_length=token_length)
     else:
         indexes = [i for i in range(0, ngram_size + skip_size)]
         skipgram_combinations = [combination for combination in combinations(indexes[1:], ngram_size - 1)]
-        for start_offset in range(0, len(text)):
-            end_offset = len(text) - start_offset
-            window = text[start_offset:start_offset+ngram_size+skip_size]
-            for skipgram, skipgram_length in insert_skips(window, skipgram_combinations):
-                yield SkipGram(skipgram, start_offset, end_offset, skipgram_length)
+        # print(skipgram_combinations)
+        for start_offset in range(0, len(padded_token)):
+            padded_start = start_offset
+            window = padded_token[start_offset:start_offset+ngram_size+skip_size]
+            # start_offset = 0 if start_offset < pad_size else start_offset - pad_size
+            end_offset = token_length - start_offset + 1
+            # print()
+            # print(f'padded_token: {padded_token}')
+            # print(f"start_offset: {start_offset}")
+            # print(f"end_offset: {end_offset}")
+            # print(f"window: {window}")
+            if end_offset > token_length:
+                end_offset = token_length
+            for skipgram, skipgram_length, combination in insert_skips(window, skipgram_combinations):
+                # print(f"combination: {combination}")
+                combination = [idx+padded_start for idx in combination if pad_size <= idx+padded_start < token_length+pad_size]
+                # print(f"combination: {combination}")
+                if len(combination) == 0:
+                    continue
+                skipgram_length = combination[-1] - combination[0] + 1
+                start_offset = combination[0] - pad_size
+                # print(f"padded_start: {padded_start}\tstart_offset: {start_offset}\t"
+                #       f"combintation: {combination}\tskipgram: {skipgram}\tskipgram_length: {skipgram_length}")
+                # if pad_token is True and all([char == '#' for char in skipgram]):
+                #     continue
+                # if start_offset + skipgram_length > token_length:
+                #     skipgram_length = token_length - start_offset
+                yield SkipGram(skipgram_string=skipgram, start_offset=start_offset,
+                               end_offset=end_offset, skipgram_length=skipgram_length)
 
 
 non_word_affixes_2 = {

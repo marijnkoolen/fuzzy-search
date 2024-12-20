@@ -17,7 +17,7 @@ def as_phrase_object(phrase: Union[str, dict, Phrase],
         return phrase
     if isinstance(phrase, dict):
         if not is_phrase_dict(phrase):
-            print(phrase)
+            print(f"phrase: {phrase}")
             raise KeyError("invalid phrase dictionary")
         return Phrase(phrase, ngram_size=ngram_size, skip_size=skip_size, tokenizer=tokenizer)
     if isinstance(phrase, str):
@@ -325,11 +325,11 @@ class PhraseModel:
         :param phrases: a list of phrases/keyphrases
         :type phrases: List[Union[str, Dict[str, Union[str, List[str]]]]]
         """
-        print('REMOVING PHRASES')
+        # print('REMOVING PHRASES')
         for phrase in phrases:
-            print('\tphrase:', phrase)
+            # print('\tphrase:', phrase)
             phrase = as_phrase_object(phrase, ngram_size=self.ngram_size, skip_size=self.skip_size)
-            print('\tas phrase:', phrase)
+            # print('\tas phrase:', phrase)
             if phrase.phrase_string not in self.phrase_index:
                 raise KeyError(f"Unknown phrase: {phrase.phrase_string}")
             self.remove_phrase(phrase)
@@ -385,6 +385,7 @@ class PhraseModel:
         """
         for phrase in variants:
             main_phrase = as_phrase_object(phrase, ngram_size=self.ngram_size, skip_size=self.skip_size)
+            # print(main_phrase.metadata)
             if main_phrase.phrase_string not in self.phrase_index:
                 if add_new_phrases:
                     self.add_phrase(main_phrase)
@@ -395,6 +396,7 @@ class PhraseModel:
             for variant_phrase_string in main_phrase.metadata["variants"]:
                 variant_phrase = as_phrase_object(variant_phrase_string, ngram_size=self.ngram_size,
                                                   skip_size=self.skip_size)
+                variant_phrase.add_metadata(main_phrase.metadata)
                 self.add_variant(variant_phrase, main_phrase)
 
     def remove_variants(self, variants: Union[List[Union[str, Phrase]], None] = None,
@@ -480,6 +482,7 @@ class PhraseModel:
             for distractor_string in main_phrase.metadata["distractors"]:
                 distractor_phrase = as_phrase_object(distractor_string, ngram_size=self.ngram_size,
                                                      skip_size=self.skip_size)
+                distractor_phrase.add_metadata(main_phrase.metadata)
                 self.add_distractor(distractor_phrase, main_phrase)
 
     def remove_distractors(self, distractors: Union[List[Union[str, Phrase]], None] = None,
@@ -607,7 +610,7 @@ class PhraseModel:
         :return: a boolean to indicate whether the phrase has a custom property of the given property name
         :rtype: bool
         """
-        print('CUSTOM:', self.custom)
+        # print('CUSTOM:', self.custom)
         return phrase_string in self.custom and custom_property in self.custom[phrase_string]
 
     def get(self, phrase_string: str, custom_property: str) -> any:
@@ -714,11 +717,19 @@ class PhraseModel:
                 phrase = self.get_phrase(phrase_string)
                 if isinstance(phrase, Phrase) and phrase.has_max_start_offset() is True:
                     token_has_phrase_with_max_start = True
+                    # print(f"phrase_model.PhraseModel.set_phrase_token_max_start_offset:")
+                    # print(f"    token: {token}\tphrase: {phrase}")
+                    # print(f"    phrase.max_start_offset: {phrase.max_start_offset}")
+                    # print(f"    self.max_token_offset_in_phrase[token][phrase_string]: "
+                    #       f"{self.max_token_offset_in_phrase[token][phrase_string]}")
                     token_max_offset = phrase.max_start_offset + self.max_token_offset_in_phrase[token][phrase_string]
+                    # print(f"    token_max_offset: {token_max_offset}")
                     if token_max_offset > max_start:
                         max_start = token_max_offset
+                    # print(f"    max_start: {max_start}")
                 if isinstance(phrase, Phrase) and phrase.has_max_start_offset() is False:
                     token_has_phrase_without_max_start = True
+                    # print(f"without max_start - token: {token}\tphrase: {phrase_string}")
             if token_has_phrase_with_max_start and not token_has_phrase_without_max_start:
                 self.phrase_token_max_start_offset[token] = max_start
 

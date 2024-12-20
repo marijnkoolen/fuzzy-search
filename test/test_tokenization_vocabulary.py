@@ -32,6 +32,10 @@ class TestVocabulary(TestCase):
         vocab = Vocabulary(self.words)
         self.assertEqual(True, vocab.has_term('This'))
 
+    def test_vocabulary_can_use_contains_dunder(self):
+        vocab = Vocabulary(self.words)
+        self.assertEqual(True, 'This' in vocab)
+
     def test_vocabulary_can_check_that_token_is_included(self):
         vocab = Vocabulary(self.doc.tokens)
         self.assertEqual(True, vocab.has_term(self.doc.tokens[0]))
