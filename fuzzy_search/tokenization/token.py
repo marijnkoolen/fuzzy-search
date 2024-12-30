@@ -1,7 +1,9 @@
 import copy
 import re
 from collections import defaultdict
-from typing import Callable, Dict, List, Set, Union
+from typing import Callable, Dict, List, Set, Tuple, Union
+
+from nltk.tokenize import WordPunctTokenizer
 
 
 class Annotation:
@@ -233,12 +235,11 @@ class Doc:
         self.token_orig_set = {}
         self.token_norm_set = {}
         self.label_token_index = defaultdict(set)
-        for token in tokens:
-            for label in token.label:
-                self.label_token_index[label].add(token)
         self.metadata = metadata if metadata else {}
         self.annotations: List[Annotation] = []
         for token in tokens:
+            for label in token.label:
+                self.label_token_index[label].add(token)
             if token.t not in self.token_orig_set:
                 self.token_orig_set[token.t] = [token]
             else:
@@ -328,7 +329,7 @@ class Doc:
         else:
             return self._has_original_token(token.t) or self._has_normalised_token(token.n)
 
-    def get_token(self, token_string: str) -> Union[Token, List[Token]]:
+    def get_token(self, token_string: str) -> Union[Token, List[Token], None]:
         """
         Retrieves a token (or tokens) from the document based on the token string.
 
@@ -339,14 +340,14 @@ class Doc:
             Union[Token, List[Token]]: A Token object or a list of Token objects that match the token string.
         """
         if token_string in self.token_orig_set:
-            token = self.token_orig_set[token_string]
+            token_list = self.token_orig_set[token_string]
         elif token_string in self.token_norm_set:
-            token = self.token_norm_set[token_string]
+            token_list = self.token_norm_set[token_string]
         else:
-            token = None
-        if isinstance(token, List) and len(token) == 1:
-            token = token[0]
-        return token
+            return None
+        if len(token_list) == 1:
+            return token_list[0]
+        return token_list
 
     def add_annotations(self, annotations: List[Annotation], replace: bool = False):
         """
@@ -390,7 +391,7 @@ class Tokenizer:
     """
 
     def __init__(self, ignorecase: bool = False, include_boundary_tokens: bool = False,
-                 remove_punctuation: bool = False):
+                 remove_punctuation: bool = False, split_pattern=r"(\S+)"):
         """
         Initializes the Tokenizer instance.
 
@@ -402,8 +403,18 @@ class Tokenizer:
         self.ignorecase = ignorecase
         self.include_boundary_tokens = include_boundary_tokens
         self.remove_punctuation = remove_punctuation
+        self.split_pattern = re.compile(split_pattern)
+        self.nltk_wp_tokenizer = WordPunctTokenizer()
 
-    def _tokenize(self, text: str) -> List[str]:
+    def _string_tokenizer(self, text) -> Tuple[str, int, int]:
+        for si, token_span in enumerate(self.nltk_wp_tokenizer.span_tokenize(text)):
+            token_string = text[token_span[0]:token_span[1]]
+            if self.remove_punctuation is True and token_string.isalnum() is False:
+                continue
+            char_index = token_span[0]
+            yield token_string, char_index
+
+    def _tokenize(self, text: str) -> List[Union[str, Token]]:
         """
         Tokenizes the input text into a list of strings.
 
@@ -413,17 +424,41 @@ class Tokenizer:
         Returns:
             List[str]: A list of tokens.
         """
-        non_whitespace_tokens = [token for token in text.strip().split() if token != '']
         tokens = []
-        for nw_token in non_whitespace_tokens:
-            if self.remove_punctuation:
-                sub_tokens = re.split(r'\W+', nw_token)
-            else:
-                sub_tokens = re.split(r'(\W+)', nw_token)
-            tokens.extend([token for token in sub_tokens if token != ''])
+        doc_length = len(text)
+        if self.include_boundary_tokens is True:
+            start_token = Token('<DOC>', index=0, char_index=0, char_end_index=doc_length, normalised_string='')
+            tokens.append(start_token)
+        for token_string, char_index in self._string_tokenizer(text):
+            char_end_index = doc_length - (char_index + len(token_string) + 1)
+            token = Token(token_string, index=len(tokens), char_index=char_index,
+                          char_end_index=char_end_index)
+            if self.ignorecase is True:
+                token.lower()
+            tokens.append(token)
+        if self.include_boundary_tokens is True:
+            end_token = Token('</DOC>', index=len(tokens), char_index=doc_length, char_end_index=0, normalised_string='')
+            tokens.append(end_token)
         return tokens
 
     def tokenize(self, doc_text: str, doc_id: str = None) -> List[Token]:
+        """
+        Tokenizes the input document text and returns a list of documents.
+
+        Args:
+            doc_text (str): The text of the document to tokenize.
+            doc_id (str, optional): The ID of the document. Defaults to None.
+
+        Returns:
+            Doc: A Doc object containing the tokenized text.
+        """
+        token_strings = self._tokenize(doc_text)
+        if doc_id is not None:
+            for token in token_strings:
+                token.doc_id = doc_id
+        return token_strings
+
+    def tokenize_doc(self, doc_text: str, doc_id: str = None):
         """
         Tokenizes the input document text and returns a Doc object.
 
@@ -434,27 +469,6 @@ class Tokenizer:
         Returns:
             Doc: A Doc object containing the tokenized text.
         """
-        dummy_text = f"<START> {doc_text} <END>" if self.include_boundary_tokens else doc_text
-        token_strings = self._tokenize(doc_text)
-        if self.include_boundary_tokens:
-            token_strings = ['<START>'] + token_strings + ['<END>']
-        tokens = []
-        prefix_text = ''
-        doc_length = len(doc_text)
-        for ti, token_string in enumerate(token_strings):
-            char_index = dummy_text.index(token_string) + len(prefix_text)
-            char_end_index = doc_length - char_index
-            prefix_text += dummy_text[:dummy_text.index(token_string) + len(token_string)]
-            dummy_text = dummy_text[dummy_text.index(token_string)+len(token_string):]
-            token = Token(token_string, index=ti, char_index=char_index, doc_id=doc_id,
-                          char_end_index=char_end_index)
-            if self.ignorecase:
-                if not self.include_boundary_tokens or (ti != 0 and ti != len(token_strings) - 1):
-                    token.lower()
-            tokens.append(token)
-        return tokens
-
-    def tokenize_doc(self, doc_text: str, doc_id: str = None):
         tokens = self.tokenize(doc_text, doc_id)
         return Doc(text=doc_text, doc_id=doc_id, tokens=tokens)
 
@@ -468,7 +482,7 @@ class RegExTokenizer(Tokenizer):
     """
 
     def __init__(self, ignorecase: bool = False, include_boundary_tokens: bool = False,
-                 split_pattern: str = r'\b'):
+                 split_pattern: str = r"\s+", token_pattern: str = None):
         """
         Initializes the RegExTokenizer instance.
 
@@ -478,26 +492,33 @@ class RegExTokenizer(Tokenizer):
             split_pattern (str, optional): The regular expression pattern used to split the text. Defaults to r'\b'.
         """
         super().__init__(ignorecase=ignorecase, include_boundary_tokens=include_boundary_tokens)
-        self.split_pattern = re.compile(split_pattern)
+        self.remove_punctuation = False
+        if token_pattern is not None:
+            self.split_pattern = None
+            self.token_pattern = re.compile(token_pattern)
+            self._string_tokenizer = self._token_pattern_tokenizer
+        else:
+            self.split_pattern = re.compile(split_pattern)
+            self.token_pattern = None
+            self._string_tokenizer = self._split_pattern_tokenizer
 
-    def _tokenize(self, text: str) -> List[str]:
-        """
-        Tokenizes the input text into a list of strings using the specified regular expression pattern.
+    def _split_pattern_tokenizer(self, text: str):
+        split_matches = [match for match in re.finditer(self.split_pattern, text)]
+        char_index = 0
+        for split_match in split_matches:
+            token_end = split_match.start()
+            token_string = text[char_index:token_end]
+            if len(token_string) > 0:
+                # only yield tokens that have at least one character
+                yield token_string, char_index
+            char_index = split_match.end()
+        token_string = text[char_index:]
+        yield token_string, char_index
 
-        Args:
-            text (str): The text to tokenize.
-
-        Returns:
-            List[str]: A list of tokens obtained by splitting the input text.
-        """
-        # Split the text using the regular expression pattern
-        tokens = [token.strip() for token in re.split(self.split_pattern, text) if token.strip() != '']
-        non_whitespace_tokens = []
-        for token in tokens:
-            # Split multi-word tokens (e.g., if there is space between parts)
-            split_tokens = token.split(' ')
-            non_whitespace_tokens.extend([token for token in split_tokens if token != ''])
-        return non_whitespace_tokens
+    def _token_pattern_tokenizer(self, text: str):
+        token_matches = [match for match in re.finditer(self.token_pattern, text)]
+        for token_match in token_matches:
+            yield token_match.group(0), token_match.start()
 
 
 class CustomTokenizer(Tokenizer):
@@ -530,6 +551,40 @@ class CustomTokenizer(Tokenizer):
             List[str]: A list of tokens generated by the custom tokenizer function.
         """
         return self.tokenizer_func(text)
+
+    def _strings_to_tokens(self, doc: Dict[str, any], token_strings: List[str]) -> List[Token]:
+        # dummy_text = f"<doc> {doc['text']} </doc>" if self.include_boundary_tokens else doc['text']
+        # if self.include_boundary_tokens:
+        #     token_strings = ['<DOC>'] + token_strings + ['</DOC>']
+        dummy_text = doc['text']
+        tokens = []
+        doc_length = len(doc['text'])
+        if self.include_boundary_tokens is True:
+            start_token = Token('<DOC>', index=0, char_index=0, char_end_index=doc_length, normalised_string='')
+            tokens.append(start_token)
+        prefix_text = ''
+        for ti, token_string in enumerate(token_strings):
+            dummy_char_index = dummy_text.index(token_string)
+            char_index = dummy_char_index + len(prefix_text)
+            char_end_index = doc_length - (char_index + len(token_string) + 1)
+            prefix_text += dummy_text[:dummy_char_index + len(token_string)]
+            dummy_text = dummy_text[dummy_char_index+len(token_string):]
+            token = Token(token_string, index=len(tokens), char_index=char_index, doc_id=doc['id'],
+                          char_end_index=char_end_index)
+            if self.ignorecase:
+                if not self.include_boundary_tokens or (ti != 0 and ti != len(token_strings) - 1):
+                    token.lower()
+            tokens.append(token)
+        if self.include_boundary_tokens is True:
+            end_token = Token('</DOC>', index=len(tokens), char_index=doc_length, char_end_index=0, normalised_string='')
+            tokens.append(end_token)
+        return tokens
+
+    def tokenize(self, doc_text: str, doc_id: str = None) -> List[Token]:
+        token_strings = self._tokenize(doc_text)
+        doc = {'id': doc_id, 'text': doc_text}
+        tokens = self._strings_to_tokens(doc, token_strings)
+        return tokens
 
 
 def update_token(token: Token, new_normalised: str) -> Token:
