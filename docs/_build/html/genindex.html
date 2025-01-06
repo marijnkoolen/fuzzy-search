@@ -1088,6 +1088,8 @@
 </li>
         <li><a href="source/test.html#test.test_tokenization_token.TestCustomTokenizer.setUp">(test.test_tokenization_token.TestCustomTokenizer method)</a>
 </li>
+        <li><a href="source/test.html#test.test_tokenization_token.TestRegexTokenizer.setUp">(test.test_tokenization_token.TestRegexTokenizer method)</a>
+</li>
         <li><a href="source/test.html#test.test_tokenization_token.TestToken2String.setUp">(test.test_tokenization_token.TestToken2String method)</a>
 </li>
         <li><a href="source/test.html#test.test_tokenization_token.TestTokenizer.setUp">(test.test_tokenization_token.TestTokenizer method)</a>
@@ -1290,6 +1292,8 @@
       <li><a href="source/test.html#test.test_match_phrase.TestFuzzyMatch.test_adjust_start_shifts_to_previous_character">test_adjust_start_shifts_to_previous_character() (test.test_match_phrase.TestFuzzyMatch method)</a>
 </li>
       <li><a href="source/test.html#test.test_match_phrase.TestFuzzyMatch.test_adjust_start_shifts_to_second_previous_characters">test_adjust_start_shifts_to_second_previous_characters() (test.test_match_phrase.TestFuzzyMatch method)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestCustomTokenizer.test_any_string_tokenizing_func_returns_correct_char_index">test_any_string_tokenizing_func_returns_correct_char_index() (test.test_tokenization_token.TestCustomTokenizer method)</a>
 </li>
       <li><a href="source/test.html#test.test_tokenization_token.TestCustomTokenizer.test_any_string_tokenizing_func_returns_doc">test_any_string_tokenizing_func_returns_doc() (test.test_tokenization_token.TestCustomTokenizer method)</a>
 </li>
@@ -1509,12 +1513,12 @@
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase_model.Test.test_phrase_model_can_add_phrase">test_phrase_model_can_add_phrase() (test.test_phrase_phrase_model.Test method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/test.html#test.test_phrase_phrase_model.Test.test_phrase_model_can_remove_phrase">test_phrase_model_can_remove_phrase() (test.test_phrase_phrase_model.Test method)</a>
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase_model.TestPhraseModelTokenizer.test_phrase_model_indexes_no_phrase_token_max_end_offset">test_phrase_model_indexes_no_phrase_token_max_end_offset() (test.test_phrase_phrase_model.TestPhraseModelTokenizer method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/test.html#test.test_phrase_phrase_model.TestPhraseModelTokenizer.test_phrase_model_indexes_no_phrase_token_max_start_offset">test_phrase_model_indexes_no_phrase_token_max_start_offset() (test.test_phrase_phrase_model.TestPhraseModelTokenizer method)</a>
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase_model.TestPhraseModelTokenizer.test_phrase_model_indexes_phrase_token_max_end_offset">test_phrase_model_indexes_phrase_token_max_end_offset() (test.test_phrase_phrase_model.TestPhraseModelTokenizer method)</a>
@@ -1530,6 +1534,14 @@
       <li><a href="source/test.html#test.test_phrase_phrase.TestPhraseTokens.test_phrase_with_tokens_has_token_index">test_phrase_with_tokens_has_token_index() (test.test_phrase_phrase.TestPhraseTokens method)</a>
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase.TestPhraseTokens.test_phrase_with_tokens_has_token_multi_index">test_phrase_with_tokens_has_token_multi_index() (test.test_phrase_phrase.TestPhraseTokens method)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestRegexTokenizer.test_regex_tokenizing_split_func_returns_correct_char_index">test_regex_tokenizing_split_func_returns_correct_char_index() (test.test_tokenization_token.TestRegexTokenizer method)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestRegexTokenizer.test_regex_tokenizing_split_func_returns_correct_tokens">test_regex_tokenizing_split_func_returns_correct_tokens() (test.test_tokenization_token.TestRegexTokenizer method)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestRegexTokenizer.test_regex_tokenizing_token_func_returns_correct_char_index">test_regex_tokenizing_token_func_returns_correct_char_index() (test.test_tokenization_token.TestRegexTokenizer method)</a>
+</li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestRegexTokenizer.test_regex_tokenizing_token_func_returns_correct_tokens">test_regex_tokenizing_token_func_returns_correct_tokens() (test.test_tokenization_token.TestRegexTokenizer method)</a>
 </li>
       <li><a href="source/test.html#test.test_tokenization_string.Test.test_score_char_overlap_with_self_is_len_of_self">test_score_char_overlap_with_self_is_len_of_self() (test.test_tokenization_string.Test method)</a>
 </li>
@@ -1795,6 +1807,8 @@
 </li>
       <li><a href="source/test.html#test.test_phrase_phrase.TestPhraseTokens">TestPhraseTokens (class in test.test_phrase_phrase)</a>
 </li>
+      <li><a href="source/test.html#test.test_tokenization_token.TestRegexTokenizer">TestRegexTokenizer (class in test.test_tokenization_token)</a>
+</li>
       <li><a href="source/test.html#test.test_search_searcher.TestSearcher">TestSearcher (class in test.test_search_searcher)</a>
 </li>
       <li><a href="source/test.html#test.test_search_phrase_searcher.TestSearcherRealData">TestSearcherRealData (class in test.test_search_phrase_searcher)</a>
@@ -1835,8 +1849,12 @@
 </li>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.token_within_phrase_offset">token_within_phrase_offset() (in module fuzzy_search.search.token_searcher)</a>
 </li>
-      <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.tokenize">tokenize() (fuzzy_search.tokenization.token.Tokenizer method)</a>
+      <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.CustomTokenizer.tokenize">tokenize() (fuzzy_search.tokenization.token.CustomTokenizer method)</a>
+
+      <ul>
+        <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.tokenize">(fuzzy_search.tokenization.token.Tokenizer method)</a>
 </li>
+      </ul></li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.tokenize_doc">tokenize_doc() (fuzzy_search.tokenization.token.Tokenizer method)</a>
 </li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer">Tokenizer (class in fuzzy_search.tokenization.token)</a>
