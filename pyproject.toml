@@ -1,8 +1,8 @@
-[tool.poetry]
+[project]
 name = "fuzzy-search"
-version = "2.4.1"
+version = "2.4.2"
 description = "Tool for fuzzy searching in texts with historical language use and OCR/HTR errors"
-authors = ["Marijn Koolen <marijn.koolen@gmail.com>"]
+authors = [{name = "Marijn Koolen", email = "marijn.koolen@gmail.com"}]
 readme = "README.md"
 homepage = "https://github.com/marijnkoolen/fuzzy-search"
 repository = "https://github.com/marijnkoolen/fuzzy-search"
@@ -14,15 +14,24 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
 ]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy~=1.22",
+    "levenshtein~=0.26"
+]
+packages = [
+    { include = "fuzzy_search" }
+]
 
-[tool.poetry.dependencies]
-python = ">=3.9"
-numpy = "^1.22.1"
-levenshtein = "^0.26.1"
+# [tool.poetry.dependencies]
+# python = ">=3.9"
+# numpy = "~=1.22"
+# levenshtein = "~=0.26"
 
 [tool.poetry.group.dev.dependencies]
 
 [tool.poetry.group.test.dependencies]
+pytest = "^6.0.0"
 icecream = "^2.1.2"
 loguru = "^0.6.0"
 
@@ -37,7 +46,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.bumpver]
-current_version = "2.4.1"
+current_version = "2.4.2"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
@@ -48,6 +57,6 @@ push = true
 "pyproject.toml" = [
     'version = "{version}"',
 ]
-"formula_detection/__init__.py" = [
+"fuzzy_search/__init__.py" = [
     '__version__ = "{version}"'
 ]
