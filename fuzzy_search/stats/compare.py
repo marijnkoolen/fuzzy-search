@@ -2,9 +2,6 @@ from collections import Counter
 from collections import namedtuple
 from typing import List, Set, Union
 
-from gensim.models.fasttext import FastText
-from gensim.models import Word2Vec
-
 from .freq import compute_llr
 
 Diff = namedtuple('Diff', "word freq1 frac1 perc_diff1 freq2 frac2 perc_diff2 llr direction")
@@ -24,7 +21,7 @@ class Change:
 
 class SpellingCompare:
 
-    def __init__(self, word_freq1: Counter, word_freq2: Counter, embeddings: Union[Word2Vec, FastText]):
+    def __init__(self, word_freq1: Counter, word_freq2: Counter, embeddings):
         self.word_freq1 = word_freq1
         self.word_freq2 = word_freq2
         self.embeddings = embeddings
