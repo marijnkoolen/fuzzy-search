@@ -1,6 +1,6 @@
 [project]
 name = "fuzzy-search"
-version = "2.4.3"
+version = "2.4.4"
 description = "Tool for fuzzy searching in texts with historical language use and OCR/HTR errors"
 authors = [{name = "Marijn Koolen", email = "marijn.koolen@gmail.com"}]
 readme = "README.md"
@@ -14,10 +14,10 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 dependencies = [
     "numpy~=1.22",
-    "levenshtein~=0.26"
+    "levenshtein~=0.24"
 ]
 packages = [
     { include = "fuzzy_search" }
@@ -46,7 +46,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.bumpver]
-current_version = "2.4.3"
+current_version = "2.4.4"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
