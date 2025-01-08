@@ -1,3 +1,4 @@
+import re
 from unittest import TestCase
 
 from fuzzy_search.tokenization.token import Token

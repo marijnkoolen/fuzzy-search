@@ -1,4 +1,12 @@
 # fuzzy-search
+
+[![GitHub Actions](https://github.com/marijnkoolen/pagexml/workflows/tests/badge.svg)](https://github.com/marijnkoolen/fuzzy-search/actions)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Documentation Status](https://readthedocs.org/projects/pagexml/badge/?version=latest)](https://fuzzy-search.readthedocs.io/en/latest/?badge=latest)
+[![PyPI](https://img.shields.io/pypi/v/fuzzy-search)](https://pypi.org/project/fuzzy-search/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fuzzy-search)](https://pypi.org/project/fuzzy-search/)
+
+
 Fuzzy search modules for searching occurrences of words or phrases in low quality OCR and HTR text and text with spelling variation. 
 
 This package has been developed for finding occurrences of formulaic phrases in corpora with repetitive texts, such as auction advertisements in 17th century newspapers, resolutions in political administrative archives, or notarial deeds.

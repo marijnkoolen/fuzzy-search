@@ -16,7 +16,7 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-    "numpy~=1.22",
+    "numpy>=1.20",
     "levenshtein~=0.24",
     "nltk (>=3.9.1,<4.0.0)"
 ]
