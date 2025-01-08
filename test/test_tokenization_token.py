@@ -112,8 +112,6 @@ class TestRegexTokenizer(TestCase):
             return re.split(r'\s+', text)
         regex_tokens = self.split_tokenizer.tokenize(self.text)
         tokens = [token for token in tokenize_func(self.text) if token != '']
-        print(tokens)
-        print(regex_tokens)
         for ti, token in enumerate(tokens):
             with self.subTest(ti):
                 self.assertEqual(token, regex_tokens[ti].t)
@@ -132,8 +130,6 @@ class TestRegexTokenizer(TestCase):
             return [m.group(0) for m in re.finditer(r'\w+', text)]
         regex_tokens = self.token_tokenizer.tokenize(self.text)
         tokens = [token for token in tokenize_func(self.text) if token != '']
-        print(tokens)
-        print(regex_tokens)
         for ti, token in enumerate(tokens):
             with self.subTest(ti):
                 self.assertEqual(token, regex_tokens[ti].t)

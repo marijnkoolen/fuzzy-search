@@ -116,7 +116,7 @@ class TestFuzzyPhraseSearcher(TestCase):
         phrase = "Makelaars"
         self.searcher.index_phrases(phrases=[phrase])
         text = 'door de Alakei&ers by na gecompletecrt'
-        matches = self.searcher.find_matches(text, debug=4)
+        matches = self.searcher.find_matches(text, debug=0)
         self.assertEqual(1, len(matches))
 
     def test_searcher_accepts_phrases_on_init(self):
