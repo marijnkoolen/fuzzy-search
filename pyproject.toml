@@ -14,11 +14,13 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.8.1"
 dependencies = [
     "numpy>=1.20",
     "levenshtein~=0.24",
-    "nltk (>=3.9.1,<4.0.0)"
+    "nltk (>=3.9.1,<4.0.0)",
+    "flake8 (>=7.1.1,<8.0.0)",
+    "pytest (>=8.3.4,<9.0.0)"
 ]
 packages = [
     { include = "fuzzy_search" }
@@ -27,7 +29,7 @@ packages = [
 [tool.poetry.group.dev.dependencies]
 
 [tool.poetry.group.test.dependencies]
-pytest = "^6.0.0"
+pytest = "^8.3.4"
 icecream = "^2.1.2"
 loguru = "^0.6.0"
 
