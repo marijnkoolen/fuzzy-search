@@ -194,7 +194,7 @@ class TestFuzzySearchExactMatch(TestCase):
 
     def test_fuzzy_search_can_search_exact_match(self):
         text = "This text is about baking and not about braking."
-        matches = self.searcher.find_exact_matches(text, debug=True)
+        matches = self.searcher.find_exact_matches(text, debug=0)
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0].string, "baking")
 

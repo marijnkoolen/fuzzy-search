@@ -1,6 +1,6 @@
 # fuzzy-search
 
-[![GitHub Actions](https://github.com/marijnkoolen/fuzzy-search/workflows/tests/badge.svg)](https://github.com/marijnkoolen/fuzzy-search/actions)
+[![GitHub Actions](https://github.com/marijnkoolen/fuzzy-search/actions/workflows/python-package.yml/badge.svg)](https://github.com/marijnkoolen/fuzzy-search/actions)
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Documentation Status](https://readthedocs.org/projects/pagexml/badge/?version=latest)](https://fuzzy-search.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/fuzzy-search)](https://pypi.org/project/fuzzy-search/)
