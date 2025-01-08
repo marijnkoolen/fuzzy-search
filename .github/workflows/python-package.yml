@@ -22,7 +22,7 @@ jobs:
 
     steps:
     - name: (1/6) Checkout
-    - uses: actions/checkout@v4
+      uses: actions/checkout@v4
     
     - name: (2/6) Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
