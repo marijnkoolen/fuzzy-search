@@ -1,6 +1,6 @@
 [project]
 name = "fuzzy-search"
-version = "2.5.0"
+version = "2.6.0"
 description = "Tool for fuzzy searching in texts with historical language use and OCR/HTR errors"
 authors = [{name = "Marijn Koolen", email = "marijn.koolen@gmail.com"}]
 readme = "README.md"
@@ -44,7 +44,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.bumpver]
-current_version = "2.5.0"
+current_version = "2.6.0"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
