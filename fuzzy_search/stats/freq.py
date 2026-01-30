@@ -141,10 +141,14 @@ class NgramFreq:
                 tail_ngram = ' '.join(tokens[-n:])
                 lambda_n = lambdas[n]
                 tail_prob = self._has_unsmoothed_conditional_prob(tail_ngram, tokens[-n:], ngram_size - n)
+                print(f"\tn: {n}\tlambda: {lambda_n}\ttail_ngram: {tail_ngram}\ttail_prob: {tail_prob}")
                 cond_prob += lambda_n * tail_prob
         except IndexError:
             print(f"ngram_size: {ngram_size}")
             raise
+        if cond_prob == 0.0:
+            cond_prob = 1 / self.total_tokens(1)
+            print(f"cond_prob == 0.0\tself.total_tokens(1): {self.total_tokens(1)}\tcond_prob: {cond_prob}")
         return cond_prob
 
     def total_tokens(self, ngram_size: int = 1):

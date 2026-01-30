@@ -12,6 +12,14 @@ fuzzy\_search.tokenization.string module
    :undoc-members:
    :show-inheritance:
 
+fuzzy\_search.tokenization.subtoken module
+------------------------------------------
+
+.. automodule:: fuzzy_search.tokenization.subtoken
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 fuzzy\_search.tokenization.token module
 ---------------------------------------
 

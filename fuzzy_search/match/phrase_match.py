@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Dict, Iterable, List, Union
 
 import fuzzy_search
+import fuzzy_search.match.candidate_match as can_match
 import fuzzy_search.tokenization.string as fuzzy_string
 from fuzzy_search.match.candidate_match import Candidate
 from fuzzy_search.phrase.phrase import Phrase
@@ -70,7 +71,7 @@ def candidates_to_matches(candidates: List[Candidate], text: dict, phrase_model:
                             ignorecase=ignorecase,
                             # match_label=match_phrase.label
                             )
-        match.add_scores(skipgram_overlap=candidate.get_skip_count_overlap())
+        match.add_scores(skipgram_overlap=candidate.skipgram_overlap)
         matches.append(match)
     return matches
 
@@ -177,10 +178,15 @@ def adjust_match_end_offset(phrase_string: str, candidate_string: str,
     # ugly hack: if phrase string ends with punctuation, use only whitespace as word end boundary
     if debug > 2:
         print('\tadjust_match_end_offset - start')
-    whitespace_only = True if phrase_string[-1] in punctuation else False
+    if phrase_string[-1] in punctuation:
+        whitespace_only = True
+    elif phrase_string[-1] in ' \t\r\n' and phrase_string[-2] in punctuation:
+        whitespace_only = True
+    else:
+        whitespace_only = False
     if debug > 2:
         print('\tadjust_match_end_offset - whitespace_only:', whitespace_only)
-    phrase_end = map_string(phrase_string[-3:], punctuation)
+    phrase_end = map_string(phrase_string[-3:], punctuation, whitespace_only=whitespace_only)
     if debug > 2:
         print('\tadjust_match_end_offset - prhase_end:', phrase_end)
     match_end = map_string(candidate_string[-3:], punctuation, whitespace_only=whitespace_only)
@@ -192,7 +198,16 @@ def adjust_match_end_offset(phrase_string: str, candidate_string: str,
         print('\tadjust_match_end_offset - text_suffix:', text_suffix)
         print(f"\tadjust_match_end_offset - match_end: {candidate_string[-3:]: <4}\ttext_suffix: {text['text'][end_offset:end_offset+3]: >4}")
         print(f"\tadjust_match_end_offset - mapped suffixes - match_end: #{match_end}#\ttext_suffix: #{text_suffix}#")
-    return calculate_end_shift(phrase_end, match_end, text_suffix, end_offset)
+    try:
+        return calculate_end_shift(phrase_end, match_end, text_suffix, end_offset)
+    except ValueError:
+        print(f"phrase_string: #{phrase_string}#\tcandidate_string: #{candidate_string}#")
+        print(f"text: #{text}#")
+        print(f"text_suffix: #{text_suffix}#")
+        print(f"phrase_end: #{phrase_end}#")
+        print(f"match_end: #{match_end}#")
+        print(f"whitespace_only: #{whitespace_only}#")
+        raise
 
 
 def adjust_match_offsets(phrase_string: str, candidate_string: str,
@@ -269,10 +284,13 @@ def map_string(affix_string: str, punctuation: str,
 
 
 def calculate_end_shift(phrase_end: str, match_end: str, text_suffix: str, end_offset: int):
+    """Determine whether and how much to shift the end offset, based on trailing whitespace
+    for either the phrase or the match or both."""
     if phrase_end == match_end:
         if text_suffix == "" or text_suffix.startswith("s"):
             return end_offset
     if phrase_end.endswith("s") and match_end.endswith("s"):
+        # both phrase and match end in whitespace, so no need to shift
         return end_offset
     if match_end == "wss":
         return end_offset - 2
@@ -327,6 +345,8 @@ def calculate_end_shift(phrase_end: str, match_end: str, text_suffix: str, end_o
             return end_offset - 2
         else:
             return None
+    # if phrase_end == "wss":
+    #     if match_end ==
     if phrase_end == "sww":
         if match_end == "sww":
             if text_suffix == "w" or text_suffix.startswith("ws"):

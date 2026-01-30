@@ -108,6 +108,14 @@ test.test\_tokenization\_string module
    :undoc-members:
    :show-inheritance:
 
+test.test\_tokenization\_subtoken module
+----------------------------------------
+
+.. automodule:: test.test_tokenization_subtoken
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 test.test\_tokenization\_token module
 -------------------------------------
 
