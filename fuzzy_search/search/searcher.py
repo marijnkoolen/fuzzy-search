@@ -279,7 +279,7 @@ class FuzzySearcher(object):
         skip_matches = SkipMatches(self.ngram_size, self.skip_size)
         text_string = text['text'].lower() if self.ignorecase else text['text']
         for skipgram in text2skipgrams(text_string, self.ngram_size, self.skip_size):
-            # print(skipgram.start_offset, skipgram.string)
+            # print(skipgram.start_offset, skipgram.string, skipgram)
             # print("skipgram:", skipgram.string)
             if skipgram.start_offset in known_word_start_offset:
                 known_word = known_word_start_offset[skipgram.start_offset]
@@ -288,15 +288,16 @@ class FuzzySearcher(object):
                 # print("end of known word start_offset reached:", known_word)
                 known_word = None
             for phrase in self.skipgram_index[skipgram.string]:
-                if phrase.max_start_offset > 0 and phrase.max_start_end < skipgram.start_offset + \
-                        skipgram.length + self.max_length_variance:
-                    # print(skipgram.offset, phrase.max_start_offset, phrase.max_start_end, phrase.phrase_string)
-                    # print(f"skipping phrase {phrase.phrase_string} at offset", skipgram.offset)
+                if phrase.max_start_offset > 0 and phrase.max_start_end + self.max_length_variance < \
+                        skipgram.start_offset + skipgram.length:
+                    # print(skipgram.start_offset, phrase.max_start_offset, phrase.max_start_end, phrase.phrase_string)
+                    # print(f"phrase.max_start_end {phrase.max_start_end} < {skipgram.start_offset} + {skipgram.length} + {self.max_length_variance}")
+                    # print(f"skipping phrase {phrase.phrase_string} at offset {skipgram.start_offset} because of max_start_offset")
                     continue
-                if phrase.max_end_offset > 0 and phrase.max_end_end < skipgram.end_offset + \
-                        skipgram.length + self.max_length_variance:
-                    # print(skipgram.offset, phrase.max_end_offset, phrase.max_end_end, phrase.phrase_string)
-                    # print(f"skipping phrase {phrase.phrase_string} at offset", skipgram.offset)
+                if phrase.max_end_offset > 0 and phrase.max_end_end + self.max_length_variance < \
+                        skipgram.end_offset + skipgram.length:
+                    # print(skipgram.start_offset, phrase.max_end_offset, phrase.max_end_end, phrase.phrase_string)
+                    # print(f"skipping phrase {phrase.phrase_string} at offset {skipgram.start_offset} because of max_end_offset")
                     continue
                 if known_word:
                     #if phrase.phrase_string not in self.phrase_model.word_in_phrase[known_word["word"]]:
@@ -308,6 +309,8 @@ class FuzzySearcher(object):
                 # print("\tphrase has skip:", phrase.phrase_string)
                 # skipmatch_count += 1
                 # print("adding skipmatch", skipmatch_count)
+                # if phrase.phrase_string == 'Is ter Vergaderinge gelesen':
+                #     print(f"fuzzy_search.Searcher.find_skipgram_matches - adding skipmatch - {phrase.phrase_string} - {skipgram}")
                 skip_matches.add_skip_match(skipgram, phrase)
             if include_variants:
                 for phrase in self.variant_skipgram_index[skipgram.string]:

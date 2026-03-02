@@ -16,6 +16,11 @@ class Candidate:
         self.match_string: str = match_string
         self.skipgram_overlap: float = skipgram_overlap
 
+    def __repr__(self):
+        return f'Candidate(' + \
+               f'phrase: "{self.phrase.phrase_string}", match_string: "{self.match_string}", ' + \
+               f'match_start_offset: {self.match_start_offset}, match_end_offset: {self.match_end_offset})'
+
 
 class CandidatePartial:
 
@@ -100,7 +105,7 @@ def add_skip_match(candidate: CandidatePartial, skipgram: SkipGram) -> None:
     :type skipgram: SkipGram
     """
     if len(candidate.skipgram_list) == 0 and skipgram.string not in candidate.early_skipgram_index:
-        if candidate.debug > 2:
+        if candidate.debug > 3:
             print("skipping skipgram as first for candidate:", skipgram.string)
         return None
     candidate.skipgram_set.add(skipgram.string)
@@ -176,11 +181,11 @@ def get_skip_match_length(candidate: CandidatePartial) -> int:
 def is_match(candidate: CandidatePartial, skipgram_threshold: float) -> bool:
     """Check if the candidate is a likely match for its corresponding phrase."""
     if len(candidate.skipgram_list) == 0:
-        if candidate.debug > 2:
+        if candidate.debug > 3:
             print('\tis_match - NO MATCH: there are no matching skipgrams')
         return False
     if candidate.skipgram_list[0].string not in candidate.early_skipgram_index:
-        if candidate.debug > 2:
+        if candidate.debug > 3:
             print('\tis_match - NO MATCH: first skipgram not in early index')
         return False
     
@@ -188,7 +193,7 @@ def is_match(candidate: CandidatePartial, skipgram_threshold: float) -> bool:
     match_len = get_skip_match_length(candidate)
     
     if match_len > phrase_len + candidate.max_length_variance:
-        if candidate.debug > 2:
+        if candidate.debug > 3:
             print('\tis_match - NO MATCH: skip match length too long')
         return False
     elif match_len < candidate.phrase.late_threshold - candidate.max_length_variance:

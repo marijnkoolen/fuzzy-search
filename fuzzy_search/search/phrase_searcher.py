@@ -7,6 +7,7 @@ from fuzzy_search.match.phrase_match import Candidate
 from fuzzy_search.match.phrase_match import adjust_match_offsets
 from fuzzy_search.match.phrase_match import candidates_to_matches
 from fuzzy_search.match.phrase_match import filter_matches_by_overlap
+from fuzzy_search.match.skip_match import filter_overlapping_phrase_candidates
 from fuzzy_search.match.skip_match import get_skipmatch_candidates
 from fuzzy_search.match.exact_match import index_known_word_offsets
 from fuzzy_search.match.exact_match import search_exact_phrases
@@ -91,6 +92,45 @@ class FuzzyPhraseSearcher(FuzzySearcher):
                                                 config=self.config, tokenizer=self.tokenizer)
         self.token_searcher = token_searcher
 
+    def filter_phrase_candidates(self, phrase_candidates: Dict[str, List[Candidate]], text: Dict[str, any],
+                                 use_word_boundaries: bool, debug: int = 0) -> List[Candidate]:
+        candidates: List[Candidate] = []
+        if debug > 1:
+            print(f"PhraseSearcher.filter_phrase_candidates - phrases with overlap filtered candidates:")
+            if use_word_boundaries:
+                print('    find_candidates - start word boundary filtering candidates')
+        for phrase_string in phrase_candidates:
+            if use_word_boundaries:
+                adjusted_candidates = []
+                for candidate in phrase_candidates[phrase_string]:
+                    if debug > 1:
+                        print(f"    candidate: {candidate.phrase}\t-\t{candidate.match_string}")
+                    adjusted_match = adjust_match_offsets(candidate.phrase.phrase_string, candidate.match_string,
+                                                      text, candidate.match_start_offset, candidate.match_end_offset,
+                                                      self.punctuation, debug=debug)
+                    if debug > 2:
+                        print("    find_candidates - adjusted_match:", adjusted_match)
+                    if not adjusted_match:
+                        if debug > 2:
+                            print(f"    find_candidates - removing candidate '{candidate.phrase}'\t-\t'{candidate.match_string}'")
+                        continue
+                    candidate.match_start_offset = adjusted_match["match_start_offset"]
+                    candidate.match_end_offset = adjusted_match["match_end_offset"]
+                    candidate.match_string = adjusted_match["match_string"]
+                    adjusted_candidates.append(candidate)
+                phrase_candidates[phrase_string] = adjusted_candidates
+            filtered_candidates = filter_overlapping_phrase_candidates(phrase_candidates[phrase_string])
+            if debug > 1 and len(filtered_candidates) > 0:
+                print(f"\tphrase_string: {phrase_string}\tnum overlap filtered candidates: {len(filtered_candidates)}")
+                if debug > 2:
+                    for candidate in filtered_candidates:
+                        print('\t', candidate.match_string, candidate.match_start_offset, candidate.match_end_offset)
+            candidates += filtered_candidates
+
+        if debug > 0:
+            print(f'PhraseSearcher.filter_phrase_candidates - returning {len(candidates)} candidates')
+        return candidates
+
     def find_candidates(self, text: dict, use_word_boundaries: bool,
                         include_variants: Union[None, bool] = None,
                         known_word_start_offset: Dict[int, Dict[str, any]] = None,
@@ -112,39 +152,18 @@ class FuzzyPhraseSearcher(FuzzySearcher):
         """
         skip_matches = self.find_skipgram_matches(text, include_variants=include_variants,
                                                   known_word_start_offset=known_word_start_offset)
-        candidates = get_skipmatch_candidates(text, skip_matches, self.skipgram_threshold, self.phrase_model,
+        phrase_candidates = get_skipmatch_candidates(text, skip_matches, self.skipgram_threshold, self.phrase_model,
                                               max_length_variance=self.max_length_variance,
                                               ignorecase=self.ignorecase, debug=debug)
-        if debug > 2:
-            print('find_candidates - candidates:')
-            for candidate in candidates:
-                print(f"\t{candidate.phrase}\t-\t{candidate.match_string}")
-        filtered = []
+        if debug > 1:
+            print('find_candidates - phrase_candidates:')
+            for phrase in phrase_candidates:
+                print(f"    phrase: {phrase}")
+                for candidate in phrase_candidates[phrase]:
+                    print(f"\t{candidate.phrase}\t-\t{candidate.match_string}")
         use_word_boundaries = use_word_boundaries if use_word_boundaries is not None else self.use_word_boundaries
-        if not use_word_boundaries:
-            filtered = candidates
-        else:
-            if debug > 1:
-                print('find_candidates - start word boundary filtering candidates')
-            for candidate in candidates:
-                if debug > 3:
-                    print()
-                    print('find_candidates - candidate:', candidate)
-                adjusted_match = adjust_match_offsets(candidate.phrase.phrase_string, candidate.match_string,
-                                                      text, candidate.match_start_offset, candidate.match_end_offset,
-                                                      self.punctuation, debug=debug)
-                if debug > 3:
-                    print("find_candidates - adjusted_match:", adjusted_match)
-                if not adjusted_match:
-                    if debug > 2:
-                        print(f"find_candidates - removing candidate '{candidate.phrase}'\t-\t'{candidate.match_string}'")
-                    continue
-                candidate.match_start_offset = adjusted_match["match_start_offset"]
-                candidate.match_end_offset = adjusted_match["match_end_offset"]
-                candidate.match_string = adjusted_match["match_string"]
-                if debug > 3:
-                    print("find_candidates - new match string:", candidate.match_string)
-                filtered.append(candidate)
+        filtered = self.filter_phrase_candidates(phrase_candidates, text,
+                                                 use_word_boundaries=use_word_boundaries, debug=debug)
         if debug > 1:
             print('find_candidates - returning word boundary filtered candidates:')
             for candidate in filtered:

@@ -82,7 +82,7 @@ def filter_skipgram_threshold(skip_matches: SkipMatches, skip_threshold: float) 
     return [phrase for phrase in skip_matches.matches if get_skipset_overlap(phrase, skip_matches) >= skip_threshold]
 
 
-def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate]) -> List[Candidate]:
+def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate], debug: int = 0) -> List[Candidate]:
     filtered: List[Candidate] = []
     if len(phrase_candidates) < 2:
         return phrase_candidates
@@ -95,6 +95,11 @@ def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate]) -> 
                 # this candidate overlaps with the previous one, pick the best
                 curr_score = score_levenshtein_similarity_ratio(curr_candidate.phrase.phrase_string,
                                                                 curr_candidate.match_string)
+                if debug > 2:
+                    print(f"skip_match.filter_overlapping_phrase_candidates - "
+                          f"curr_candidate: {curr_candidate}, prev_candidate: {prev_candidate}")
+                    print(f"skip_match.filter_overlapping_phrase_candidates - "
+                          f"curr_score: {curr_score}, prev_score: {prev_score}")
                 if curr_score > prev_score:
                     # this candidate is better, so skip the previous candidate
                     prev_candidate = curr_candidate
@@ -151,7 +156,7 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
                   skip_matches.match_skipgrams[phrase][ci].string, '\tnext offset:', next_start_offset)
         # add current skipgram to the candidate
         add_skip_match(candidate, skip_matches.match_skipgrams[phrase][ci])
-        if debug > 3 and abs(get_skip_match_length(candidate) - len(candidate.phrase.phrase_string)) < max_length_variance:
+        if debug > 2 and abs(get_skip_match_length(candidate) - len(candidate.phrase.phrase_string)) < max_length_variance:
             skip = skip_matches.match_skipgrams[phrase][ci]
             print('\t', ci, curr_start_offset, "adding skip match:", skip.string, skip.start_offset, skip.length)
             print("\tcandidate skips:", [skip.string for skip in candidate.skipgram_list],
@@ -160,7 +165,7 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
         # check if the current candidate is a potential match for the phrase
         if is_match(candidate, skipgram_threshold):
             candidate.match_string = get_match_string(candidate, text)
-            if debug > 3:
+            if debug > 2:
                 print("\tmeets threshold:", candidate.match_string)
             # if this candidate has enough skipgram overlap, yield it as a candidate match
             if len(candidates) == 0 or not can_match.same_candidate(candidate, candidates[-1]):
@@ -174,7 +179,7 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
             # if the gap between the current skipgram and the next is larger than an entire skipgram
             # the next skipgram does not belong to this candidate
             # start a new candidate for the next skipgram
-            if debug > 3:
+            if debug > 2:
                 print('\tcurr_start_offset:', curr_start_offset, '\tnext_start_offset:', next_start_offset)
                 print('\tstarting a new candidate')
             candidate = CandidatePartial(phrase, max_length_variance=max_length_variance,
@@ -194,6 +199,8 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
     if debug > 2:
         print(f'get_skipmatch_phrase_candidates - returning {len(candidates)} candidates '
               f'for phrase "{phrase.phrase_string}"')
+        for candidate in candidates:
+            print(f'\tCandidate: {candidate.match_string}')
     if debug > 3:
         for candidate in candidates:
             print('\tCandidate:', candidate)
@@ -203,7 +210,7 @@ def get_skipmatch_phrase_candidates(text: Dict[str, any], phrase: Phrase, skip_m
 def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
                              skipgram_threshold: float, phrase_model: PhraseModel,
                              max_length_variance: int = 1, ignorecase: bool = False,
-                             debug: int = 0) -> List[Candidate]:
+                             debug: int = 0) -> Dict[str, List[Candidate]]:
     """Find all candidate matches for the phrases in a SkipMatches object.
 
     :param text: the text object to match with phrases
@@ -221,10 +228,9 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
     :param debug: level to show debug information
     :type debug: int
     :return: a list of candidate matches
-    :rtype: List[Candidate]
+    :rtype: Dict[str, List[Candidate]]
     """
     phrase_candidates = defaultdict(list)
-    candidates: List[Candidate] = []
     for phrase in skip_matches.matches:
         if debug > 2:
             print("get_skipmatch_candidates - phrase:", phrase.phrase_string)
@@ -245,17 +251,6 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
         for phrase_string in phrase_candidates:
             if len(phrase_candidates[phrase_string]) > 0:
                 print(f"\tphrase_string: {phrase_string}\tnum candidates: {len(phrase_candidates[phrase_string])}")
+    return phrase_candidates
 
-    if debug > 1:
-        print(f"get_skipmatch_candidates - phrases with overlap filtered candidates:")
-    for phrase_string in phrase_candidates:
-        filtered_candidates = filter_overlapping_phrase_candidates(phrase_candidates[phrase_string])
-        if debug > 1 and len(filtered_candidates) > 0:
-            print(f"\tphrase_string: {phrase_string}\tnum overlap filtered candidates: {len(filtered_candidates)}")
-            if debug > 2:
-                for candidate in filtered_candidates:
-                    print('\t', candidate.match_string, candidate.match_start_offset, candidate.match_end_offset)
-        candidates += filtered_candidates
-    if debug > 0:
-        print(f'get_skipmatch_candidates - returning {len(candidates)} candidates')
-    return candidates
+
