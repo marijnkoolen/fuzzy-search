@@ -48,16 +48,16 @@ class TestFuzzyPhraseSearcher(TestCase):
         self.searcher.index_phrase_model(phrase_model=phrase_model)
         text = {"text": "this is a test"}
         skip_matches = self.searcher.find_skipgram_matches(text)
-        phrases = get_skipmatch_candidates(text, skip_matches, 0.5, phrase_model=phrase_model)
-        self.assertEqual(len(phrases), 1)
+        phrase_candidates = get_skipmatch_candidates(text, skip_matches, 0.5, phrase_model=phrase_model)
+        self.assertEqual(len(phrase_candidates['test']), 1)
 
     def test_finds_multiple_candidates(self):
         phrase_model = PhraseModel(phrases=["test"])
         self.searcher.index_phrase_model(phrase_model=phrase_model)
         text = {"text": "a test is a test is a test"}
         skip_matches = self.searcher.find_skipgram_matches(text)
-        phrases = get_skipmatch_candidates(text, skip_matches, 0.5, phrase_model=phrase_model)
-        self.assertEqual(len(phrases), 3)
+        phrase_candidates = get_skipmatch_candidates(text, skip_matches, 0.5, phrase_model=phrase_model)
+        self.assertEqual(len(phrase_candidates['test']), 3)
 
     def test_searcher_finds_near_match(self):
         phrase = "contains"

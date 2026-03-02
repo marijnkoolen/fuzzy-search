@@ -30,6 +30,9 @@ class SkipMatches:
         self.match_skipgrams: Dict[Union[Phrase, Token, str], List[SkipGram]] = defaultdict(list)
         self.matches: Set[Union[Phrase, Token, str]] = set()
 
+    def __repr__(self):
+        return f'SkipMatches(ngram_size: {self.ngram_size}, skip_size: {self.skip_size}, matches: {self.matches})'
+
     def add_skip_match(self, skipgram: SkipGram, phrase: Union[Phrase, Token]) -> None:
         """Add a skipgram from a text that matches a phrase.
 
