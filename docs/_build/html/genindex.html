@@ -123,10 +123,10 @@
 </li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.add_scores">add_scores() (fuzzy_search.match.phrase_match.PhraseMatch method)</a>
 </li>
-      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.add_skip_match">add_skip_match() (fuzzy_search.match.candidate_match.Candidate method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.skip_match.SkipMatches.add_skip_match">add_skip_match() (fuzzy_search.match.skip_match.SkipMatches method)</a>
 
       <ul>
-        <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.skip_match.SkipMatches.add_skip_match">(fuzzy_search.match.skip_match.SkipMatches method)</a>
+        <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.add_skip_match">(in module fuzzy_search.match.candidate_match)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -181,20 +181,24 @@
 </li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate">Candidate (class in fuzzy_search.match.candidate_match)</a>
 </li>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.candidate_from_partial">candidate_from_partial() (in module fuzzy_search.match.candidate_match)</a>
+</li>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.CandidatePartial">CandidatePartial (class in fuzzy_search.match.candidate_match)</a>
+</li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.candidates_to_matches">candidates_to_matches() (in module fuzzy_search.match.phrase_match)</a>
 </li>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.combine_fuzzy_and_exact_matches">combine_fuzzy_and_exact_matches() (in module fuzzy_search.search.phrase_searcher)</a>
 </li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.compare_token_symbol_pairs">compare_token_symbol_pairs() (in module fuzzy_search.tokenization.subtoken)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.configure">configure() (fuzzy_search.search.searcher.FuzzySearcher method)</a>
 
       <ul>
         <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.token_searcher.FuzzyTokenSearcher.configure">(fuzzy_search.search.token_searcher.FuzzyTokenSearcher method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.context_searcher.FuzzyContextSearcher.configure_context">configure_context() (fuzzy_search.search.context_searcher.FuzzyContextSearcher method)</a>
 </li>
       <li><a href="source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_patterns.context_before_pattern">context_before_pattern() (in module fuzzy_search.pattern.fuzzy_patterns)</a>
@@ -254,6 +258,8 @@
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_ngram_candidates">filter_ngram_candidates() (fuzzy_search.fuzzy_searcher.FuzzySearcher method)</a>
 </li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.skip_match.filter_overlapping_phrase_candidates">filter_overlapping_phrase_candidates() (in module fuzzy_search.match.skip_match)</a>
+</li>
+      <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.filter_phrase_candidates">filter_phrase_candidates() (fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher method)</a>
 </li>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.filter_phrase_matches">filter_phrase_matches() (fuzzy_search.search.template_searcher.FuzzyTemplateSearcher method)</a>
 </li>
@@ -559,9 +565,9 @@
 </li>
       <li><a href="source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_labels_by_cardinality">get_labels_by_cardinality() (fuzzy_search.pattern.fuzzy_template.FuzzyTemplate method)</a>
 </li>
-      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.get_match_start_offset">get_match_start_offset() (fuzzy_search.match.candidate_match.Candidate method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.get_match_start_offset">get_match_start_offset() (in module fuzzy_search.match.candidate_match)</a>
 </li>
-      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.get_match_string">get_match_string() (fuzzy_search.match.candidate_match.Candidate method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.get_match_string">get_match_string() (in module fuzzy_search.match.candidate_match)</a>
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.similarity.get_min_length">get_min_length() (in module fuzzy_search.similarity)</a>
 </li>
@@ -575,10 +581,10 @@
 </li>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.get_phrase_match_list_labels">get_phrase_match_list_labels() (in module fuzzy_search.search.template_searcher)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.get_phrases">get_phrases() (fuzzy_search.phrase.phrase_model.PhraseModel method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.get_phrases_by_max_length">get_phrases_by_max_length() (fuzzy_search.phrase.phrase_model.PhraseModel method)</a>
 </li>
       <li><a href="source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_required_elements">get_required_elements() (fuzzy_search.pattern.fuzzy_template.FuzzyTemplate method)</a>
@@ -591,9 +597,11 @@
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.similarity.get_skip_coocs">get_skip_coocs() (in module fuzzy_search.similarity)</a>
 </li>
-      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.get_skip_count_overlap">get_skip_count_overlap() (fuzzy_search.match.candidate_match.Candidate method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.get_skip_count_overlap">get_skip_count_overlap() (in module fuzzy_search.match.candidate_match)</a>
 </li>
-      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.get_skip_set_overlap">get_skip_set_overlap() (fuzzy_search.match.candidate_match.Candidate method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.get_skip_match_length">get_skip_match_length() (in module fuzzy_search.match.candidate_match)</a>
+</li>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.get_skip_set_overlap">get_skip_set_overlap() (in module fuzzy_search.match.candidate_match)</a>
 </li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.skip_match.get_skipmatch_candidates">get_skipmatch_candidates() (in module fuzzy_search.match.skip_match)</a>
 </li>
@@ -729,7 +737,7 @@
 </li>
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.is_label">is_label() (fuzzy_search.phrase.phrase_model.PhraseModel method)</a>
 </li>
-      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.is_match">is_match() (fuzzy_search.match.candidate_match.Candidate method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.is_match">is_match() (in module fuzzy_search.match.candidate_match)</a>
 </li>
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.is_phrase_dict">is_phrase_dict() (in module fuzzy_search.phrase.phrase_model)</a>
 </li>
@@ -869,6 +877,8 @@
 </li>
         <li><a href="source/fuzzy_search.tokenization.html#module-fuzzy_search.tokenization.vocabulary">fuzzy_search.tokenization.vocabulary</a>
 </li>
+        <li><a href="source/poetry_scripts.html#module-poetry_scripts">poetry_scripts</a>
+</li>
         <li><a href="source/resolution_phrase_model.html#module-resolution_phrase_model">resolution_phrase_model</a>
 </li>
         <li><a href="source/test.html#module-test">test</a>
@@ -960,16 +970,23 @@
 </li>
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase">Phrase (class in fuzzy_search.phrase.phrase)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.phrase_match_from_json">phrase_match_from_json() (in module fuzzy_search.match.phrase_match)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch">PhraseMatch (class in fuzzy_search.match.phrase_match)</a>
 </li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatchInContext">PhraseMatchInContext (class in fuzzy_search.match.phrase_match)</a>
 </li>
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel">PhraseModel (class in fuzzy_search.phrase.phrase_model)</a>
 </li>
+      <li>
+    poetry_scripts
+
+      <ul>
+        <li><a href="source/poetry_scripts.html#module-poetry_scripts">module</a>
+</li>
+      </ul></li>
       <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch.pop">pop() (fuzzy_search.match.phrase_match.PartialPhraseMatch method)</a>
 </li>
       <li><a href="source/test.html#test.test_search_template_searcher.TestFuzzyTemplateSearcherWithRealData.prep_test">prep_test() (test.test_search_template_searcher.TestFuzzyTemplateSearcherWithRealData method)</a>
@@ -1000,7 +1017,7 @@
 </li>
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.remove_distractors">remove_distractors() (fuzzy_search.phrase.phrase_model.PhraseModel method)</a>
 </li>
-      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.remove_first_skip">remove_first_skip() (fuzzy_search.match.candidate_match.Candidate method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.remove_first_skip">remove_first_skip() (in module fuzzy_search.match.candidate_match)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -1033,7 +1050,7 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.same_candidate">same_candidate() (fuzzy_search.match.candidate_match.Candidate method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.same_candidate">same_candidate() (in module fuzzy_search.match.candidate_match)</a>
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_char_overlap">score_char_overlap() (fuzzy_search.fuzzy_searcher.FuzzySearcher method)</a>
 
@@ -1159,9 +1176,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.share_label">share_label() (in module fuzzy_search.search.template_searcher)</a>
 </li>
-      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.shift_start_skip">shift_start_skip() (fuzzy_search.match.candidate_match.Candidate method)</a>
-</li>
-      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.skip_match_length">skip_match_length() (fuzzy_search.match.candidate_match.Candidate method)</a>
+      <li><a href="source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.shift_start_skip">shift_start_skip() (in module fuzzy_search.match.candidate_match)</a>
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.similarity.SkipCooccurrence">SkipCooccurrence (class in fuzzy_search.similarity)</a>
 </li>
@@ -1997,6 +2012,8 @@
       <li><a href="source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.variants">variants() (fuzzy_search.phrase.phrase_model.PhraseModel method)</a>
 </li>
       <li><a href="source/fuzzy_search.html#fuzzy_search.similarity.vector_length">vector_length() (in module fuzzy_search.similarity)</a>
+</li>
+      <li><a href="source/poetry_scripts.html#poetry_scripts.version">version() (in module poetry_scripts)</a>
 </li>
       <li><a href="source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary">Vocabulary (class in fuzzy_search.tokenization.vocabulary)</a>
 </li>
