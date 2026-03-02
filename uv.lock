@@ -69,7 +69,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "flake8", specifier = ">=7.1.1,<8.0.0" },
-    { name = "levenshtein", specifier = "~=0.24" },
+    { name = "levenshtein", specifier = ">=0.26" },
     { name = "nltk", specifier = ">=3.9.3,<4.0.0" },
     { name = "numpy", specifier = ">=1.26,<3.0.0" },
     { name = "pytest", specifier = ">=8.3.4,<9.0.0" },
