@@ -1,3 +1,12 @@
+"""Core data structures for tokens, documents, annotations and tokenizers.
+
+This module defines the basic building blocks used throughout the fuzzy_search
+library to represent tokenized text: ``Token`` and ``Doc`` for the tokenized
+representation of a document, ``Annotation`` and ``Tag`` for spans of text with
+metadata, and several ``Tokenizer`` implementations for turning raw text into
+``Token`` objects.
+"""
+
 import copy
 import re
 from collections import defaultdict
@@ -407,6 +416,8 @@ class Tokenizer:
         self.nltk_wp_tokenizer = WordPunctTokenizer()
 
     def _string_tokenizer(self, text) -> Tuple[str, int, int]:
+        """Split text into (token_string, char_index) pairs using the NLTK
+        word/punctuation tokenizer, optionally dropping non-alphanumeric tokens."""
         for si, token_span in enumerate(self.nltk_wp_tokenizer.span_tokenize(text)):
             token_string = text[token_span[0]:token_span[1]]
             if self.remove_punctuation is True and token_string.isalnum() is False:
@@ -605,6 +616,17 @@ def update_token(token: Token, new_normalised: str) -> Token:
 
 
 def tokens2string(tokens: List[Token]) -> str:
+    """Reconstruct an approximate original string from a list of tokens.
+
+    Tokens are joined using their original character indices, padding with
+    spaces to align each token's text at its ``char_index`` position.
+
+    Args:
+        tokens (List[Token]): The tokens to join, assumed to be in order.
+
+    Returns:
+        str: The reconstructed string.
+    """
     string = ''
     for token in tokens:
         if token.char_index > len(string):

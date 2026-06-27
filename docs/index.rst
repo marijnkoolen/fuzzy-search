@@ -19,6 +19,7 @@ difficult to find these keywords or phrases.
    :maxdepth: 3
    :caption: Contents:
 
+   source/quickstart
    source/fuzzy_search
 
 Indices and tables

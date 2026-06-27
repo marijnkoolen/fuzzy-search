@@ -1,3 +1,6 @@
+"""Skipgram-based matching: tracking which phrase skipgrams are found in a text (SkipMatches),
+and turning those skipgram matches into candidate matches per phrase."""
+
 import copy
 from collections import defaultdict
 from typing import Dict, List, Set, Union
@@ -18,8 +21,18 @@ from fuzzy_search.tokenization.token import Token
 
 
 class SkipMatches:
+    """Tracks, for a set of phrases, which of their skipgrams are found in a text, along with
+    the text offsets where each match occurs. Used as an intermediate structure to build
+    candidate matches per phrase."""
 
     def __init__(self, ngram_size: int, skip_size: int):
+        """Create an empty SkipMatches tracker.
+
+        :param ngram_size: the ngram size used to compute skipgrams
+        :type ngram_size: int
+        :param skip_size: the maximum number of characters skipped between ngram parts
+        :type skip_size: int
+        """
         self.ngram_size = ngram_size
         self.skip_size = skip_size
         self.skip_length = ngram_size + skip_size
@@ -31,6 +44,7 @@ class SkipMatches:
         self.matches: Set[Union[Phrase, Token, str]] = set()
 
     def __repr__(self):
+        """Return a debug representation showing ngram/skip size and the matched phrases."""
         return f'SkipMatches(ngram_size: {self.ngram_size}, skip_size: {self.skip_size}, matches: {self.matches})'
 
     def add_skip_match(self, skipgram: SkipGram, phrase: Union[Phrase, Token]) -> None:
@@ -50,6 +64,11 @@ class SkipMatches:
         self.matches.add(phrase)
 
     def remove_phrase(self, phrase: Union[Phrase, Token]):
+        """Remove all tracked skipgram match data for a given phrase.
+
+        :param phrase: the phrase to remove from the tracker
+        :type phrase: Union[Phrase, Token]
+        """
         if phrase in self.matches:
             self.matches.remove(phrase)
             del self.match_skipgrams[phrase]
@@ -86,6 +105,16 @@ def filter_skipgram_threshold(skip_matches: SkipMatches, skip_threshold: float) 
 
 
 def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate], debug: int = 0) -> List[Candidate]:
+    """Filter a list of candidate matches for a phrase so that overlapping candidates are
+    reduced to the single best one (by Levenshtein similarity, then by match length).
+
+    :param phrase_candidates: a list of candidate matches for the same phrase
+    :type phrase_candidates: List[Candidate]
+    :param debug: level to show debug information
+    :type debug: int
+    :return: a list of non-overlapping candidate matches
+    :rtype: List[Candidate]
+    """
     filtered: List[Candidate] = []
     if len(phrase_candidates) < 2:
         return phrase_candidates

@@ -1,3 +1,7 @@
+"""FuzzyTemplate and its element classes, which combine labeled phrases from a PhraseModel into
+ordered or unordered, single or grouped, optionally required elements that together describe a
+structured fuzzy-matchable template (e.g. a name followed by a date)."""
+
 from __future__ import annotations
 from typing import Dict, List, Set, Union
 
@@ -51,14 +55,27 @@ def validate_element_properties(label: str, required: bool = False, cardinality:
 
 
 class FuzzyTemplateElement:
+    """Base class for elements of a fuzzy template: either a single labeled element or a group
+    of elements."""
 
     def __init__(self, label: Union[None, str, List[str]], element_type: str, required: bool):
+        """Create a FuzzyTemplateElement.
+
+        :param label: the label of the element, which can be a single string or a list of strings
+        :type label: Union[None, str, List[str]]
+        :param element_type: the type of element, either 'label' or 'group'
+        :type element_type: str
+        :param required: whether or not the element must match for the template to match
+        :type required: bool
+        """
         self.label = label
         self.type = element_type
         self.required = required
 
 
 class FuzzyTemplateLabelElement(FuzzyTemplateElement):
+    """A single labeled element of a fuzzy template, corresponding to phrases in a phrase model
+    that share this label."""
 
     def __init__(self, label: str, required: bool = False, cardinality: str = "single",
                  next_label: Union[None, str, List[str]] = None, next_distance_max: Union[None, int] = None,
@@ -72,10 +89,10 @@ class FuzzyTemplateLabelElement(FuzzyTemplateElement):
         :param required: whether or not the element must match for the template to match
         :type required: bool
         :param cardinality: whether the element can occur only once or multiple times in a template match. The default
-        value is 'multi'
+            value is 'multi'
         :type cardinality: str
         :param next_label: what the label of the next template element should be. This can be a list of labels to
-        allow different types of element to come next
+            allow different types of element to come next
         :type next_label: Union[str, List[str]]
         :param next_distance_max: the maximum distance allowed between this element and the next element in the template
         :type next_distance_max: int
@@ -90,13 +107,27 @@ class FuzzyTemplateLabelElement(FuzzyTemplateElement):
         self.variable = variable
 
     def __repr__(self):
+        """Return a debug representation showing the label, required flag and cardinality."""
         return f"FuzzyTemplateElement(label='{self.label}', required={self.required}, cardinality='{self.cardinality}'"
 
 
 class FuzzyTemplateGroupElement(FuzzyTemplateElement):
+    """A group of fuzzy template elements (labels and/or nested groups), which can be ordered
+    or unordered, and becomes required if any of its sub-elements is required."""
 
     def __init__(self, elements: List[FuzzyTemplateElement],
                  label: Union[str, None] = None, ordered: bool = True, required: bool = False):
+        """Create a FuzzyTemplateGroupElement from a list of sub-elements.
+
+        :param elements: the sub-elements (label or group elements) that make up this group
+        :type elements: List[FuzzyTemplateElement]
+        :param label: an optional label for the group itself
+        :type label: Union[str, None]
+        :param ordered: whether the sub-elements must occur in order for the group to match
+        :type ordered: bool
+        :param required: whether the group must match for the template to match
+        :type required: bool
+        """
         super().__init__(label, "group", required)
         self.ordered = ordered
         self.elements = elements
@@ -115,6 +146,7 @@ class FuzzyTemplateGroupElement(FuzzyTemplateElement):
                 self.required = True
 
     def __repr__(self):
+        """Return a debug representation showing the label, required flag and ordered flag."""
         return f"FuzzyTemplateGroup(label='{self.label}', required={self.required}, ordered='{self.ordered}'"
 
 
@@ -165,7 +197,7 @@ class FuzzyTemplate:
         blocks of elements. Element groups can be hierarchical.
 
         :param phrase_model: a PhraseModel object with phrases that correspond to the element label
-        in the template.
+            in the template.
         :type phrase_model: PhraseModel
         :param template_json: a dictionary of template groups or elements to be registered as part of the template
         :type template_json: Union[List[str], List[dict], Dict[str, Union[str, dict]]]
@@ -189,6 +221,7 @@ class FuzzyTemplate:
         self.register_template(template_json)
 
     def __repr__(self):
+        """Return a debug representation showing the registered labels and required labels."""
         return f"FuzzyTemplate(labels={self.labels}, required={self.get_required_labels()})"
 
     def get_label_phrases(self, label: str) -> List[Phrase]:

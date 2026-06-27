@@ -1,3 +1,6 @@
+"""Regex pattern definitions for recognizing Dutch person names, place names and dates, and
+helper functions to combine these patterns with surrounding context strings."""
+
 from typing import Union
 
 dutch_person_name_patterns = {
@@ -64,6 +67,12 @@ pattern_definitions = {
 
 
 def list_context_pattern_types(context_type=None):
+    """Return the names of context pattern functions registered for a given context type.
+
+    :param context_type: a context type key in ``context_pattern`` (defaults to "all")
+    :return: a list of context pattern function names
+    :rtype: list
+    """
     if not context_type:
         context_type = "all"
     if context_type not in context_pattern:
@@ -75,6 +84,13 @@ def list_context_pattern_types(context_type=None):
 
 
 def list_pattern_names(name_only=True, pattern_type=None):
+    """Return the names of registered pattern definitions, optionally filtered by pattern type.
+
+    :param name_only: unused; kept for API compatibility
+    :param pattern_type: if given, only return names of patterns with this type
+    :return: a list of pattern names
+    :rtype: list
+    """
     if pattern_type:
         return [pattern_name for pattern_name in pattern_definitions if
                 pattern_definitions[pattern_name]["type"] == pattern_type]
@@ -83,6 +99,11 @@ def list_pattern_names(name_only=True, pattern_type=None):
 
 
 def list_pattern_definitions(pattern_type=None):
+    """Return registered pattern definitions, optionally filtered by pattern type.
+
+    :param pattern_type: if given, only return definitions of patterns with this type
+    :return: a list (if filtered) or dict (if not) of pattern definitions
+    """
     if pattern_type:
         return [pattern_definitions[pattern_name] for pattern_name in pattern_definitions if
                 pattern_definitions[pattern_name]["type"] == pattern_type]
@@ -91,6 +112,15 @@ def list_pattern_definitions(pattern_type=None):
 
 
 def pattern_comma_then_context(name, pattern_definition, context_string):
+    """Build a pattern definition that matches the given pattern followed by a comma and the
+    context string.
+
+    :param name: the base name of the pattern
+    :param pattern_definition: the pattern definition dictionary to extend
+    :param context_string: the (already escaped) context string to match after the pattern
+    :return: a new pattern definition dictionary
+    :rtype: dict
+    """
     return {
         "name": name + "_comma_then_context",
         "pattern": pattern_definition["pattern"] + " ?, ?" + context_string,
@@ -99,6 +129,14 @@ def pattern_comma_then_context(name, pattern_definition, context_string):
 
 
 def context_then_pattern(name, pattern_definition, context_string):
+    """Build a pattern definition that matches the context string followed by the given pattern.
+
+    :param name: the base name of the pattern
+    :param pattern_definition: the pattern definition dictionary to extend
+    :param context_string: the (already escaped) context string to match before the pattern
+    :return: a new pattern definition dictionary
+    :rtype: dict
+    """
     return {
         "name": "context_then_" + name,
         "pattern": context_string + ",? " + pattern_definition["pattern"],
@@ -107,6 +145,16 @@ def context_then_pattern(name, pattern_definition, context_string):
 
 
 def pattern_before_context(name, pattern_definition, context_string, max_distance=10):
+    """Build a pattern definition that matches the given pattern, then up to ``max_distance``
+    characters, then the context string.
+
+    :param name: the base name of the pattern
+    :param pattern_definition: the pattern definition dictionary to extend
+    :param context_string: the (already escaped) context string to match after the pattern
+    :param max_distance: the maximum number of characters allowed between pattern and context
+    :return: a new pattern definition dictionary
+    :rtype: dict
+    """
     return {
         "name": name + "_before_context",
         "pattern": pattern_definition["pattern"] + ".{d}".format(d=max_distance) + context_string,
@@ -115,6 +163,16 @@ def pattern_before_context(name, pattern_definition, context_string, max_distanc
 
 
 def context_before_pattern(name, pattern_definition, context_string, max_distance=10):
+    """Build a pattern definition that matches the context string, then up to ``max_distance``
+    characters, then the given pattern.
+
+    :param name: the base name of the pattern
+    :param pattern_definition: the pattern definition dictionary to extend
+    :param context_string: the (already escaped) context string to match before the pattern
+    :param max_distance: the maximum number of characters allowed between context and pattern
+    :return: a new pattern definition dictionary
+    :rtype: dict
+    """
     return {
         "name": "context_before_" + name,
         "pattern": context_string + ".{d}".format(d=max_distance) + pattern_definition["pattern"],
@@ -123,6 +181,12 @@ def context_before_pattern(name, pattern_definition, context_string, max_distanc
 
 
 def get_search_patterns(pattern_type=None):
+    """Return registered pattern definitions as a dictionary, optionally filtered by pattern type.
+
+    :param pattern_type: if given, only return definitions of patterns with this type
+    :return: a dict mapping pattern name to pattern definition
+    :rtype: dict
+    """
     if pattern_type:
         return {pattern_name: pattern_definitions[pattern_name] for pattern_name in pattern_definitions if
                 pattern_definitions[pattern_name]["type"] == pattern_type}
@@ -131,6 +195,13 @@ def get_search_patterns(pattern_type=None):
 
 
 def get_context_patterns(context_type: Union[None, str] = None) -> dict:
+    """Return the dictionary of context pattern functions registered for a given context type.
+
+    :param context_type: a context type key in ``context_pattern`` (defaults to "all")
+    :type context_type: Union[None, str]
+    :return: a dict mapping pattern function name to pattern function
+    :rtype: dict
+    """
     if not context_type:
         context_type = "all"
     if context_type not in context_pattern:
@@ -161,6 +232,12 @@ context_pattern = {
 
 
 def escape_string(string):
+    """Escape regex special characters in a string so it can be embedded literally in a pattern.
+
+    :param string: the string to escape
+    :return: the escaped string
+    :rtype: str
+    """
     string = string.replace("\\", r"\\").replace("/", r"\/")
     string = string.replace("[", r"\[").replace("]", r"\]").replace("(", r"\(").replace(")", r"\)")
     string = string.replace("{", r"\{").replace("}", r"\}")
@@ -171,6 +248,15 @@ def escape_string(string):
 
 
 def make_search_context_patterns(context_string, pattern_names, context_patterns):
+    """Generate context-specific search patterns by combining a context string with named
+    pattern definitions using the given context pattern functions.
+
+    :param context_string: the context string to embed in the generated patterns
+    :param pattern_names: the names of the pattern definitions to combine with the context
+    :param context_patterns: a dict mapping context pattern function name to function
+    :return: a list of new pattern definitions
+    :rtype: list
+    """
     context_string = escape_string(context_string)
     patterns = []
     for context_pattern in context_patterns:

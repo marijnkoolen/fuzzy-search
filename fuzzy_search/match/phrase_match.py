@@ -1,3 +1,6 @@
+"""PhraseMatch and related classes that represent a fuzzy match between a phrase and a span of
+text, along with helper functions to build, filter, score, and adjust the offsets of matches."""
+
 from __future__ import annotations
 import uuid
 import string
@@ -58,6 +61,20 @@ def filter_matches_by_overlap(filtered_matches: List[PhraseMatch], first_best: b
 
 def candidates_to_matches(candidates: List[Candidate], text: dict, phrase_model: PhraseModel,
                           ignorecase: bool = False) -> List[PhraseMatch]:
+    """Convert a list of fuzzy match candidates into PhraseMatch objects, resolving variant
+    candidates to their corresponding main phrase and computing similarity scores.
+
+    :param candidates: a list of candidate matches
+    :type candidates: List[Candidate]
+    :param text: the text object the candidates were found in
+    :type text: dict
+    :param phrase_model: the phrase model containing the phrases and their variants
+    :type phrase_model: PhraseModel
+    :param ignorecase: whether to ignore case when scoring matches
+    :type ignorecase: bool
+    :return: a list of phrase matches
+    :rtype: List[PhraseMatch]
+    """
     matches: List[PhraseMatch] = []
     for candidate in candidates:
         if candidate.phrase.phrase_string in phrase_model.is_variant_of:
@@ -441,16 +458,14 @@ def calculate_end_shift(phrase_end: str, match_end: str, text_suffix: str, end_o
 ###############
 
 class PhraseMatch:
-    """
-
-    Attributes
-    """
+    """A fuzzy match between a phrase (and a specific spelling variant of it) and a string
+    found in a text, with its offsets, label(s) and similarity scores."""
 
     def __init__(self, match_phrase: Phrase, match_variant: Phrase, match_string: str,
                  match_offset: int, ignorecase: bool = False, text_id: Union[None, str] = None,
                  match_scores: dict = None, match_label: Union[str, List[str]] = None,
                  match_id: str = None, levenshtein_similarity: float = None):
-        """
+        """Create a PhraseMatch.
 
         :param match_phrase: a phrase object for which a matching string is found in the text
         :param match_variant: a phrase object for the variant that matches the string in the text
@@ -461,6 +476,7 @@ class PhraseMatch:
         :param match_scores: the similarity scores of the match
         :param match_label: one or more labels to attach to the match
         :param match_id: an optional identifier to use for the match
+        :param levenshtein_similarity: an optional precomputed levenshtein similarity score
         """
         # print("Match class match_phrase:", match_phrase)
         validate_match_props(match_phrase, match_variant, match_string, match_offset)
@@ -490,6 +506,7 @@ class PhraseMatch:
         self.created = datetime.now()
 
     def __repr__(self):
+        """Return a debug representation showing the phrase, variant, string, offset and score."""
         return f'PhraseMatch(' + \
             f'phrase: "{self.phrase.phrase_string}", variant: "{self.variant.phrase_string}", ' + \
             f'string: "{self.string}", offset: {self.offset}, ignorecase: {self.ignorecase}, ' + \
@@ -497,6 +514,8 @@ class PhraseMatch:
 
     @property
     def label_list(self) -> List[str]:
+        """Return the match's label(s) as a list, regardless of whether it is stored as a
+        single string, a list, or None."""
         if isinstance(self.label, str):
             return [self.label]
         elif isinstance(self.label, list):
@@ -505,6 +524,13 @@ class PhraseMatch:
             return []
 
     def has_label(self, label: str):
+        """Check whether this match has the given label.
+
+        :param label: a label string
+        :type label: str
+        :return: whether the match has this label
+        :rtype: bool
+        """
         if isinstance(self.label, str):
             return label == self.label
         elif isinstance(self.label, list):
@@ -513,6 +539,7 @@ class PhraseMatch:
             return label in self.label
 
     def json(self) -> dict:
+        """Return a JSON-serializable dictionary representation of the match."""
         data = {
             "type": "PhraseMatch",
             "phrase": self.phrase.phrase_string,
@@ -534,6 +561,12 @@ class PhraseMatch:
 
     @staticmethod
     def from_json(match_json):
+        """Reconstruct a PhraseMatch from its JSON dictionary representation.
+
+        :param match_json: a JSON dictionary as produced by :meth:`json`
+        :return: the reconstructed phrase match
+        :rtype: PhraseMatch
+        """
         match_phrase = Phrase(phrase=match_json['phrase'])
         match_variant = Phrase(phrase=match_json['variant'])
         return PhraseMatch(match_phrase=match_phrase, match_variant=match_variant,
@@ -621,7 +654,11 @@ class PhraseMatch:
             return False
 
     def as_web_anno(self) -> Dict[str, any]:
-        """Turn match object into a W3C Web Annotation representation"""
+        """Turn match object into a W3C Web Annotation representation.
+
+        :return: a W3C Web Annotation dictionary
+        :rtype: Dict[str, any]
+        """
         if not self.text_id:
             raise ValueError('Cannot make target: match object has no text_id')
         body_match = [
@@ -678,6 +715,8 @@ class PhraseMatch:
 
 
 class PhraseMatchInContext(PhraseMatch):
+    """A PhraseMatch extended with a window of surrounding text (prefix and suffix context)
+    taken from the source document."""
 
     def __init__(self, match: PhraseMatch, text: Union[str, dict] = None, context: str = None,
                  context_start: int = None, context_end: int = None,
@@ -721,11 +760,13 @@ class PhraseMatchInContext(PhraseMatch):
         self.suffix = text["text"][match.end:self.context_end]
 
     def __repr__(self):
+        """Return a debug representation showing the phrase, variant, string, offset and context."""
         return f'PhraseMatchInContext(' + \
                f'phrase: "{self.phrase.phrase_string}", variant: "{self.variant.phrase_string}",' + \
                f'string: "{self.string}", offset: {self.offset}), context: "{self.context}"'
 
     def json(self):
+        """Return a JSON-serializable dictionary representation including the context."""
         json_data = super().json()
         json_data["context_start"] = self.context_start
         json_data["context_end"] = self.context_end
@@ -737,6 +778,8 @@ class PhraseMatchInContext(PhraseMatch):
         return json_data
 
     def as_web_anno(self) -> Dict[str, any]:
+        """Turn match object into a W3C Web Annotation representation, including a
+        TextQuoteSelector with the prefix/exact/suffix context."""
         match_anno = super().as_web_anno()
         position_selector = match_anno['target']['selector']
         quote_selector = {
@@ -750,6 +793,14 @@ class PhraseMatchInContext(PhraseMatch):
 
 
 def phrase_match_from_json(match_json: dict) -> PhraseMatch:
+    """Reconstruct a PhraseMatch (or PhraseMatchInContext, if context info is present) from its
+    JSON dictionary representation.
+
+    :param match_json: a JSON dictionary representation of a phrase match
+    :type match_json: dict
+    :return: the reconstructed phrase match
+    :rtype: PhraseMatch
+    """
     match_phrase = Phrase(match_json['phrase'])
     match_variant = Phrase(match_json['variant'])
     phrase_match = PhraseMatch(match_phrase, match_variant, match_json['string'],
@@ -766,6 +817,8 @@ def phrase_match_from_json(match_json: dict) -> PhraseMatch:
 
 
 class MatchType(Enum):
+    """Enumerates how a token match relates a text token to a phrase token: no match, a partial
+    match within a phrase token, a full match, or a partial match within a text token."""
     NONE = 0
     PARTIAL_OF_PHRASE_TOKEN = 0.5
     FULL = 1
@@ -773,10 +826,21 @@ class MatchType(Enum):
 
 
 class TokenMatch:
+    """A match between one or more text tokens and one or more phrase tokens, with the type
+    of match (full or partial) between them."""
 
     def __init__(self, text_tokens: Union[Token, List[Token]],
                  phrase_tokens: Union[str, List[str]],
                  match_type: MatchType):
+        """Create a TokenMatch.
+
+        :param text_tokens: one or more text tokens involved in the match
+        :type text_tokens: Union[Token, List[Token]]
+        :param phrase_tokens: one or more phrase tokens involved in the match
+        :type phrase_tokens: Union[str, List[str]]
+        :param match_type: the type of match between the text and phrase tokens
+        :type match_type: MatchType
+        """
         if isinstance(text_tokens, Token):
             text_tokens = (text_tokens, )
         elif isinstance(text_tokens, list):
@@ -795,14 +859,29 @@ class TokenMatch:
         self.text_length = self.text_end - self.text_start
 
     def __repr__(self):
+        """Return a debug representation showing the match type, text tokens and phrase tokens."""
         return f"{self.__class__.__name__}(match_type={self.match_type}, " \
                f"text_tokens={self.text_tokens}, phrase_tokens={self.phrase_tokens})"
 
 
 class PartialPhraseMatch:
+    """A growing token-based match between a phrase and a sequence of text tokens, built up
+    incrementally from individual TokenMatch objects while tracking missing and redundant
+    phrase tokens and enforcing maximum character/token gaps between matched tokens."""
 
     def __init__(self, phrase: Phrase, token_matches: List[TokenMatch] = None, max_char_gap: int = 20,
                  max_token_gap: int = 1):
+        """Create a PartialPhraseMatch for a given phrase.
+
+        :param phrase: the phrase being matched
+        :type phrase: Phrase
+        :param token_matches: an optional initial list of token matches to add
+        :type token_matches: List[TokenMatch]
+        :param max_char_gap: the maximum allowed character gap between consecutive matched tokens
+        :type max_char_gap: int
+        :param max_token_gap: the maximum allowed token index gap between consecutive matched tokens
+        :type max_token_gap: int
+        """
         # create a new list instead of pointing to original list
         self.token_matches = []
         self.phrase = phrase
@@ -826,6 +905,7 @@ class PartialPhraseMatch:
             self.add_tokens(token_matches)
 
     def __repr__(self):
+        """Return a debug representation showing the phrase, token matches, and missing tokens."""
         return f"{self.__class__.__name__}(\n\tphrase={self.phrase}, \n\ttoken_matches={self.token_matches}, " \
                f"\n\ttext_tokens={self.text_tokens}, \n\tphrase_tokens={self.phrase_tokens}, " \
                f"\n\tmissing_tokens={self.missing_tokens}\n)"
@@ -855,6 +935,8 @@ class PartialPhraseMatch:
         self.text_length = self.text_end - self.text_start
 
     def pop(self):
+        """Remove the first (earliest) token match from this partial match and update its
+        derived state (text/phrase tokens, offsets, length)."""
         self.token_matches.pop(0)
         self._update()
 
@@ -865,6 +947,13 @@ class PartialPhraseMatch:
             self.__init__(phrase=self.phrase)
 
     def push(self, token_match: TokenMatch):
+        """Add a new token match to the end of this partial match, resetting the match if the
+        gap to the new token match exceeds the configured maximum character/token gap, and
+        updating which phrase tokens are missing or redundant.
+
+        :param token_match: the token match to add
+        :type token_match: TokenMatch
+        """
         self.token_matches.append(token_match)
         if len(self.text_tokens) > 0:
             self._check_gap(token_match)
@@ -879,6 +968,11 @@ class PartialPhraseMatch:
                 self.redundant_tokens.append(phrase_token)
 
     def add_tokens(self, token_matches: Union[List[TokenMatch], TokenMatch]):
+        """Add one or more token matches to this partial match and update its derived state.
+
+        :param token_matches: a single token match or a list of token matches to add
+        :type token_matches: Union[List[TokenMatch], TokenMatch]
+        """
         if isinstance(token_matches, TokenMatch):
             token_matches = [token_matches]
         for token_match in token_matches:
@@ -890,6 +984,13 @@ class PartialPhraseMatch:
 
 
 def copy_partial_match(partial_match: PartialPhraseMatch):
+    """Create a deep-ish copy of a PartialPhraseMatch, copying its tracked token and offset state.
+
+    :param partial_match: the partial match to copy
+    :type partial_match: PartialPhraseMatch
+    :return: a new, independent PartialPhraseMatch with the same state
+    :rtype: PartialPhraseMatch
+    """
     new_pm = PartialPhraseMatch(phrase=partial_match.phrase, token_matches=None,
                                 max_char_gap=partial_match.max_char_gap,
                                 max_token_gap=partial_match.max_token_gap)

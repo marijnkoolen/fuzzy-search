@@ -1,3 +1,11 @@
+"""Phrase-level fuzzy searcher.
+
+Defines :class:`FuzzyPhraseSearcher`, which combines an exact-matching pass
+with the skipgram-based fuzzy matching from
+:class:`~fuzzy_search.search.searcher.FuzzySearcher` to find whole-phrase
+matches in text, applying word-boundary, threshold, distractor, and overlap
+filtering.
+"""
 import time
 from typing import Dict, List, Union
 
@@ -41,6 +49,18 @@ def get_text_dict(text: Union[str, dict, Doc], ignorecase: bool = False) -> dict
 def combine_fuzzy_and_exact_matches(filtered_matches: List[PhraseMatch],
                                     exact_matches: List[PhraseMatch],
                                     debug: int = 0):
+    """Merge fuzzy and exact phrase matches, preferring the exact match when both exist for the
+    same phrase at the same offset.
+
+    :param filtered_matches: fuzzy matches that have passed filtering
+    :type filtered_matches: List[PhraseMatch]
+    :param exact_matches: exact phrase matches
+    :type exact_matches: List[PhraseMatch]
+    :param debug: level to show debug information
+    :type debug: int
+    :return: the combined list of matches, sorted by offset
+    :rtype: List[PhraseMatch]
+    """
     combined_matches = [em for em in exact_matches]
     exact_phrases = {(em.offset, em.phrase.phrase_string): em for em in exact_matches}
     if debug > 2:
@@ -56,6 +76,12 @@ def combine_fuzzy_and_exact_matches(filtered_matches: List[PhraseMatch],
 
 
 class FuzzyPhraseSearcher(FuzzySearcher):
+    """Fuzzy searcher for finding whole-phrase matches in text.
+
+    Extends :class:`FuzzySearcher` with an exact-matching pass (used to speed up
+    and disambiguate fuzzy matching), candidate generation and filtering, and
+    distractor/threshold/overlap-based filtering of the resulting matches.
+    """
 
     def __init__(self, phrase_list: List[any] = None,
                  phrase_model: Union[Dict[str, any], List[Dict[str, any]], PhraseModel] = None,
@@ -66,19 +92,19 @@ class FuzzyPhraseSearcher(FuzzySearcher):
         configuration dictionary that overrides the default configuration values. The default config dictionary
         is available via `fuzzy_search.default_config`.
 
-        To set e.g. the character ngram_size to 3 and the skip_size to 1 use the following dictionary:
+        To set e.g. the character ngram_size to 3 and the skip_size to 1 use the following dictionary::
 
-        config = {
-            'ngram_size': 3,
-            'skip_size': 1
-        }
+            config = {
+                'ngram_size': 3,
+                'skip_size': 1
+            }
 
         :param phrase_list: a list of phrases (a list of strings or more complex dictionaries with phrases and variants)
         :type phrase_list: list
         :param phrase_model: a phrase model
         :type phrase_model: PhraseModel
         :param config: a configuration dictionary to override default configuration properties.
-        Only the properties in the config dictionaries of updated.
+            Only the properties present in the config dictionary are updated.
         :type config: dict
         :param tokenizer: a tokenizer instance
         :type tokenizer: Tokenizer
@@ -94,6 +120,20 @@ class FuzzyPhraseSearcher(FuzzySearcher):
 
     def filter_phrase_candidates(self, phrase_candidates: Dict[str, List[Candidate]], text: Dict[str, any],
                                  use_word_boundaries: bool, debug: int = 0) -> List[Candidate]:
+        """Filter per-phrase candidate matches, optionally snapping their boundaries to word
+        boundaries and removing candidates that overlap with a better candidate for the same phrase.
+
+        :param phrase_candidates: candidate matches grouped by phrase string
+        :type phrase_candidates: Dict[str, List[Candidate]]
+        :param text: the text object the candidates were found in
+        :type text: Dict[str, any]
+        :param use_word_boundaries: whether to adjust candidate boundaries to word boundaries
+        :type use_word_boundaries: bool
+        :param debug: level to show debug information
+        :type debug: int
+        :return: the filtered list of candidates across all phrases
+        :rtype: List[Candidate]
+        """
         candidates: List[Candidate] = []
         if debug > 1:
             print(f"PhraseSearcher.filter_phrase_candidates - phrases with overlap filtered candidates:")
@@ -171,6 +211,14 @@ class FuzzyPhraseSearcher(FuzzySearcher):
         return filtered
 
     def filter_matches_by_distractors(self, matches: List[PhraseMatch]) -> List[PhraseMatch]:
+        """Remove matches that are a worse fit for their phrase than for one of that phrase's
+        known distractor phrases.
+
+        :param matches: phrase matches to filter
+        :type matches: List[PhraseMatch]
+        :return: matches that are not better explained by a distractor
+        :rtype: List[PhraseMatch]
+        """
         filtered: List[PhraseMatch] = []
         for match in matches:
             if match.phrase.phrase_string in self.phrase_model.has_distractors:
@@ -185,6 +233,14 @@ class FuzzyPhraseSearcher(FuzzySearcher):
         return filtered
 
     def filter_matches_by_threshold(self, matches: List[PhraseMatch]) -> List[PhraseMatch]:
+        """Remove matches whose character overlap, ngram overlap, or Levenshtein similarity
+        score falls below the searcher's configured thresholds.
+
+        :param matches: phrase matches to filter
+        :type matches: List[PhraseMatch]
+        :return: matches that satisfy all configured similarity thresholds
+        :rtype: List[PhraseMatch]
+        """
         filtered: List[PhraseMatch] = []
         for match in matches:
             if match.character_overlap < self.char_match_threshold:
@@ -334,7 +390,8 @@ class FuzzyPhraseSearcher(FuzzySearcher):
 
 
 def make_step_timer():
-
+    """Create a closure that, on each call, prints and returns the elapsed time since the
+    previous call (and the total time since the timer was created). Used for debug timing."""
     first_step = time.time()
     prev_step = first_step
 

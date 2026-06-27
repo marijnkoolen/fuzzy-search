@@ -1,3 +1,10 @@
+"""Base fuzzy searcher class.
+
+Defines :class:`FuzzySearcher`, which indexes phrases (and their variants and
+distractors) using character skipgrams and provides the core skipgram-based
+matching logic that other, more specialized searchers in this package build
+upon.
+"""
 import copy
 import string
 from collections import defaultdict
@@ -21,19 +28,19 @@ class FuzzySearcher(object):
         configuration dictionary that overrides the default configuration values. The default config dictionary
         is available via `fuzzy_search.default_config`.
 
-        To set e.g. the character ngram_size to 3 and the skip_size to 1 use the following dictionary:
+        To set e.g. the character ngram_size to 3 and the skip_size to 1 use the following dictionary::
 
-        config = {
-            'ngram_size': 3,
-            'skip_size': 1
-        }
+            config = {
+                'ngram_size': 3,
+                'skip_size': 1
+            }
 
         :param phrase_list: a list of phrases (a list of strings or more complex dictionaries with phrases and variants)
         :type phrase_list: list
         :param phrase_model: a phrase model
         :type phrase_model: PhraseModel
         :param config: a configuration dictionary to override default configuration properties.
-        Only the properties in the config dictionaries of updated.
+            Only the properties present in the config dictionary are updated.
         :type config: dict
         :param tokenizer: a tokenizer instance (default tokenizer splits on whitespace)
         :type tokenizer: Tokenizer
@@ -129,6 +136,7 @@ class FuzzySearcher(object):
             self.debug = config["debug"]
 
     def _get_debug_level(self, debug: int = 0):
+        """Return the higher of the given debug level and the searcher's configured debug level."""
         if debug > self.debug:
             return debug
         else:
@@ -327,6 +335,17 @@ class FuzzySearcher(object):
 
     @staticmethod
     def filter_matches_by_offset_threshold(matches: List[PhraseMatch], debug: int = 0):
+        """Filter out matches whose start offset exceeds their phrase's configured maximum start offset.
+
+        Matches whose phrase has no max_start_offset restriction (None or -1) are always kept.
+
+        :param matches: a list of phrase matches to filter
+        :type matches: List[PhraseMatch]
+        :param debug: level to show debug information
+        :type debug: int
+        :return: the matches that satisfy the max_start_offset constraint
+        :rtype: List[PhraseMatch]
+        """
         filtered_matches = []
         for match in matches:
             if debug > 1:

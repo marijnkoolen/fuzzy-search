@@ -1,3 +1,10 @@
+"""String-level helper functions for fuzzy term comparison.
+
+Provides character ngram generation, ngram/character overlap scoring,
+Levenshtein-based similarity scoring, skipgram generation for strings and
+tokens, and small utilities for stripping non-word prefixes/suffixes.
+"""
+
 from typing import List, Generator, Tuple
 from itertools import combinations
 
@@ -154,20 +161,49 @@ def score_levenshtein_distance(term1: str, term2: str) -> int:
 
 
 class SkipGram:
+    """Represents a single skipgram extracted from a string.
+
+    Attributes:
+        string (str): The skipgram's character string.
+        start_offset (int): The character offset where the skipgram starts.
+        end_offset (int): The character offset where the skipgram ends.
+        length (int): The span (in characters) covered by the skipgram in the source string.
+    """
 
     def __init__(self, skipgram_string: str, start_offset: int, end_offset: int, skipgram_length: int):
+        """Initializes the SkipGram instance.
+
+        Args:
+            skipgram_string (str): The skipgram's character string.
+            start_offset (int): The character offset where the skipgram starts.
+            end_offset (int): The character offset where the skipgram ends.
+            skipgram_length (int): The span (in characters) covered by the skipgram.
+        """
         self.string = skipgram_string
         self.start_offset = start_offset
         self.end_offset = end_offset
         self.length = skipgram_length
 
     def __repr__(self):
+        """Returns a string representation of the SkipGram."""
         return (f"{self.__class__.__name__}(string='{self.string}', start_offset={self.start_offset}, "
                 f"end_offset={self.end_offset}, length={self.length})")
 
 
 def insert_skips(window: str, skipgram_combinations: List[Tuple[int]]):
-    """For a given skip gram window, return all skip grams for a given configuration."""
+    """For a given skip gram window, return all skip grams for a given configuration.
+
+    Args:
+        window (str): A substring (the sliding window) from which skipgrams are built.
+            The first character of the window is always included.
+        skipgram_combinations (List[Tuple[int]]): Index combinations (relative to ``window``,
+            excluding index 0) specifying which characters after the first to combine.
+
+    Yields:
+        Tuple[str, int, Tuple[int, ...]]: The skipgram string, the (1-based) length spanned
+        within the window, and the index combination (including the leading 0) used to
+        build it. Combinations whose indexes fall outside ``window`` are silently skipped.
+    """
     for combination in skipgram_combinations:
         skip_gram = window[0]
         try:
@@ -188,7 +224,17 @@ def text2skipgrams(text: str, ngram_size: int = 2, skip_size: int = 2) -> Genera
     :param skip_size: an integer indicating how many skip characters in the ngrams
     :type skip_size: int
     :return: An iterator returning tuples of skip_gram and offset
-    :rtype: Generator[tuple]"""
+    :rtype: Generator[tuple]
+
+    Algorithm:
+        A sliding window of size ``ngram_size + skip_size`` is moved one character at a
+        time across ``text``. For each window position, ``insert_skips`` enumerates all
+        ways of picking ``ngram_size - 1`` characters (in order, after the first) from the
+        window to combine with the window's first character, producing all skipgrams of
+        ``ngram_size`` characters that allow up to ``skip_size`` skipped characters between
+        them. ``ngram_size == 1`` and very short texts are handled as special cases that
+        bypass the windowing logic.
+    """
     if ngram_size <= 0 or skip_size < 0:
         raise ValueError('ngram_size must be a positive integer, skip_size must be a positive integer or zero')
     if ngram_size == 1:
@@ -223,7 +269,17 @@ def token2skipgrams(token: str, ngram_size: int = 2, skip_size: int = 2,
                      at the boundaries of the token
     :type pad_token: bool
     :return: An iterator returning tuples of skip_gram and offset
-    :rtype: Generator[tuple]"""
+    :rtype: Generator[tuple]
+
+    Algorithm:
+        Like :func:`text2skipgrams`, but operates on a single token instead of running
+        text, and optionally pads the token with ``#`` characters on both sides (using
+        ``ngram_size - 1`` padding characters) so that skipgrams near the token boundaries
+        are generated consistently with skipgrams in the middle of the token. The padded
+        token is scanned with the same sliding-window/``insert_skips`` approach, after
+        which offsets and combination indexes are corrected back to the un-padded token's
+        coordinate space, and combination indexes that fall in the padding are dropped.
+    """
     token_length = len(token)
     if ngram_size <= 0 or skip_size < 0:
         raise ValueError('ngram_size must be a positive integer, skip_size must be a positive integer or zero')

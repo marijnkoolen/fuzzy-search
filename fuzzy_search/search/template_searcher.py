@@ -1,3 +1,13 @@
+"""Template-based fuzzy searcher.
+
+Defines :class:`FuzzyTemplateSearcher`, which searches text for phrase matches
+and then checks whether sequences of those matches fit a
+:class:`~fuzzy_search.pattern.fuzzy_template.FuzzyTemplate` made up of ordered
+and unordered, required and optional, label and group elements. Also includes
+the helper functions used to find phrase-match sequences that satisfy template
+group elements, and :class:`TemplateMatch`, which represents a successful
+template match.
+"""
 from typing import Dict, List, Union
 
 import fuzzy_search
@@ -59,6 +69,8 @@ def has_required_matches(phrase_matches: List[PhraseMatch], template: FuzzyTempl
 
 
 class TemplateMatch:
+    """A successful match of a :class:`~fuzzy_search.pattern.fuzzy_template.FuzzyTemplate`
+    against a sequence of phrase matches found in a text."""
 
     def __init__(self, template: FuzzyTemplate, phrase_matches: List[PhraseMatch],
                  template_sequence: Dict[str, any]):
@@ -77,6 +89,7 @@ class TemplateMatch:
         self.element_matches = get_sequence_label_element_matches(template_sequence)
 
     def __repr__(self):
+        """Return a debug representation showing the template and its element matches."""
         return f"{self.__class__.__name__}(template={self.template}, element_matches={self.element_matches})"
 
 
@@ -139,6 +152,19 @@ def find_next_element_end_index(phrase_matches: List[PhraseMatch],
 
 
 def initialize_sequence(element: FuzzyTemplateElement, start_index: int, end_index: int) -> Dict[str, any]:
+    """Create an empty match-sequence dictionary for a template element, covering the given
+    start/end indices into the list of phrase matches and with no phrase matches assigned yet.
+
+    :param element: the template element (label or group) the sequence is for
+    :type element: FuzzyTemplateElement
+    :param start_index: the start index in the phrase match list
+    :type start_index: int
+    :param end_index: the end index in the phrase match list
+    :type end_index: int
+    :return: a sequence dictionary with keys element_label, element_type, element, start, end,
+        phrase_matches, contains_required and element_sequences
+    :rtype: Dict[str, any]
+    """
     return {
         "element_label": element.label,
         "element_type": element.type,
@@ -152,6 +178,16 @@ def initialize_sequence(element: FuzzyTemplateElement, start_index: int, end_ind
 
 
 def get_sequence_label_element_matches(template_sequence: Dict[str, any]) -> List[Dict[str, any]]:
+    """Recursively flatten a (possibly nested) template match sequence into a list of per-label
+    phrase match dictionaries, annotating each with the group labels it belongs to.
+
+    :param template_sequence: a sequence dictionary as produced by :func:`initialize_sequence`
+        and the ``find_next_*_group_match_sequence`` functions
+    :type template_sequence: Dict[str, any]
+    :return: a list of dictionaries with keys "label", "phrase_matches" and, for matches nested
+        inside groups, "label_groups"
+    :rtype: List[Dict[str, any]]
+    """
     if template_sequence["element_type"] == "label":
         # print("label:", template_sequence["element_label"], template_sequence["start"], template_sequence["end"])
         return [{"label": template_sequence["element_label"], "phrase_matches": template_sequence["phrase_matches"]}]
@@ -463,6 +499,9 @@ def find_next_group_match_sequence(phrase_matches: List[PhraseMatch],
 
 
 class FuzzyTemplateSearcher(FuzzyContextSearcher):
+    """Fuzzy searcher that finds phrase matches in text and groups them into
+    :class:`TemplateMatch` objects wherever a sequence of matches satisfies a
+    :class:`~fuzzy_search.pattern.fuzzy_template.FuzzyTemplate`."""
 
     def __init__(self, template: Union[None, FuzzyTemplate] = None, config: Union[None, dict] = None):
         """A fuzzy searcher for finding fuzzy matches in texts and checking if the matches fit a given template.
@@ -482,6 +521,7 @@ class FuzzyTemplateSearcher(FuzzyContextSearcher):
             self.index_phrase_model(self.phrase_model)
 
     def __repr__(self):
+        """Return a debug representation showing the registered template."""
         return f"{self.__class__.__name__}(template={self.template})"
 
     def set_template(self, template: FuzzyTemplate) -> None:

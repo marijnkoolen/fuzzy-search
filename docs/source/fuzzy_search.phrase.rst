@@ -9,21 +9,21 @@ fuzzy\_search.phrase.phrase module
 
 .. automodule:: fuzzy_search.phrase.phrase
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 fuzzy\_search.phrase.phrase\_model module
 -----------------------------------------
 
 .. automodule:: fuzzy_search.phrase.phrase_model
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 Module contents
 ---------------
 
 .. automodule:: fuzzy_search.phrase
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

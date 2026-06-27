@@ -22,7 +22,7 @@ copyright = '2020, Marijn Koolen'
 author = 'Marijn Koolen'
 
 # The full version, including alpha/beta/rc tags
-release = '0.3.0'
+release = '2.7.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -31,8 +31,15 @@ release = '0.3.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc'
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
 ]
+
+# Napoleon settings (Google-style docstrings)
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+napoleon_include_init_with_doc = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
