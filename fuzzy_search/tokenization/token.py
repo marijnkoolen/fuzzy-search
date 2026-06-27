@@ -12,8 +12,6 @@ import re
 from collections import defaultdict
 from typing import Callable, Dict, List, Set, Tuple, Union
 
-from nltk.tokenize import WordPunctTokenizer
-
 
 class Annotation:
     """
@@ -413,7 +411,20 @@ class Tokenizer:
         self.include_boundary_tokens = include_boundary_tokens
         self.remove_punctuation = remove_punctuation
         self.split_pattern = re.compile(split_pattern)
-        self.nltk_wp_tokenizer = WordPunctTokenizer()
+        self._nltk_wp_tokenizer = None
+
+    @property
+    def nltk_wp_tokenizer(self):
+        """The NLTK ``WordPunctTokenizer`` used by the base :meth:`_string_tokenizer`.
+
+        Constructed lazily (and NLTK imported lazily) on first access, since NLTK is a
+        relatively expensive import and subclasses such as :class:`RegExTokenizer` and
+        :class:`CustomTokenizer` override :meth:`_string_tokenizer` and never need it.
+        """
+        if self._nltk_wp_tokenizer is None:
+            from nltk.tokenize import WordPunctTokenizer
+            self._nltk_wp_tokenizer = WordPunctTokenizer()
+        return self._nltk_wp_tokenizer
 
     def _string_tokenizer(self, text) -> Tuple[str, int, int]:
         """Split text into (token_string, char_index) pairs using the NLTK
