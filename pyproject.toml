@@ -1,6 +1,6 @@
 [project]
 name = "fuzzy-search"
-version = "2.7.1"
+version = "2.8.0"
 description = "Tool for fuzzy searching in texts with historical language use and OCR/HTR errors"
 authors = [{name = "Marijn Koolen", email = "marijn.koolen@gmail.com"}]
 readme = "README.md"
