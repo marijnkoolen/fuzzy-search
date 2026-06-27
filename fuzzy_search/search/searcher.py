@@ -10,7 +10,7 @@ import string
 from collections import defaultdict
 from typing import Dict, List, Set, Union
 
-import fuzzy_search
+from fuzzy_search._version import __version__
 from fuzzy_search.match.skip_match import SkipMatches
 from fuzzy_search.match.phrase_match import PhraseMatch
 from fuzzy_search.phrase.phrase import Phrase
@@ -45,7 +45,7 @@ class FuzzySearcher(object):
         :param tokenizer: a tokenizer instance (default tokenizer splits on whitespace)
         :type tokenizer: Tokenizer
         """
-        self.__version__ = fuzzy_search.__version__
+        self.__version__ = __version__
         # default configuration
         self.char_match_threshold = 0.5
         self.ngram_threshold = 0.5

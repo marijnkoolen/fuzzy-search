@@ -22,9 +22,6 @@ from Levenshtein import ratio as score_ratio
 from fuzzy_search.phrase.phrase import Phrase
 from fuzzy_search.match.phrase_match import PhraseMatch
 from fuzzy_search.match.phrase_match import MatchType
-from fuzzy_search.match.phrase_match import TokenMatch
-from fuzzy_search.match.phrase_match import PartialPhraseMatch
-from fuzzy_search.match.phrase_match import copy_partial_match
 from fuzzy_search.match.skip_match import SkipMatches
 from fuzzy_search.phrase.phrase_model import PhraseModel
 from fuzzy_search.search.searcher import FuzzySearcher
@@ -33,6 +30,185 @@ from fuzzy_search.tokenization.token import Doc
 from fuzzy_search.tokenization.token import Token
 from fuzzy_search.tokenization.token import Tokenizer
 from fuzzy_search.tokenization.vocabulary import Vocabulary
+
+
+class TokenMatch:
+    """A match between one or more text tokens and one or more phrase tokens, with the type
+    of match (full or partial) between them."""
+
+    def __init__(self, text_tokens: Union[Token, List[Token]],
+                 phrase_tokens: Union[str, List[str]],
+                 match_type: MatchType):
+        """Create a TokenMatch.
+
+        :param text_tokens: one or more text tokens involved in the match
+        :type text_tokens: Union[Token, List[Token]]
+        :param phrase_tokens: one or more phrase tokens involved in the match
+        :type phrase_tokens: Union[str, List[str]]
+        :param match_type: the type of match between the text and phrase tokens
+        :type match_type: MatchType
+        """
+        if isinstance(text_tokens, Token):
+            text_tokens = (text_tokens, )
+        elif isinstance(text_tokens, list):
+            text_tokens = tuple(text_tokens)
+        if isinstance(phrase_tokens, str):
+            phrase_tokens = (phrase_tokens, )
+        elif isinstance(phrase_tokens, list):
+            phrase_tokens = tuple(phrase_tokens)
+        self.text_tokens = text_tokens
+        self.phrase_tokens = phrase_tokens
+        self.match_type = match_type
+        self.first = text_tokens[0] if isinstance(text_tokens, Iterable) else text_tokens
+        self.last = text_tokens[-1] if isinstance(text_tokens, Iterable) else text_tokens
+        self.text_start = self.first.char_index
+        self.text_end = self.last.char_index + len(self.last)
+        self.text_length = self.text_end - self.text_start
+
+    def __repr__(self):
+        """Return a debug representation showing the match type, text tokens and phrase tokens."""
+        return f"{self.__class__.__name__}(match_type={self.match_type}, " \
+               f"text_tokens={self.text_tokens}, phrase_tokens={self.phrase_tokens})"
+
+
+class PartialPhraseMatch:
+    """A growing token-based match between a phrase and a sequence of text tokens, built up
+    incrementally from individual TokenMatch objects while tracking missing and redundant
+    phrase tokens and enforcing maximum character/token gaps between matched tokens."""
+
+    def __init__(self, phrase: Phrase, token_matches: List[TokenMatch] = None, max_char_gap: int = 20,
+                 max_token_gap: int = 1):
+        """Create a PartialPhraseMatch for a given phrase.
+
+        :param phrase: the phrase being matched
+        :type phrase: Phrase
+        :param token_matches: an optional initial list of token matches to add
+        :type token_matches: List[TokenMatch]
+        :param max_char_gap: the maximum allowed character gap between consecutive matched tokens
+        :type max_char_gap: int
+        :param max_token_gap: the maximum allowed token index gap between consecutive matched tokens
+        :type max_token_gap: int
+        """
+        # create a new list instead of pointing to original list
+        self.token_matches = []
+        self.phrase = phrase
+        self.text_tokens = []
+        self.phrase_tokens = []
+        self.text_phrase_map = defaultdict(list)
+        self.missing_tokens = [token.n for token in phrase.tokens]
+        self.redundant_tokens = []
+        self.max_char_gap = max_char_gap
+        self.max_token_gap = max_token_gap
+        self.text_start = -1
+        self.text_end = -1
+        self.text_length = 0
+        self.match_string = None
+        self.first_text_token = None
+        self.last_text_token = None
+        self.first_phrase_token = None
+        self.last_phrase_token = None
+        self.levenshtein_score = None
+        if token_matches is not None:
+            self.add_tokens(token_matches)
+
+    def __repr__(self):
+        """Return a debug representation showing the phrase, token matches, and missing tokens."""
+        return f"{self.__class__.__name__}(\n\tphrase={self.phrase}, \n\ttoken_matches={self.token_matches}, " \
+               f"\n\ttext_tokens={self.text_tokens}, \n\tphrase_tokens={self.phrase_tokens}, " \
+               f"\n\tmissing_tokens={self.missing_tokens}\n)"
+
+    def _update(self):
+        text_tokens = []
+        prev_match = None
+        for match in self.token_matches:
+            if prev_match is None:
+                text_tokens.extend(match.text_tokens)
+            elif match.text_start == prev_match.text_start:
+                continue
+            elif match.text_start >= prev_match.text_end:
+                text_tokens.extend(match.text_tokens)
+            else:
+                print('TO DO: figure out how to filter text tokens in partially overlapping token matches')
+            prev_match = match
+        self.text_tokens = tuple(text_tokens)
+        self.phrase_tokens = tuple([token for match in self.token_matches for token in match.phrase_tokens])
+        self.first_text_token = self.text_tokens[0]
+        self.last_text_token = self.text_tokens[-1]
+        self.text_start = self.first_text_token.char_index
+        self.text_end = self.last_text_token.char_index + len(self.last_text_token)
+        self.text_length = self.text_end - self.text_start
+
+    def pop(self):
+        """Remove the first (earliest) token match from this partial match and update its
+        derived state (text/phrase tokens, offsets, length)."""
+        self.token_matches.pop(0)
+        self._update()
+
+    def _check_gap(self, token_match: TokenMatch):
+        token_gap = token_match.text_tokens[0].index - self.text_tokens[-1].index
+        char_gap = token_match.text_tokens[0].char_index - self.text_end
+        if token_gap > self.max_token_gap or char_gap > self.max_char_gap:
+            self.__init__(phrase=self.phrase)
+
+    def push(self, token_match: TokenMatch):
+        """Add a new token match to the end of this partial match, resetting the match if the
+        gap to the new token match exceeds the configured maximum character/token gap, and
+        updating which phrase tokens are missing or redundant.
+
+        :param token_match: the token match to add
+        :type token_match: TokenMatch
+        """
+        self.token_matches.append(token_match)
+        if len(self.text_tokens) > 0:
+            self._check_gap(token_match)
+        for text_token in token_match.text_tokens:
+            self.text_tokens.append(text_token)
+            self.text_phrase_map[text_token].extend(list(token_match.phrase_tokens))
+        for phrase_token in token_match.phrase_tokens:
+            self.phrase_tokens.append(phrase_token)
+            if phrase_token in self.missing_tokens:
+                self.missing_tokens.remove(phrase_token)
+            else:
+                self.redundant_tokens.append(phrase_token)
+
+    def add_tokens(self, token_matches: Union[List[TokenMatch], TokenMatch]):
+        """Add one or more token matches to this partial match and update its derived state.
+
+        :param token_matches: a single token match or a list of token matches to add
+        :type token_matches: Union[List[TokenMatch], TokenMatch]
+        """
+        if isinstance(token_matches, TokenMatch):
+            token_matches = [token_matches]
+        for token_match in token_matches:
+            for phrase_token in token_match.phrase_tokens:
+                if phrase_token in self.missing_tokens:
+                    self.missing_tokens.remove(phrase_token)
+        self.token_matches.extend(token_matches)
+        self._update()
+
+
+def copy_partial_match(partial_match: PartialPhraseMatch):
+    """Create a deep-ish copy of a PartialPhraseMatch, copying its tracked token and offset state.
+
+    :param partial_match: the partial match to copy
+    :type partial_match: PartialPhraseMatch
+    :return: a new, independent PartialPhraseMatch with the same state
+    :rtype: PartialPhraseMatch
+    """
+    new_pm = PartialPhraseMatch(phrase=partial_match.phrase, token_matches=None,
+                                max_char_gap=partial_match.max_char_gap,
+                                max_token_gap=partial_match.max_token_gap)
+    new_pm.token_matches = [tm for tm in partial_match.token_matches]
+    new_pm.missing_tokens = [token for token in partial_match.missing_tokens]
+    new_pm.text_tokens = [token for token in partial_match.text_tokens]
+    new_pm.phrase_tokens = [token for token in partial_match.phrase_tokens]
+    new_pm.redundant_tokens = [token for token in partial_match.redundant_tokens]
+    new_pm.first_text_token = partial_match.first_text_token
+    new_pm.last_text_token = partial_match.last_text_token
+    new_pm.text_start = partial_match.text_start
+    new_pm.text_end = partial_match.text_end
+    new_pm.text_length = partial_match.text_length
+    return new_pm
 
 
 def map_text_tokens_to_phrase_tokens(partial_match: PartialPhraseMatch) -> Union[Dict[str, List[str]], None]:

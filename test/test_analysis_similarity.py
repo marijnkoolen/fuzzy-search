@@ -1,7 +1,7 @@
 import math
 from unittest import TestCase
 
-import fuzzy_search.similarity as similarity
+import fuzzy_search.analysis.similarity as similarity
 
 
 class TestKeywordList(TestCase):

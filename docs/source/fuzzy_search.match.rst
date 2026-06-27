@@ -20,6 +20,14 @@ fuzzy\_search.match.exact\_match module
    :show-inheritance:
    :undoc-members:
 
+fuzzy\_search.match.match\_offsets module
+-----------------------------------------
+
+.. automodule:: fuzzy_search.match.match_offsets
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 fuzzy\_search.match.phrase\_match module
 ----------------------------------------
 

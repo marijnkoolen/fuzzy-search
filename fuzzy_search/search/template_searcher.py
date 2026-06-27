@@ -10,7 +10,7 @@ template match.
 """
 from typing import Dict, List, Union
 
-import fuzzy_search
+from fuzzy_search._version import __version__
 from fuzzy_search.match.phrase_match import PhraseMatch
 from fuzzy_search.phrase.phrase_model import PhraseModel
 from fuzzy_search.pattern.fuzzy_template import FuzzyTemplate, FuzzyTemplateElement, FuzzyTemplateGroupElement
@@ -514,7 +514,7 @@ class FuzzyTemplateSearcher(FuzzyContextSearcher):
         :param searcher_config: an optional configuration dictionary to configure the FuzzyTemplateSearcher
         """
         super().__init__(config=config)
-        self.__version__ = fuzzy_search.__version__
+        self.__version__ = __version__
         self.template: Union[None, FuzzyTemplate] = template if template else None
         self.phrase_model: Union[None, PhraseModel] = template.phrase_model if template else None
         if self.phrase_model:

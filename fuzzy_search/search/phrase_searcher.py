@@ -11,10 +11,10 @@ from typing import Dict, List, Union
 
 from fuzzy_search.phrase.phrase_model import PhraseModel
 from fuzzy_search.match.phrase_match import PhraseMatch
-from fuzzy_search.match.phrase_match import Candidate
-from fuzzy_search.match.phrase_match import adjust_match_offsets
-from fuzzy_search.match.phrase_match import candidates_to_matches
-from fuzzy_search.match.phrase_match import filter_matches_by_overlap
+from fuzzy_search.match.candidate_match import Candidate
+from fuzzy_search.match.match_offsets import adjust_match_offsets
+from fuzzy_search.match.match_offsets import candidates_to_matches
+from fuzzy_search.match.match_offsets import filter_matches_by_overlap
 from fuzzy_search.match.skip_match import filter_overlapping_phrase_candidates
 from fuzzy_search.match.skip_match import get_skipmatch_candidates
 from fuzzy_search.match.exact_match import index_known_word_offsets

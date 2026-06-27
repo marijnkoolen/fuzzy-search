@@ -6,8 +6,7 @@ provides the ``make_searcher`` convenience function for building a phrase search
 from a list of phrases and a config.
 """
 
-__version__ = "2.7.1"
-
+from fuzzy_search._version import __version__
 from fuzzy_search.search.config import default_config
 from fuzzy_search.search.phrase_searcher import FuzzyPhraseSearcher
 from fuzzy_search.search.token_searcher import FuzzyTokenSearcher

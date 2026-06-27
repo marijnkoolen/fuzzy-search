@@ -22,7 +22,7 @@ copyright = '2020, Marijn Koolen'
 author = 'Marijn Koolen'
 
 # The full version, including alpha/beta/rc tags
-release = '2.7.1'
+release = '3.0.0'
 
 
 # -- General configuration ---------------------------------------------------

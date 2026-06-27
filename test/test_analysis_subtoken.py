@@ -1,5 +1,5 @@
 from unittest import TestCase
-import fuzzy_search.tokenization.subtoken as subtoken
+import fuzzy_search.analysis.subtoken as subtoken
 
 
 class TestCorpus(TestCase):

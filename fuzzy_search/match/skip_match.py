@@ -1,13 +1,11 @@
 """Skipgram-based matching: tracking which phrase skipgrams are found in a text (SkipMatches),
 and turning those skipgram matches into candidate matches per phrase."""
 
-import copy
 from collections import defaultdict
 from typing import Dict, List, Set, Union
 
 import fuzzy_search.match.candidate_match as can_match
-from fuzzy_search.match.candidate_match import CandidatePartial
-from fuzzy_search.match.phrase_match import Candidate
+from fuzzy_search.match.candidate_match import Candidate, CandidatePartial
 from fuzzy_search.match.candidate_match import (
     add_skip_match, shift_start_skip, is_match, get_skip_match_length,
     get_match_string, get_skip_set_overlap
