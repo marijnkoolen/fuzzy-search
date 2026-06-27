@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: fuzzy-search
+abstract: >-
+  Tool for fuzzy searching in texts with historical language use and
+  OCR/HTR errors.
+authors:
+  - family-names: Koolen
+    given-names: Marijn
+    email: marijn.koolen@gmail.com
+repository-code: https://github.com/marijnkoolen/fuzzy-search
+url: https://github.com/marijnkoolen/fuzzy-search
+license: MIT
+version: 2.7.1
+date-released: 2026-06-27
