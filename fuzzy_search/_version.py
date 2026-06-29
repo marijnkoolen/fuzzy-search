@@ -7,4 +7,4 @@ a circular import (``fuzzy_search/__init__.py`` itself imports those
 submodules).
 """
 
-__version__ = "3.0.0"
+__version__ = "3.0.1"
