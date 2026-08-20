@@ -1,0 +1,543 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.search.phrase_searcher &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.search.phrase_searcher</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.search.phrase_searcher</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Phrase-level fuzzy searcher.</span>
+
+<span class="sd">Defines :class:`FuzzyPhraseSearcher`, which combines an exact-matching pass</span>
+<span class="sd">with the skipgram-based fuzzy matching from</span>
+<span class="sd">:class:`~fuzzy_search.search.searcher.FuzzySearcher` to find whole-phrase</span>
+<span class="sd">matches in text, applying word-boundary, threshold, distractor, and overlap</span>
+<span class="sd">filtering.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase_model</span> <span class="kn">import</span> <span class="n">PhraseModel</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.phrase_match</span> <span class="kn">import</span> <span class="n">PhraseMatch</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.candidate_match</span> <span class="kn">import</span> <span class="n">Candidate</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.match_offsets</span> <span class="kn">import</span> <span class="n">adjust_match_offsets</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.match_offsets</span> <span class="kn">import</span> <span class="n">candidates_to_matches</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.match_offsets</span> <span class="kn">import</span> <span class="n">filter_matches_by_overlap</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.skip_match</span> <span class="kn">import</span> <span class="n">filter_overlapping_phrase_candidates</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.skip_match</span> <span class="kn">import</span> <span class="n">get_skipmatch_candidates</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.exact_match</span> <span class="kn">import</span> <span class="n">index_known_word_offsets</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.exact_match</span> <span class="kn">import</span> <span class="n">search_exact_phrases</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.search.searcher</span> <span class="kn">import</span> <span class="n">FuzzySearcher</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.search.token_searcher</span> <span class="kn">import</span> <span class="n">FuzzyTokenSearcher</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.string</span> <span class="kn">import</span> <span class="n">score_levenshtein_similarity_ratio</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.token</span> <span class="kn">import</span> <span class="n">Tokenizer</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.token</span> <span class="kn">import</span> <span class="n">Doc</span>
+
+
+<div class="viewcode-block" id="get_text_dict">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.get_text_dict">[docs]</a>
+<span class="k">def</span> <span class="nf">get_text_dict</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">Doc</span><span class="p">],</span> <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that text is in a dictionary with an id property, so that passing a long text</span>
+<span class="sd">    goes by reference instead of copying the long text string.</span>
+
+<span class="sd">    :param text: a text string or text dictionary</span>
+<span class="sd">    :type text: Union[str, dict]</span>
+<span class="sd">    :param ignorecase: boolean flag for whether to ignore case</span>
+<span class="sd">    :type ignorecase: bool</span>
+<span class="sd">    :return: a text dictionary with an id property</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;text_lower&#39;</span><span class="p">:</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()}</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">Doc</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">text</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">text</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>
+    <span class="k">if</span> <span class="s2">&quot;id&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">text</span><span class="p">:</span>
+        <span class="n">text</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">text</span></div>
+
+
+
+<div class="viewcode-block" id="combine_fuzzy_and_exact_matches">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.combine_fuzzy_and_exact_matches">[docs]</a>
+<span class="k">def</span> <span class="nf">combine_fuzzy_and_exact_matches</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">],</span>
+                                    <span class="n">exact_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">],</span>
+                                    <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge fuzzy and exact phrase matches, preferring the exact match when both exist for the</span>
+<span class="sd">    same phrase at the same offset.</span>
+
+<span class="sd">    :param filtered_matches: fuzzy matches that have passed filtering</span>
+<span class="sd">    :type filtered_matches: List[PhraseMatch]</span>
+<span class="sd">    :param exact_matches: exact phrase matches</span>
+<span class="sd">    :type exact_matches: List[PhraseMatch]</span>
+<span class="sd">    :param debug: level to show debug information</span>
+<span class="sd">    :type debug: int</span>
+<span class="sd">    :return: the combined list of matches, sorted by offset</span>
+<span class="sd">    :rtype: List[PhraseMatch]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">combined_matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">em</span> <span class="k">for</span> <span class="n">em</span> <span class="ow">in</span> <span class="n">exact_matches</span><span class="p">]</span>
+    <span class="n">exact_phrases</span> <span class="o">=</span> <span class="p">{(</span><span class="n">em</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">em</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">):</span> <span class="n">em</span> <span class="k">for</span> <span class="n">em</span> <span class="ow">in</span> <span class="n">exact_matches</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;combine_fuzzy_and_exact_matches - exact_phrases.keys():&#39;</span><span class="p">,</span> <span class="n">exact_phrases</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">fm</span> <span class="ow">in</span> <span class="n">filtered_matches</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">fm</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span> <span class="ow">in</span> <span class="n">exact_phrases</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;skipping fuzzy match because there is a better exact match:&#39;</span><span class="p">,</span> <span class="n">fm</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">combined_matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fm</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">combined_matches</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FuzzyPhraseSearcher">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher">[docs]</a>
+<span class="k">class</span> <span class="nc">FuzzyPhraseSearcher</span><span class="p">(</span><span class="n">FuzzySearcher</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fuzzy searcher for finding whole-phrase matches in text.</span>
+
+<span class="sd">    Extends :class:`FuzzySearcher` with an exact-matching pass (used to speed up</span>
+<span class="sd">    and disambiguate fuzzy matching), candidate generation and filtering, and</span>
+<span class="sd">    distractor/threshold/overlap-based filtering of the resulting matches.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FuzzyPhraseSearcher.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">phrase_model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]],</span> <span class="n">PhraseModel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">config</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Tokenizer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">token_searcher</span><span class="p">:</span> <span class="n">FuzzyTokenSearcher</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This class represents the basic fuzzy searcher. You can pass a list of phrases or a phrase model and</span>
+<span class="sd">        configuration dictionary that overrides the default configuration values. The default config dictionary</span>
+<span class="sd">        is available via `fuzzy_search.default_config`.</span>
+
+<span class="sd">        To set e.g. the character ngram_size to 3 and the skip_size to 1 use the following dictionary::</span>
+
+<span class="sd">            config = {</span>
+<span class="sd">                &#39;ngram_size&#39;: 3,</span>
+<span class="sd">                &#39;skip_size&#39;: 1</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param phrase_list: a list of phrases (a list of strings or more complex dictionaries with phrases and variants)</span>
+<span class="sd">        :type phrase_list: list</span>
+<span class="sd">        :param phrase_model: a phrase model</span>
+<span class="sd">        :type phrase_model: PhraseModel</span>
+<span class="sd">        :param config: a configuration dictionary to override default configuration properties.</span>
+<span class="sd">            Only the properties present in the config dictionary are updated.</span>
+<span class="sd">        :type config: dict</span>
+<span class="sd">        :param tokenizer: a tokenizer instance</span>
+<span class="sd">        :type tokenizer: Tokenizer</span>
+<span class="sd">        :param token_searcher: a fuzzy token searcher instance (using the same phrase model and config)</span>
+<span class="sd">        :type token_searcher: FuzzyTokenSearcher</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">phrase_list</span><span class="o">=</span><span class="n">phrase_list</span><span class="p">,</span> <span class="n">phrase_model</span><span class="o">=</span><span class="n">phrase_model</span><span class="p">,</span>
+                         <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="n">tokenizer</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">token_searcher</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">token_searcher</span> <span class="o">=</span> <span class="n">FuzzyTokenSearcher</span><span class="p">(</span><span class="n">phrase_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="p">,</span>
+                                                <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">token_searcher</span> <span class="o">=</span> <span class="n">token_searcher</span></div>
+
+
+<div class="viewcode-block" id="FuzzyPhraseSearcher.filter_phrase_candidates">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.filter_phrase_candidates">[docs]</a>
+    <span class="k">def</span> <span class="nf">filter_phrase_candidates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_candidates</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Candidate</span><span class="p">]],</span> <span class="n">text</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">],</span>
+                                 <span class="n">use_word_boundaries</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Candidate</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter per-phrase candidate matches, optionally snapping their boundaries to word</span>
+<span class="sd">        boundaries and removing candidates that overlap with a better candidate for the same phrase.</span>
+
+<span class="sd">        :param phrase_candidates: candidate matches grouped by phrase string</span>
+<span class="sd">        :type phrase_candidates: Dict[str, List[Candidate]]</span>
+<span class="sd">        :param text: the text object the candidates were found in</span>
+<span class="sd">        :type text: Dict[str, any]</span>
+<span class="sd">        :param use_word_boundaries: whether to adjust candidate boundaries to word boundaries</span>
+<span class="sd">        :type use_word_boundaries: bool</span>
+<span class="sd">        :param debug: level to show debug information</span>
+<span class="sd">        :type debug: int</span>
+<span class="sd">        :return: the filtered list of candidates across all phrases</span>
+<span class="sd">        :rtype: List[Candidate]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">candidates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Candidate</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PhraseSearcher.filter_phrase_candidates - phrases with overlap filtered candidates:&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">use_word_boundaries</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;    find_candidates - start word boundary filtering candidates&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="n">phrase_candidates</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">use_word_boundaries</span><span class="p">:</span>
+                <span class="n">adjusted_candidates</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">phrase_candidates</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    candidate: </span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="si">}</span><span class="se">\t</span><span class="s2">-</span><span class="se">\t</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">match_string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">adjusted_match</span> <span class="o">=</span> <span class="n">adjust_match_offsets</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_string</span><span class="p">,</span>
+                                                      <span class="n">text</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_end_offset</span><span class="p">,</span>
+                                                      <span class="bp">self</span><span class="o">.</span><span class="n">punctuation</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    find_candidates - adjusted_match:&quot;</span><span class="p">,</span> <span class="n">adjusted_match</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">adjusted_match</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    find_candidates - removing candidate &#39;</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="si">}</span><span class="s2">&#39;</span><span class="se">\t</span><span class="s2">-</span><span class="se">\t</span><span class="s2">&#39;</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">match_string</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+                        <span class="k">continue</span>
+                    <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span> <span class="o">=</span> <span class="n">adjusted_match</span><span class="p">[</span><span class="s2">&quot;match_start_offset&quot;</span><span class="p">]</span>
+                    <span class="n">candidate</span><span class="o">.</span><span class="n">match_end_offset</span> <span class="o">=</span> <span class="n">adjusted_match</span><span class="p">[</span><span class="s2">&quot;match_end_offset&quot;</span><span class="p">]</span>
+                    <span class="n">candidate</span><span class="o">.</span><span class="n">match_string</span> <span class="o">=</span> <span class="n">adjusted_match</span><span class="p">[</span><span class="s2">&quot;match_string&quot;</span><span class="p">]</span>
+                    <span class="n">adjusted_candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+                <span class="n">phrase_candidates</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">adjusted_candidates</span>
+            <span class="n">filtered_candidates</span> <span class="o">=</span> <span class="n">filter_overlapping_phrase_candidates</span><span class="p">(</span><span class="n">phrase_candidates</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">filtered_candidates</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">phrase_string: </span><span class="si">{</span><span class="n">phrase_string</span><span class="si">}</span><span class="se">\t</span><span class="s2">num overlap filtered candidates: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">filtered_candidates</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">filtered_candidates</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_string</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_end_offset</span><span class="p">)</span>
+            <span class="n">candidates</span> <span class="o">+=</span> <span class="n">filtered_candidates</span>
+
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;PhraseSearcher.filter_phrase_candidates - returning </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span><span class="si">}</span><span class="s1"> candidates&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">candidates</span></div>
+
+
+<div class="viewcode-block" id="FuzzyPhraseSearcher.find_candidates">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.find_candidates">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_candidates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">use_word_boundaries</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+                        <span class="n">include_variants</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">known_word_start_offset</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Candidate</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find candidate fuzzy matches for a given text.</span>
+
+<span class="sd">        :param text: the text object to match with phrases</span>
+<span class="sd">        :type text: dict</span>
+<span class="sd">        :param use_word_boundaries: use word boundaries in determining match boundaries</span>
+<span class="sd">        :type use_word_boundaries: bool</span>
+<span class="sd">        :param include_variants: boolean flag for whether to include phrase variants for finding matches</span>
+<span class="sd">        :type include_variants: bool</span>
+<span class="sd">        :param known_word_start_offset: a dictionary of known words and their text offsets based on exact matches</span>
+<span class="sd">        :type known_word_start_offset: Dict[int, Dict[str, any]]</span>
+<span class="sd">        :param debug: level to show debug information</span>
+<span class="sd">        :type debug: int</span>
+<span class="sd">        :return: a list of candidate matches</span>
+<span class="sd">        :rtype: List[Candidate]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">skip_matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_skipgram_matches</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">include_variants</span><span class="o">=</span><span class="n">include_variants</span><span class="p">,</span>
+                                                  <span class="n">known_word_start_offset</span><span class="o">=</span><span class="n">known_word_start_offset</span><span class="p">)</span>
+        <span class="n">phrase_candidates</span> <span class="o">=</span> <span class="n">get_skipmatch_candidates</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">skip_matches</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_threshold</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="p">,</span>
+                                              <span class="n">max_length_variance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length_variance</span><span class="p">,</span>
+                                              <span class="n">ignorecase</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_candidates - phrase_candidates:&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">phrase_candidates</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    phrase: </span><span class="si">{</span><span class="n">phrase</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">phrase_candidates</span><span class="p">[</span><span class="n">phrase</span><span class="p">]:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="si">}</span><span class="se">\t</span><span class="s2">-</span><span class="se">\t</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">match_string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">use_word_boundaries</span> <span class="o">=</span> <span class="n">use_word_boundaries</span> <span class="k">if</span> <span class="n">use_word_boundaries</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_word_boundaries</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_phrase_candidates</span><span class="p">(</span><span class="n">phrase_candidates</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span>
+                                                 <span class="n">use_word_boundaries</span><span class="o">=</span><span class="n">use_word_boundaries</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_candidates - returning word boundary filtered candidates:&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">filtered</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="se">\t</span><span class="s2">-</span><span class="se">\t</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">match_string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">filtered</span></div>
+
+
+<div class="viewcode-block" id="FuzzyPhraseSearcher.filter_matches_by_distractors">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.filter_matches_by_distractors">[docs]</a>
+    <span class="k">def</span> <span class="nf">filter_matches_by_distractors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove matches that are a worse fit for their phrase than for one of that phrase&#39;s</span>
+<span class="sd">        known distractor phrases.</span>
+
+<span class="sd">        :param matches: phrase matches to filter</span>
+<span class="sd">        :type matches: List[PhraseMatch]</span>
+<span class="sd">        :return: matches that are not better explained by a distractor</span>
+<span class="sd">        :rtype: List[PhraseMatch]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filtered</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">distractor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]:</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="n">score_levenshtein_similarity_ratio</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">string</span><span class="p">,</span> <span class="n">distractor</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">match</span><span class="o">.</span><span class="n">levenshtein_similarity</span><span class="p">:</span>
+                        <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">filtered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">filtered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">filtered</span></div>
+
+
+<div class="viewcode-block" id="FuzzyPhraseSearcher.filter_matches_by_threshold">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.filter_matches_by_threshold">[docs]</a>
+    <span class="k">def</span> <span class="nf">filter_matches_by_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove matches whose character overlap, ngram overlap, or Levenshtein similarity</span>
+<span class="sd">        score falls below the searcher&#39;s configured thresholds.</span>
+
+<span class="sd">        :param matches: phrase matches to filter</span>
+<span class="sd">        :type matches: List[PhraseMatch]</span>
+<span class="sd">        :return: matches that satisfy all configured similarity thresholds</span>
+<span class="sd">        :rtype: List[PhraseMatch]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filtered</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">character_overlap</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">char_match_threshold</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">ngram_overlap</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">ngram_threshold</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">levenshtein_similarity</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">levenshtein_threshold</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">filtered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">filtered</span></div>
+
+
+<div class="viewcode-block" id="FuzzyPhraseSearcher.find_matches">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.find_matches">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_matches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">Doc</span><span class="p">],</span>
+                     <span class="n">use_word_boundaries</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">allow_overlapping_matches</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">include_variants</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">filter_distractors</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">skip_exact_matching</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">first_best</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                     <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find all fuzzy matching phrases for a given text. By default, a first pass of exact matching is conducted</span>
+<span class="sd">        to find exact occurrences of phrases. This is to speed up the fuzzy matching pass</span>
+
+<span class="sd">        :param text: the text (string or dictionary with &#39;text&#39; property) to find fuzzy matching phrases in.</span>
+<span class="sd">        :type text: Union[str, Dict[str, str]]</span>
+<span class="sd">        :param use_word_boundaries: use word boundaries in determining match boundaries</span>
+<span class="sd">        :type use_word_boundaries: bool</span>
+<span class="sd">        :param allow_overlapping_matches: boolean flag for whether to allow matches to overlap in their text ranges</span>
+<span class="sd">        :type allow_overlapping_matches: bool</span>
+<span class="sd">        :param include_variants: boolean flag for whether to include phrase variants for finding matches</span>
+<span class="sd">        :type include_variants: bool</span>
+<span class="sd">        :param filter_distractors: boolean flag for whether to remove phrase matches that better match distractors</span>
+<span class="sd">        :type filter_distractors: bool</span>
+<span class="sd">        :param skip_exact_matching: boolean flag whether to skip the exact matching step</span>
+<span class="sd">        :type skip_exact_matching: bool</span>
+<span class="sd">        :return: a list of phrases matches</span>
+<span class="sd">        :type first_best: bool</span>
+<span class="sd">        :return: whether to return only the first match with the best score, or all matches</span>
+<span class="sd">        :param debug: level to show debug information</span>
+<span class="sd">        :type debug: int</span>
+<span class="sd">        :rtype: PhraseMatch</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">time_step</span> <span class="o">=</span> <span class="n">make_step_timer</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_matches - getting text dict&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No phrase model indexed&quot;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">get_text_dict</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">ignorecase</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_word_boundaries</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">use_word_boundaries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_word_boundaries</span>
+        <span class="k">if</span> <span class="n">skip_exact_matching</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">skip_exact_matching</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_exact_matching</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">skip_exact_matching</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">time_step</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;find_matches - running exact matching&quot;</span><span class="p">)</span>
+            <span class="n">exact_matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_exact_matches</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">use_word_boundaries</span><span class="o">=</span><span class="n">use_word_boundaries</span><span class="p">,</span>
+                                                    <span class="n">include_variants</span><span class="o">=</span><span class="n">include_variants</span><span class="p">)</span>
+            <span class="n">known_word_start_offset</span> <span class="o">=</span> <span class="n">index_known_word_offsets</span><span class="p">(</span><span class="n">exact_matches</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">time_step</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;find_matches - skipping exact matching&quot;</span><span class="p">)</span>
+            <span class="n">exact_matches</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">known_word_start_offset</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">time_step</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_matches - number of exact matches:&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">exact_matches</span><span class="p">))</span>
+        <span class="n">candidates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_candidates</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">use_word_boundaries</span><span class="o">=</span><span class="n">use_word_boundaries</span><span class="p">,</span>
+                                          <span class="n">include_variants</span><span class="o">=</span><span class="n">include_variants</span><span class="p">,</span>
+                                          <span class="n">known_word_start_offset</span><span class="o">=</span><span class="n">known_word_start_offset</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_matches - number of candidates received from find_candidates:&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">time_step</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="se">\t</span><span class="s2">-</span><span class="se">\t</span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">match_string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="n">candidates_to_matches</span><span class="p">(</span><span class="n">candidates</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="p">,</span> <span class="n">ignorecase</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">time_step</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_macthes - number of matches:&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_macthes - matches:&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">match phrase_string: </span><span class="si">{</span><span class="n">match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="se">\t</span><span class="s2">match_string: </span><span class="si">{</span><span class="n">match</span><span class="o">.</span><span class="n">string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">filtered_matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_matches_by_threshold</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">filter_distractors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filter_distractors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_distractors</span>
+        <span class="k">if</span> <span class="n">filter_distractors</span><span class="p">:</span>
+            <span class="n">filtered_matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_matches_by_distractors</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_macthes - number of matches after filtering by distractors:&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">allow_overlapping_matches</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">allow_overlapping_matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">allow_overlapping_matches</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">exact_matches</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">([</span><span class="n">fm</span><span class="o">.</span><span class="n">levenshtein_similarity</span> <span class="k">for</span> <span class="n">fm</span> <span class="ow">in</span> <span class="n">filtered_matches</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">([</span><span class="n">em</span><span class="o">.</span><span class="n">levenshtein_similarity</span> <span class="k">for</span> <span class="n">em</span> <span class="ow">in</span> <span class="n">exact_matches</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">fm</span> <span class="ow">in</span> <span class="n">filtered_matches</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">fm</span><span class="p">)</span>
+        <span class="n">filtered_matches</span> <span class="o">=</span> <span class="n">combine_fuzzy_and_exact_matches</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">,</span> <span class="n">exact_matches</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_macthes - number of matches after combining fuzzy and exact matches:&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">))</span>
+        <span class="n">filtered_matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_matches_by_offset_threshold</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_macthes - number of matches after filtering by offset threshold:&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">allow_overlapping_matches</span><span class="p">:</span>
+            <span class="n">filtered_matches</span> <span class="o">=</span> <span class="n">filter_matches_by_overlap</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">,</span> <span class="n">first_best</span><span class="o">=</span><span class="n">first_best</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_macthes - number of matches after filtering by overlap:&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">))</span>
+        <span class="c1"># print(exact_matches)</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">time_step</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_matches - filtered_matches:&#39;</span><span class="p">,</span> <span class="n">filtered_matches</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">text_id</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">offset</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">string</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="FuzzyPhraseSearcher.find_exact_matches">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.find_exact_matches">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_exact_matches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
+                           <span class="n">use_word_boundaries</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                           <span class="n">include_variants</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                           <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find all fuzzy matching phrases for a given text.</span>
+
+<span class="sd">        :param text: the text (string or dictionary with &#39;text&#39; property) to find fuzzy matching phrases in.</span>
+<span class="sd">        :type text: Union[str, Dict[str, str]]</span>
+<span class="sd">        :param use_word_boundaries: use word boundaries in determining match boundaries</span>
+<span class="sd">        :type use_word_boundaries: Union[None, bool]</span>
+<span class="sd">        :param include_variants: boolean flag for whether to include phrase variants for finding matches</span>
+<span class="sd">        :type include_variants: Union[None, bool]</span>
+<span class="sd">        :param debug: level to show debug information</span>
+<span class="sd">        :type debug: int</span>
+<span class="sd">        :return: a list of phrases matches</span>
+<span class="sd">        :rtype: PhraseMatch</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">exact_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">get_text_dict</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">ignorecase</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_word_boundaries</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">use_word_boundaries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_word_boundaries</span>
+        <span class="k">if</span> <span class="n">include_variants</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">include_variants</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_variants</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_exact_matches - use_word_boundaries:&#39;</span><span class="p">,</span> <span class="n">use_word_boundaries</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;find_exact_matches - include_variants:&#39;</span><span class="p">,</span> <span class="n">include_variants</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">exact_match</span> <span class="ow">in</span> <span class="n">search_exact_phrases</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">use_word_boundaries</span><span class="o">=</span><span class="n">use_word_boundaries</span><span class="p">,</span>
+                                                <span class="n">include_variants</span><span class="o">=</span><span class="n">include_variants</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">):</span>
+            <span class="n">exact_matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exact_match</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">exact_matches</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="make_step_timer">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.make_step_timer">[docs]</a>
+<span class="k">def</span> <span class="nf">make_step_timer</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a closure that, on each call, prints and returns the elapsed time since the</span>
+<span class="sd">    previous call (and the total time since the timer was created). Used for debug timing.&quot;&quot;&quot;</span>
+    <span class="n">first_step</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">prev_step</span> <span class="o">=</span> <span class="n">first_step</span>
+
+    <span class="k">def</span> <span class="nf">time_step</span><span class="p">():</span>
+        <span class="k">nonlocal</span> <span class="n">prev_step</span>
+        <span class="n">curr_step</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">took</span> <span class="o">=</span> <span class="n">curr_step</span> <span class="o">-</span> <span class="n">prev_step</span>
+        <span class="n">prev_step</span> <span class="o">=</span> <span class="n">curr_step</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">step took </span><span class="si">{</span><span class="n">took</span><span class="si">:</span><span class="s1"> &gt;.2f</span><span class="si">}</span><span class="s1"> seconds, total: </span><span class="si">{</span><span class="n">curr_step</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">first_step</span><span class="si">:</span><span class="s1"> &gt;.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">took</span>
+
+    <span class="k">return</span> <span class="n">time_step</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

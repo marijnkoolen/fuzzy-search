@@ -1,0 +1,760 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.search.template_searcher &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.search.template_searcher</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.search.template_searcher</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Template-based fuzzy searcher.</span>
+
+<span class="sd">Defines :class:`FuzzyTemplateSearcher`, which searches text for phrase matches</span>
+<span class="sd">and then checks whether sequences of those matches fit a</span>
+<span class="sd">:class:`~fuzzy_search.pattern.fuzzy_template.FuzzyTemplate` made up of ordered</span>
+<span class="sd">and unordered, required and optional, label and group elements. Also includes</span>
+<span class="sd">the helper functions used to find phrase-match sequences that satisfy template</span>
+<span class="sd">group elements, and :class:`TemplateMatch`, which represents a successful</span>
+<span class="sd">template match.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">fuzzy_search._version</span> <span class="kn">import</span> <span class="n">__version__</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.phrase_match</span> <span class="kn">import</span> <span class="n">PhraseMatch</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase_model</span> <span class="kn">import</span> <span class="n">PhraseModel</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.pattern.fuzzy_template</span> <span class="kn">import</span> <span class="n">FuzzyTemplate</span><span class="p">,</span> <span class="n">FuzzyTemplateElement</span><span class="p">,</span> <span class="n">FuzzyTemplateGroupElement</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.search.context_searcher</span> <span class="kn">import</span> <span class="n">FuzzyContextSearcher</span>
+
+
+<span class="n">DEBUG</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<div class="viewcode-block" id="share_label">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.share_label">[docs]</a>
+<span class="k">def</span> <span class="nf">share_label</span><span class="p">(</span><span class="n">object1</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">,</span> <span class="n">FuzzyTemplateElement</span><span class="p">],</span>
+                <span class="n">object2</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">,</span> <span class="n">FuzzyTemplateElement</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if two fuzzy objects (phrase matches of template elements) share at least one label.</span>
+
+<span class="sd">    :param object1: the first object to compare</span>
+<span class="sd">    :type object1: Union[PhraseMatch, FuzzyTemplateElement]</span>
+<span class="sd">    :param object2: the second object to compare</span>
+<span class="sd">    :type object2: Union[PhraseMatch, FuzzyTemplateElement]</span>
+<span class="sd">    :return: boolean value indicating that the two objects share a label</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">label1</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">object1</span><span class="o">.</span><span class="n">label</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object1</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">{</span><span class="n">object1</span><span class="o">.</span><span class="n">label</span><span class="p">}</span>
+    <span class="n">label2</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">object2</span><span class="o">.</span><span class="n">label</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">object2</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">{</span><span class="n">object2</span><span class="o">.</span><span class="n">label</span><span class="p">}</span>
+    <span class="c1"># print(&quot;set 1:&quot;, label1)</span>
+    <span class="c1"># print(&quot;set 2:&quot;, label2)</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">label1</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">label2</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+
+
+<div class="viewcode-block" id="get_phrase_match_list_labels">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.get_phrase_match_list_labels">[docs]</a>
+<span class="k">def</span> <span class="nf">get_phrase_match_list_labels</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a list of all the labels of a list of phrase matches.</span>
+
+<span class="sd">    :param phrase_matches: a list of phrase matches</span>
+<span class="sd">    :type phrase_matches: List[PhraseMatch]</span>
+<span class="sd">    :return: a list of phrase match labels</span>
+<span class="sd">    :rtype: List[str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">phrase_match</span> <span class="ow">in</span> <span class="n">phrase_matches</span><span class="p">:</span>
+        <span class="n">labels</span> <span class="o">+=</span> <span class="n">phrase_match</span><span class="o">.</span><span class="n">label</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase_match</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">phrase_match</span><span class="o">.</span><span class="n">label</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">labels</span></div>
+
+
+
+<div class="viewcode-block" id="has_required_matches">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.has_required_matches">[docs]</a>
+<span class="k">def</span> <span class="nf">has_required_matches</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">],</span> <span class="n">template</span><span class="p">:</span> <span class="n">FuzzyTemplate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if list of phrase matches contain all required labels of a template.</span>
+
+<span class="sd">    :param phrase_matches: a list of phrase matches</span>
+<span class="sd">    :type phrase_matches: List[PhraseMatch]</span>
+<span class="sd">    :param template: a fuzzy template to use for searching</span>
+<span class="sd">    :type template: FuzzyTemplate</span>
+<span class="sd">    :return: a True value only if all required labels have at least one match</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phrase_match_labels</span> <span class="o">=</span> <span class="n">get_phrase_match_list_labels</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">required_label</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">get_required_labels</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">required_label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">phrase_match_labels</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
+<div class="viewcode-block" id="TemplateMatch">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.TemplateMatch">[docs]</a>
+<span class="k">class</span> <span class="nc">TemplateMatch</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A successful match of a :class:`~fuzzy_search.pattern.fuzzy_template.FuzzyTemplate`</span>
+<span class="sd">    against a sequence of phrase matches found in a text.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TemplateMatch.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.TemplateMatch.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="n">FuzzyTemplate</span><span class="p">,</span> <span class="n">phrase_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">],</span>
+                 <span class="n">template_sequence</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A match object for a given template, with a list of phrase matches that fill the template elements.</span>
+
+<span class="sd">        :param template: the template that is matched</span>
+<span class="sd">        :type template: FuzzyTemplate</span>
+<span class="sd">        :param phrase_matches: the phrase matches that correspond to the template elements</span>
+<span class="sd">        :type phrase_matches: List[PhraseMatch]</span>
+<span class="sd">        :param template_sequence: a template sequence mapping each phrase match to the corresponding template labels</span>
+<span class="sd">        :type template_sequence: Dict[str, any]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="n">template</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_matches</span> <span class="o">=</span> <span class="n">phrase_matches</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_sequence</span> <span class="o">=</span> <span class="n">template_sequence</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">element_matches</span> <span class="o">=</span> <span class="n">get_sequence_label_element_matches</span><span class="p">(</span><span class="n">template_sequence</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a debug representation showing the template and its element matches.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(template=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="si">}</span><span class="s2">, element_matches=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">element_matches</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="find_next_element_start_index">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.find_next_element_start_index">[docs]</a>
+<span class="k">def</span> <span class="nf">find_next_element_start_index</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">],</span>
+                                  <span class="n">template_element</span><span class="p">:</span> <span class="n">FuzzyTemplateElement</span><span class="p">,</span>
+                                  <span class="n">template_start_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the next phrase match that matches a template element, from a given starting point</span>
+<span class="sd">    in a list of phrase matches.</span>
+
+<span class="sd">    :param phrase_matches: a list of phrase matches to be tested against a template element</span>
+<span class="sd">    :type phrase_matches: List[PhraseMatch]</span>
+<span class="sd">    :param template_element: a template element to test the phrase matches against</span>
+<span class="sd">    :type template_element: FuzzyTemplateElement</span>
+<span class="sd">    :param template_start_index: the index in the phrase list to start the matching process</span>
+<span class="sd">    :type template_start_index: int</span>
+<span class="sd">    :return: the index in the phrase list where the template element matches</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># print(&quot;finding start for template element:&quot;, template_element.label, template_element.type, template_start_index)</span>
+    <span class="c1"># if isinstance(template_element, FuzzyTemplateGroupElement):</span>
+        <span class="c1"># print(template_element.group_element_labels)</span>
+    <span class="c1"># print(&quot;finding start index:&quot;)</span>
+    <span class="k">for</span> <span class="n">phrase_match</span> <span class="ow">in</span> <span class="n">phrase_matches</span><span class="p">[</span><span class="n">template_start_index</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="n">share_label</span><span class="p">(</span><span class="n">template_element</span><span class="p">,</span> <span class="n">phrase_match</span><span class="p">):</span>
+            <span class="c1"># print(phrase_matches.index(phrase_match), &quot;phrase_match label:&quot;, phrase_match.label)</span>
+            <span class="c1"># print(phrase_matches.index(phrase_match), &quot;shared label&quot;)</span>
+            <span class="c1"># print(&quot;returning start for template element:&quot;, template_element.label, template_element.type,</span>
+            <span class="c1">#       template_start_index)</span>
+            <span class="k">return</span> <span class="n">phrase_matches</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">phrase_match</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="find_next_element_end_index">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.find_next_element_end_index">[docs]</a>
+<span class="k">def</span> <span class="nf">find_next_element_end_index</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">],</span>
+                                <span class="n">template_element</span><span class="p">:</span> <span class="n">FuzzyTemplateElement</span><span class="p">,</span>
+                                <span class="n">element_start_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the next phrase match that doesn&#39;t match a template element, from a given starting point</span>
+<span class="sd">    in a list of phrase matches.</span>
+
+<span class="sd">    :param phrase_matches: a list of phrase matches to be tested against a template element</span>
+<span class="sd">    :type phrase_matches: List[PhraseMatch]</span>
+<span class="sd">    :param template_element: a template element to test the phrase matches against</span>
+<span class="sd">    :type template_element: FuzzyTemplateElement</span>
+<span class="sd">    :param element_start_index: the index in the phrase list where the template elements first matches the template</span>
+<span class="sd">    :type element_start_index: int</span>
+<span class="sd">    :return: the index in the phrase list where the template element stops matching</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">element_start_index</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="c1"># print(&quot;template element finding end:&quot;, template_element.label, template_element.type)</span>
+    <span class="k">for</span> <span class="n">phrase_match</span> <span class="ow">in</span> <span class="n">phrase_matches</span><span class="p">[</span><span class="n">element_start_index</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">share_label</span><span class="p">(</span><span class="n">template_element</span><span class="p">,</span> <span class="n">phrase_match</span><span class="p">):</span>
+            <span class="c1"># this is the first phrase match after the start index that does not fit</span>
+            <span class="c1"># the template element, so the sequence ends here</span>
+            <span class="c1"># print(&quot;element end index:&quot;, phrase_matches.index(phrase_match))</span>
+            <span class="k">return</span> <span class="n">phrase_matches</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">phrase_match</span><span class="p">)</span>
+    <span class="c1"># if all phrases matches after element start fit the element&#39;s label(s),</span>
+    <span class="c1"># the end index is the end of the phrase matches</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="initialize_sequence">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.initialize_sequence">[docs]</a>
+<span class="k">def</span> <span class="nf">initialize_sequence</span><span class="p">(</span><span class="n">element</span><span class="p">:</span> <span class="n">FuzzyTemplateElement</span><span class="p">,</span> <span class="n">start_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an empty match-sequence dictionary for a template element, covering the given</span>
+<span class="sd">    start/end indices into the list of phrase matches and with no phrase matches assigned yet.</span>
+
+<span class="sd">    :param element: the template element (label or group) the sequence is for</span>
+<span class="sd">    :type element: FuzzyTemplateElement</span>
+<span class="sd">    :param start_index: the start index in the phrase match list</span>
+<span class="sd">    :type start_index: int</span>
+<span class="sd">    :param end_index: the end index in the phrase match list</span>
+<span class="sd">    :type end_index: int</span>
+<span class="sd">    :return: a sequence dictionary with keys element_label, element_type, element, start, end,</span>
+<span class="sd">        phrase_matches, contains_required and element_sequences</span>
+<span class="sd">    :rtype: Dict[str, any]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;element_label&quot;</span><span class="p">:</span> <span class="n">element</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+        <span class="s2">&quot;element_type&quot;</span><span class="p">:</span> <span class="n">element</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
+        <span class="s2">&quot;element&quot;</span><span class="p">:</span> <span class="n">element</span><span class="p">,</span>
+        <span class="s2">&quot;start&quot;</span><span class="p">:</span> <span class="n">start_index</span><span class="p">,</span>
+        <span class="s2">&quot;end&quot;</span><span class="p">:</span> <span class="n">end_index</span><span class="p">,</span>
+        <span class="s2">&quot;phrase_matches&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;contains_required&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;element_sequences&quot;</span><span class="p">:</span> <span class="p">[]</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="get_sequence_label_element_matches">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.get_sequence_label_element_matches">[docs]</a>
+<span class="k">def</span> <span class="nf">get_sequence_label_element_matches</span><span class="p">(</span><span class="n">template_sequence</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively flatten a (possibly nested) template match sequence into a list of per-label</span>
+<span class="sd">    phrase match dictionaries, annotating each with the group labels it belongs to.</span>
+
+<span class="sd">    :param template_sequence: a sequence dictionary as produced by :func:`initialize_sequence`</span>
+<span class="sd">        and the ``find_next_*_group_match_sequence`` functions</span>
+<span class="sd">    :type template_sequence: Dict[str, any]</span>
+<span class="sd">    :return: a list of dictionaries with keys &quot;label&quot;, &quot;phrase_matches&quot; and, for matches nested</span>
+<span class="sd">        inside groups, &quot;label_groups&quot;</span>
+<span class="sd">    :rtype: List[Dict[str, any]]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">template_sequence</span><span class="p">[</span><span class="s2">&quot;element_type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span>
+        <span class="c1"># print(&quot;label:&quot;, template_sequence[&quot;element_label&quot;], template_sequence[&quot;start&quot;], template_sequence[&quot;end&quot;])</span>
+        <span class="k">return</span> <span class="p">[{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">template_sequence</span><span class="p">[</span><span class="s2">&quot;element_label&quot;</span><span class="p">],</span> <span class="s2">&quot;phrase_matches&quot;</span><span class="p">:</span> <span class="n">template_sequence</span><span class="p">[</span><span class="s2">&quot;phrase_matches&quot;</span><span class="p">]}]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># print(&quot;group:&quot;, template_sequence[&quot;element_label&quot;], template_sequence[&quot;start&quot;], template_sequence[&quot;end&quot;])</span>
+        <span class="n">template_phrase_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">element_sequence</span> <span class="ow">in</span> <span class="n">template_sequence</span><span class="p">[</span><span class="s2">&quot;element_sequences&quot;</span><span class="p">]:</span>
+            <span class="n">element_phrase_matches</span> <span class="o">=</span> <span class="n">get_sequence_label_element_matches</span><span class="p">(</span><span class="n">element_sequence</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">element_phrase_match</span> <span class="ow">in</span> <span class="n">element_phrase_matches</span><span class="p">:</span>
+                <span class="n">template_phrase_matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element_phrase_match</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">template_sequence</span><span class="p">[</span><span class="s2">&quot;element_label&quot;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="s2">&quot;label_groups&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">element_phrase_match</span><span class="p">:</span>
+                        <span class="n">element_phrase_match</span><span class="p">[</span><span class="s2">&quot;label_groups&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">element_phrase_match</span><span class="p">[</span><span class="s2">&quot;label_groups&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">template_sequence</span><span class="p">[</span><span class="s2">&quot;element_label&quot;</span><span class="p">])</span>
+                <span class="c1"># print(&quot;\telement:&quot;, element_phrase_match)</span>
+        <span class="k">return</span> <span class="n">template_phrase_matches</span></div>
+
+
+
+<div class="viewcode-block" id="find_next_ordered_group_match_sequence">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.find_next_ordered_group_match_sequence">[docs]</a>
+<span class="k">def</span> <span class="nf">find_next_ordered_group_match_sequence</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">],</span>
+                                           <span class="n">template_group</span><span class="p">:</span> <span class="n">FuzzyTemplateGroupElement</span><span class="p">,</span>
+                                           <span class="n">template_start_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the next sequence of phrase matches that match an ordered template group element, from a given</span>
+<span class="sd">    starting point in the list of phrase matches. This function returns None if the template doesn&#39;t match.</span>
+
+<span class="sd">    :param phrase_matches: a list of phrase matches to be tested against a template element</span>
+<span class="sd">    :type phrase_matches: List[PhraseMatch]</span>
+<span class="sd">    :param template_group: a template group element to test the phrase matches against</span>
+<span class="sd">    :type template_group: FuzzyTemplateGroupElement</span>
+<span class="sd">    :param template_start_index: the index in the phrase list to start the matching process</span>
+<span class="sd">    :type template_start_index: int</span>
+<span class="sd">    :return: a sequence with start and end indexes in the list of phrase matches that match the template group</span>
+<span class="sd">    :rtype: Union[None, Dict[str, any]]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># find first phrase match that belongs to first element of group</span>
+    <span class="n">group_sequence</span> <span class="o">=</span> <span class="n">initialize_sequence</span><span class="p">(</span><span class="n">template_group</span><span class="p">,</span> <span class="n">template_start_index</span><span class="p">,</span> <span class="n">template_start_index</span><span class="p">)</span>
+    <span class="n">element_sequences</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ordered template group label:&quot;</span><span class="p">,</span> <span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;start index:&quot;</span><span class="p">,</span> <span class="n">template_start_index</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">group_element</span> <span class="ow">in</span> <span class="n">template_group</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ordered group element label:&quot;</span><span class="p">,</span> <span class="n">group_element</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">group_element</span><span class="p">,</span> <span class="n">FuzzyTemplateGroupElement</span><span class="p">):</span>
+            <span class="n">element_sequence</span> <span class="o">=</span> <span class="n">find_next_group_match_sequence</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">,</span> <span class="n">group_element</span><span class="p">,</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;returned sequence within ordered template:&quot;</span><span class="p">,</span> <span class="n">group_element</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">element_sequence</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">element_sequence</span><span class="p">:</span>
+                    <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;element_sequences&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element_sequence</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">element_start_index</span> <span class="o">=</span> <span class="n">find_next_element_start_index</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">,</span>
+                                                                <span class="n">group_element</span><span class="p">,</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">])</span>
+            <span class="n">element_end_index</span> <span class="o">=</span> <span class="n">find_next_element_end_index</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">,</span>
+                                                            <span class="n">group_element</span><span class="p">,</span> <span class="n">element_start_index</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">group_element</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;element_start_index:&quot;</span><span class="p">,</span> <span class="n">element_start_index</span><span class="p">,</span>
+                      <span class="s2">&quot;element_end_index:&quot;</span><span class="p">,</span> <span class="n">element_end_index</span><span class="p">)</span>
+            <span class="n">element_sequence</span> <span class="o">=</span> <span class="n">initialize_sequence</span><span class="p">(</span><span class="n">group_element</span><span class="p">,</span> <span class="n">element_start_index</span><span class="p">,</span> <span class="n">element_end_index</span><span class="p">)</span>
+            <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;phrase_matches&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">phrase_matches</span><span class="p">[</span><span class="n">element_start_index</span><span class="p">:</span><span class="n">element_end_index</span><span class="p">]</span>
+        <span class="n">element_sequences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element_sequence</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">element_sequence</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ordered group element </span><span class="si">{</span><span class="n">group_element</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2"> indexes:&quot;</span><span class="p">,</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">group start,end:&quot;</span><span class="p">,</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">element_sequence</span> <span class="ow">or</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">group_element</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">not found, not required&quot;</span><span class="p">)</span>
+            <span class="c1"># this element has no matches in the remaining match phrases but is not required so can be skipped</span>
+            <span class="k">continue</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="ow">not</span> <span class="n">element_sequence</span> <span class="ow">or</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">group_element</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">not found, but required, returning None&quot;</span><span class="p">,</span> <span class="n">group_element</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+            <span class="c1"># this element is required but has no matches, so the phrase matches do not fit the group template</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]:</span>
+            <span class="c1"># The group is still empty and this element has matches, so set its start and end</span>
+            <span class="c1"># as the groups start and end sequence</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;element_sequences&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element_sequence</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;adding element sequence:&#39;</span><span class="p">,</span> <span class="n">element_sequence</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">first found&quot;</span><span class="p">,</span> <span class="n">group_element</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span>
+                      <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">current group sequence:&quot;</span><span class="p">,</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">updated group sequence:&quot;</span><span class="p">,</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">group_element</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+                <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;contains_required&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]:</span>
+            <span class="c1"># there is no gap between this element&#39;s phrase matches and</span>
+            <span class="c1"># those of the previous elements in the group so update end</span>
+            <span class="c1"># if this element&#39;s matches extend the group end</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;element_sequences&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element_sequence</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;adding element sequence:&#39;</span><span class="p">,</span> <span class="n">element_sequence</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">next found&quot;</span><span class="p">,</span> <span class="n">group_element</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span>
+                      <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">current group sequence:&quot;</span><span class="p">,</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]:</span>
+                <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">next sequence:&quot;</span><span class="p">,</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">group_element</span><span class="o">.</span><span class="n">required</span> <span class="ow">and</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]:</span>
+            <span class="c1"># there is a gap between this element&#39;s matches and the previous sequence, but this element is</span>
+            <span class="c1"># required. Check if parts of the previous sequence are required. If so, the phrase matches do</span>
+            <span class="c1"># not fit the template group. If not, the previous sequence can be ignored and this required</span>
+            <span class="c1"># element is the start of the sequence</span>
+            <span class="k">if</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;contains_required&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;next required disconnected from previous required&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;replacing previous element sequences with current element sequence:&#39;</span><span class="p">,</span> <span class="n">element_sequence</span><span class="p">)</span>
+                <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;element_sequences&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">element_sequence</span><span class="p">]</span>
+                <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span>
+                <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span>
+                <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;contains_required&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">reset first found&quot;</span><span class="p">,</span> <span class="n">group_element</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span>
+                          <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">reset first sequence:&quot;</span><span class="p">,</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># there are phrase matches in between this element and the previous elements,</span>
+            <span class="c1"># and this element is not required, so skip this element</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;gap between this non-required element and previous sequence. &quot;</span> <span class="o">+</span>
+                      <span class="s2">&quot;Skipping this element:&quot;</span><span class="p">,</span> <span class="n">group_element</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;remove element sequence:&#39;</span><span class="p">,</span> <span class="n">element_sequence</span><span class="p">)</span>
+                <span class="n">group_sequence</span><span class="p">[</span><span class="s1">&#39;element_sequences&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;group sequence:&#39;</span><span class="p">,</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s1">&#39;element_sequences&#39;</span><span class="p">])</span>
+            <span class="k">pass</span>
+            <span class="c1"># return None</span>
+    <span class="k">if</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># none of the group&#39;s elements has a phrase match sequence, so the template has no matches</span>
+        <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;returning no ordered sequence&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;returning ordered sequence:&quot;</span><span class="p">,</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">group_sequence</span></div>
+
+
+
+<div class="viewcode-block" id="find_next_unordered_group_match_sequence">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.find_next_unordered_group_match_sequence">[docs]</a>
+<span class="k">def</span> <span class="nf">find_next_unordered_group_match_sequence</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">],</span>
+                                             <span class="n">template_group</span><span class="p">:</span> <span class="n">FuzzyTemplateGroupElement</span><span class="p">,</span>
+                                             <span class="n">template_start_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the next sequence of phrase matches that match an unordered template group element, from a given</span>
+<span class="sd">    starting point in the list of phrase matches. This function returns None if the template doesn&#39;t match.</span>
+
+<span class="sd">    :param phrase_matches: a list of phrase matches to be tested against a template element</span>
+<span class="sd">    :type phrase_matches: List[PhraseMatch]</span>
+<span class="sd">    :param template_group: a template group element to test the phrase matches against</span>
+<span class="sd">    :type template_group: FuzzyTemplateGroupElement</span>
+<span class="sd">    :param template_start_index: the index in the phrase list to start the matching process</span>
+<span class="sd">    :type template_start_index: int</span>
+<span class="sd">    :return: a sequence with start and end indexes in the list of phrase matches that match the template group</span>
+<span class="sd">    :rtype: Union[None, Dict[str, any]]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># find first phrase match that belongs to first element of group</span>
+    <span class="n">group_sequence</span> <span class="o">=</span> <span class="n">initialize_sequence</span><span class="p">(</span><span class="n">template_group</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">element_sequences</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># print(&quot;unordered template group label:&quot;, template_group.label, &quot;start_index:&quot;, template_start_index)</span>
+    <span class="k">for</span> <span class="n">group_element</span> <span class="ow">in</span> <span class="n">template_group</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+        <span class="c1"># print(&quot;unordered group element label:&quot;, group_element.label)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">group_element</span><span class="p">,</span> <span class="n">FuzzyTemplateGroupElement</span><span class="p">):</span>
+            <span class="c1"># print(&quot;checking group element next sequence&quot;)</span>
+            <span class="n">element_sequence</span> <span class="o">=</span> <span class="n">find_next_group_match_sequence</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">,</span> <span class="n">group_element</span><span class="p">,</span> <span class="n">template_start_index</span><span class="p">)</span>
+            <span class="c1"># print(&quot;returned sequence within unordered template:&quot;, group_element.label, element_sequence)</span>
+            <span class="c1"># if element_sequence:</span>
+            <span class="c1">#     group_sequence[&quot;element_sequences&quot;].append(element_sequence)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># print(&quot;checking label element next sequence&quot;)</span>
+            <span class="n">element_start_index</span> <span class="o">=</span> <span class="n">find_next_element_start_index</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">,</span>
+                                                                <span class="n">group_element</span><span class="p">,</span> <span class="n">template_start_index</span><span class="p">)</span>
+            <span class="n">element_end_index</span> <span class="o">=</span> <span class="n">find_next_element_end_index</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">,</span>
+                                                            <span class="n">group_element</span><span class="p">,</span> <span class="n">element_start_index</span><span class="p">)</span>
+            <span class="n">element_sequence</span> <span class="o">=</span> <span class="n">initialize_sequence</span><span class="p">(</span><span class="n">group_element</span><span class="p">,</span> <span class="n">element_start_index</span><span class="p">,</span> <span class="n">element_end_index</span><span class="p">)</span>
+            <span class="c1"># print(&quot;returned label sequence within unordered template:&quot;, group_element.label, element_start_index, element_end_index)</span>
+            <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;phrase_matches&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">phrase_matches</span><span class="p">[</span><span class="n">element_start_index</span><span class="p">:</span><span class="n">element_end_index</span><span class="p">]</span>
+        <span class="c1"># group_sequence[&quot;element_sequences&quot;].append(element_sequence)</span>
+        <span class="c1"># element_sequences.append(element_sequence)</span>
+        <span class="c1"># print(f&quot;unordered group element {group_element.label} indexes:&quot;, element_start_index, element_end_index)</span>
+        <span class="k">if</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">group_element</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+            <span class="c1"># print(&quot;\tnot found, not required&quot;)</span>
+            <span class="c1"># this element has no matches, but is not required</span>
+            <span class="c1"># so does not contribute to the current template sequence</span>
+            <span class="k">continue</span>
+        <span class="k">elif</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">group_element</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+            <span class="c1"># print(&quot;\tnot found, but required&quot;)</span>
+            <span class="c1"># this element has no matches and is required, so the phrase matches</span>
+            <span class="c1"># do not fit this template group</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># this element has matches, so add its sequence to the list of sequences</span>
+            <span class="c1"># print(&quot;\tunordered element sequence&quot;, group_element.label, element_start_index, element_end_index)</span>
+            <span class="c1"># print(&quot;\tunordered group sequence:&quot;, group_sequence[&quot;start&quot;], group_sequence[&quot;end&quot;])</span>
+            <span class="n">element_sequences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element_sequence</span><span class="p">)</span>
+    <span class="c1"># print(template_group.label, &quot;sorting element sequences:&quot;, len(element_sequences))</span>
+    <span class="n">element_sequences</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">element_sequence</span> <span class="ow">in</span> <span class="n">element_sequences</span><span class="p">:</span>
+        <span class="c1"># print(template_group.label, &quot;checking sorted element sequence&quot;, element_sequence[&quot;element_label&quot;],</span>
+        <span class="c1">#      element_sequence[&quot;start&quot;], element_sequence[&quot;end&quot;])</span>
+        <span class="k">if</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># this is the first element with matches, so set its sequence as the group sequence</span>
+            <span class="c1"># print(&quot;adding first sequence&quot;)</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;element_sequences&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element_sequence</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]:</span>
+            <span class="c1"># there are no matches in between this element sequence and the previous one,</span>
+            <span class="c1"># so adjust the end of the group sequence to contain include this element sequence as well</span>
+            <span class="c1"># print(&quot;extending end&quot;)</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;element_sequences&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element_sequence</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]:</span>
+            <span class="c1"># this sequences falls within the current group sequence, so add it but leave the group sequence end</span>
+            <span class="c1"># print(&quot;not extending end&quot;)</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;element_sequences&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element_sequence</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;element&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+            <span class="c1"># there is a gap between this element&#39;s matches and the previous sequence, but this element is</span>
+            <span class="c1"># required. Check if parts of the previous sequence are required. If so, the phrase matches do</span>
+            <span class="c1"># not fit the template group. If not, the previous sequence can be ignored and this required</span>
+            <span class="c1"># element is the start of the sequence</span>
+            <span class="k">if</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;contains_required&quot;</span><span class="p">]:</span>
+                <span class="c1"># print(&quot;next required disconnected from previous required&quot;)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="c1"># the previous sequence has no required element, and this element is required</span>
+            <span class="c1"># so the matches of the previous elements do not fit this template group</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span>
+            <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;element_sequences&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">element_sequence</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]:</span>
+            <span class="c1"># there are matches in between this element and the previous so this element&#39;s</span>
+            <span class="c1"># matches are part of a next sequence</span>
+            <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;unknown condition&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;group start,end:&quot;</span><span class="p">,</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;element start,end:&quot;</span><span class="p">,</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">element_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;UNKNOWN CONDITION&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">group_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># none of the group&#39;s elements has a phrase match sequence, so the template has no matches</span>
+        <span class="c1"># print(&quot;returning no unordered sequence:&quot;, template_group.label)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="c1"># print(template_group.label, &quot;returning unordered sequence:&quot;, group_sequence[&quot;start&quot;], group_sequence[&quot;end&quot;])</span>
+    <span class="k">return</span> <span class="n">group_sequence</span></div>
+
+
+
+<div class="viewcode-block" id="find_next_group_match_sequence">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.find_next_group_match_sequence">[docs]</a>
+<span class="k">def</span> <span class="nf">find_next_group_match_sequence</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">],</span>
+                                   <span class="n">template_group</span><span class="p">:</span> <span class="n">FuzzyTemplateGroupElement</span><span class="p">,</span>
+                                   <span class="n">template_start_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the next sequence of phrase matches that match a template group element, from a given</span>
+<span class="sd">    starting point in the list of phrase matches. This function returns None if the template doesn&#39;t match.</span>
+
+<span class="sd">    :param phrase_matches: a list of phrase matches to be tested against a template element</span>
+<span class="sd">    :type phrase_matches: List[PhraseMatch]</span>
+<span class="sd">    :param template_group: a template group element to test the phrase matches against</span>
+<span class="sd">    :type template_group: FuzzyTemplateGroupElement</span>
+<span class="sd">    :param template_start_index: the index in the phrase list to start the matching process</span>
+<span class="sd">    :type template_start_index: int</span>
+<span class="sd">    :return: a sequence with start and end indexes in the list of phrase matches that match the template group</span>
+<span class="sd">    :rtype: Union[None, Dict[str, any]]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">template_group</span><span class="o">.</span><span class="n">ordered</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;CHECKING FOR FIRST ORDERED SEQUENCE&quot;</span><span class="p">)</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="n">find_next_ordered_group_match_sequence</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">,</span> <span class="n">template_group</span><span class="p">,</span> <span class="n">template_start_index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;returned ordered sequence&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sequence</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">received ordered start,end:&quot;</span><span class="p">,</span> <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">received no ordered sequence&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sequence</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;CHECKING FOR FIRST UNORDERED SEQUENCE&quot;</span><span class="p">)</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="n">find_next_unordered_group_match_sequence</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">,</span> <span class="n">template_group</span><span class="p">,</span> <span class="n">template_start_index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sequence</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">received first start,end:&quot;</span><span class="p">,</span> <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;CHECKING FOR ADDITIONAL UNORDERED SEQUENCE&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;no first sequence for&quot;</span><span class="p">)</span>
+        <span class="k">while</span> <span class="kc">True</span> <span class="ow">and</span> <span class="n">sequence</span><span class="p">:</span>
+            <span class="n">next_sequence</span> <span class="o">=</span> <span class="n">find_next_unordered_group_match_sequence</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">,</span> <span class="n">template_group</span><span class="p">,</span> <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">next_sequence</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">received no next sequence&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">next_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">received sequence with gap next start,end:&quot;</span><span class="p">,</span> <span class="n">next_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">next_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+                <span class="k">break</span>
+            <span class="k">elif</span> <span class="n">next_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">received sequence with no gap next start,end:&quot;</span><span class="p">,</span> <span class="n">next_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">next_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+                <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">next_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span>
+                <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;element_sequences&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">next_sequence</span><span class="p">[</span><span class="s2">&quot;element_sequences&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">received something strange:&quot;</span><span class="p">,</span> <span class="n">next_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">next_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sequence</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;RETURN find_next_group_match_sequence:&quot;</span><span class="p">,</span> <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">template_group</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;RETURN find_next_group_match_sequence:&quot;</span><span class="p">,</span> <span class="n">sequence</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sequence</span></div>
+
+
+
+<div class="viewcode-block" id="FuzzyTemplateSearcher">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher">[docs]</a>
+<span class="k">class</span> <span class="nc">FuzzyTemplateSearcher</span><span class="p">(</span><span class="n">FuzzyContextSearcher</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fuzzy searcher that finds phrase matches in text and groups them into</span>
+<span class="sd">    :class:`TemplateMatch` objects wherever a sequence of matches satisfies a</span>
+<span class="sd">    :class:`~fuzzy_search.pattern.fuzzy_template.FuzzyTemplate`.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FuzzyTemplateSearcher.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">FuzzyTemplate</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A fuzzy searcher for finding fuzzy matches in texts and checking if the matches fit a given template.</span>
+<span class="sd">        The FuzzyTemplateSearcher incorporates a FuzzyContextSearcher for searching phrase matches in texts.</span>
+<span class="sd">        The phrases are taken from the phrase model that is part of the template. The FuzzyContextSearcher</span>
+<span class="sd">        uses the default configuration unless a searcher_config is specified that overrides specific properties.</span>
+
+<span class="sd">        :param template: a fuzzy template to use for searching</span>
+<span class="sd">        :type template: FuzzyTemplate</span>
+<span class="sd">        :param searcher_config: an optional configuration dictionary to configure the FuzzyTemplateSearcher</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__version__</span> <span class="o">=</span> <span class="n">__version__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">FuzzyTemplate</span><span class="p">]</span> <span class="o">=</span> <span class="n">template</span> <span class="k">if</span> <span class="n">template</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">PhraseModel</span><span class="p">]</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">phrase_model</span> <span class="k">if</span> <span class="n">template</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">index_phrase_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a debug representation showing the registered template.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(template=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+<div class="viewcode-block" id="FuzzyTemplateSearcher.set_template">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.set_template">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="n">FuzzyTemplate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set a new template for the searcher and index the corresponding phrase model.</span>
+
+<span class="sd">        :param template: a fuzzy template to use for searching</span>
+<span class="sd">        :type template: FuzzyTemplate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="n">template</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">phrase_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_phrase_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplateSearcher.search_text">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.search_text">[docs]</a>
+    <span class="k">def</span> <span class="nf">search_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">TemplateMatch</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Search phrases from the registered template&#39;s phrase model in the text and check if the resulting matches</span>
+<span class="sd">        together match the template. This method returns a dictionary including the individual phrase matches and</span>
+<span class="sd">        any template matches.</span>
+
+<span class="sd">        :param text: a text to search in, either as a string or a dictionary with text and an identifier</span>
+<span class="sd">        :type text: Union[str, Dict[str, str]]</span>
+<span class="sd">        :return: a dictionary with all phrase matches and template matches</span>
+<span class="sd">        :rtype: Dict[str, Union[List[PhraseMatch], List[TemplateMatch]]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No fuzzy search template registered.&quot;</span><span class="p">)</span>
+        <span class="n">phrase_matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_matches</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">template_matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_template_matches</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">template_matches</span></div>
+
+        <span class="c1"># return {&quot;phrase_matches&quot;: phrase_matches, &quot;template_matches&quot;: template_matches}</span>
+
+<div class="viewcode-block" id="FuzzyTemplateSearcher.filter_phrase_matches">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.filter_phrase_matches">[docs]</a>
+    <span class="k">def</span> <span class="nf">filter_phrase_matches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter a list of phrase matches to only include phrase matches that have at least one label in</span>
+<span class="sd">        common with the template.</span>
+
+<span class="sd">        :param phrase_matches: a list of phrase matches</span>
+<span class="sd">        :type phrase_matches: List[PhraseMatch]</span>
+<span class="sd">        :return: a filtered list of phrases matches</span>
+<span class="sd">        :rtype: List[PhraseMatch]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># first, check if required elements are present</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_required_matches</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="c1"># second, remove phrase matches that have no label that is part of the template</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">phrase_match</span> <span class="k">for</span> <span class="n">phrase_match</span> <span class="ow">in</span> <span class="n">phrase_matches</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">has_label</span><span class="p">(</span><span class="n">phrase_match</span><span class="o">.</span><span class="n">label</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplateSearcher.find_template_matches">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.find_template_matches">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_template_matches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">TemplateMatch</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find all the matches that fit a template. The method returns a list of template matches, where</span>
+<span class="sd">        each template match contains the phrase match that fit the template. There can be multiple</span>
+<span class="sd">        template matches, if the phrase matches fit a template multiple times.</span>
+
+<span class="sd">        :param phrase_matches: a list of phrase matches</span>
+<span class="sd">        :type phrase_matches: List[PhraseMatch]</span>
+<span class="sd">        :return: a list of template matches</span>
+<span class="sd">        :rtype: List[TemplateMatch]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">template_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">TemplateMatch</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># make sure the matches are sorted in order of occurrence in the text</span>
+        <span class="n">template_phrase_matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_phrase_matches</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">phrase_matches</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">offset</span><span class="p">))</span>
+        <span class="n">sequence_start_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># print(&quot;num matches:&quot;, len(template_phrase_matches))</span>
+        <span class="c1"># for phrase_match in template_phrase_matches:</span>
+        <span class="c1">#     print(&quot;\t&quot;, phrase_match.label, phrase_match.phrase.phrase_string, &quot;\t&quot;, phrase_match.string)</span>
+        <span class="k">while</span> <span class="n">sequence_start_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">template_phrase_matches</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;sequence_start_index:&quot;</span><span class="p">,</span> <span class="n">sequence_start_index</span><span class="p">)</span>
+            <span class="n">template_sequence</span> <span class="o">=</span> <span class="n">find_next_group_match_sequence</span><span class="p">(</span><span class="n">template_phrase_matches</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">root_element</span><span class="p">,</span>
+                                                               <span class="n">sequence_start_index</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">template_sequence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sequence_start_index</span> <span class="o">=</span> <span class="n">template_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]</span>
+                <span class="n">sequence_matches</span> <span class="o">=</span> <span class="n">phrase_matches</span><span class="p">[</span><span class="n">template_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]:</span><span class="n">template_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]]</span>
+                <span class="n">template_match</span> <span class="o">=</span> <span class="n">TemplateMatch</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">,</span> <span class="n">phrase_matches</span><span class="o">=</span><span class="n">sequence_matches</span><span class="p">,</span>
+                                               <span class="n">template_sequence</span><span class="o">=</span><span class="n">template_sequence</span><span class="p">)</span>
+                <span class="n">template_matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">template_match</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;template_sequence:&quot;</span><span class="p">,</span> <span class="n">template_sequence</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">],</span> <span class="n">template_sequence</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">])</span>
+            <span class="c1"># print(&quot;updated sequence_start_index:&quot;, sequence_start_index)</span>
+            <span class="c1"># print(&quot;\n\n&quot;)</span>
+        <span class="k">return</span> <span class="n">template_matches</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

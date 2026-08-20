@@ -1,0 +1,569 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.match.match_offsets &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.match.match_offsets</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.match.match_offsets</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Algorithms for building :class:`~fuzzy_search.match.phrase_match.PhraseMatch` objects from</span>
+<span class="sd">candidate matches, validating their properties, and adjusting their start/end offsets to align</span>
+<span class="sd">with word boundaries.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">fuzzy_search.tokenization.string</span> <span class="k">as</span> <span class="nn">fuzzy_string</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.candidate_match</span> <span class="kn">import</span> <span class="n">Candidate</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.phrase_match</span> <span class="kn">import</span> <span class="n">PhraseMatch</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase</span> <span class="kn">import</span> <span class="n">Phrase</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase_model</span> <span class="kn">import</span> <span class="n">PhraseModel</span>
+
+
+<div class="viewcode-block" id="filter_matches_by_overlap">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.match_offsets.filter_matches_by_overlap">[docs]</a>
+<span class="k">def</span> <span class="nf">filter_matches_by_overlap</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">],</span> <span class="n">first_best</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                              <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter matches by overlapping match string offsets. When there are multiple phrases matching</span>
+<span class="sd">    with the same character range in the input text, only pick the matches with the highest</span>
+<span class="sd">    similarity scores. By default, all matches with the highest similarity score are returned.</span>
+<span class="sd">    Use &#39;first_best=True&#39; to return only the first best scoring match.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;match_offsets.filter_matches_by_overlap - filtered_matches: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">sorted_matches</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">filtered_matches</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">string</span><span class="p">)))</span>
+    <span class="n">filtered_matches</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;match_offsets.filter_matches_by_overlap - sorted_matches: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_matches</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">overlapping</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;match_offsets.filter_matches_by_overlap - using first_best: </span><span class="si">{</span><span class="n">first_best</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">sorted_matches</span><span class="p">:</span>
+        <span class="n">overlapping</span><span class="p">[(</span><span class="n">match</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">string</span><span class="p">))]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">offset_length</span> <span class="ow">in</span> <span class="n">overlapping</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">overlapping</span><span class="p">[</span><span class="n">offset_length</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">filtered_matches</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">overlapping</span><span class="p">[</span><span class="n">offset_length</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">first_best</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">first_best</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">overlapping</span><span class="p">[</span><span class="n">offset_length</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">levenshtein_similarity</span><span class="p">)</span>
+                <span class="n">filtered_matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">first_best</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sorted_matches</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">overlapping</span><span class="p">[</span><span class="n">offset_length</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">levenshtein_similarity</span><span class="p">,</span>
+                                        <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">best_sim</span> <span class="o">=</span> <span class="n">sorted_matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">levenshtein_similarity</span>
+                <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;match_offsets.filter_matches_by_overlap - best similarity score: </span><span class="si">{</span><span class="n">best_sim</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">best_match</span> <span class="ow">in</span> <span class="n">sorted_matches</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">best_match</span><span class="o">.</span><span class="n">levenshtein_similarity</span> <span class="o">&lt;</span> <span class="n">best_sim</span><span class="p">:</span>
+                        <span class="k">break</span>
+                    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;match_offsets.filter_matches_by_overlap - best match: &quot;</span>
+                              <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">offset_length</span><span class="si">}</span><span class="s2">)</span><span class="se">\t</span><span class="si">{</span><span class="n">best_match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">filtered_matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best_match</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">filtered_matches</span></div>
+
+
+
+<div class="viewcode-block" id="candidates_to_matches">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.match_offsets.candidates_to_matches">[docs]</a>
+<span class="k">def</span> <span class="nf">candidates_to_matches</span><span class="p">(</span><span class="n">candidates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Candidate</span><span class="p">],</span> <span class="n">text</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">phrase_model</span><span class="p">:</span> <span class="n">PhraseModel</span><span class="p">,</span>
+                          <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a list of fuzzy match candidates into PhraseMatch objects, resolving variant</span>
+<span class="sd">    candidates to their corresponding main phrase and computing similarity scores.</span>
+
+<span class="sd">    :param candidates: a list of candidate matches</span>
+<span class="sd">    :type candidates: List[Candidate]</span>
+<span class="sd">    :param text: the text object the candidates were found in</span>
+<span class="sd">    :type text: dict</span>
+<span class="sd">    :param phrase_model: the phrase model containing the phrases and their variants</span>
+<span class="sd">    :type phrase_model: PhraseModel</span>
+<span class="sd">    :param ignorecase: whether to ignore case when scoring matches</span>
+<span class="sd">    :type ignorecase: bool</span>
+<span class="sd">    :return: a list of phrase matches</span>
+<span class="sd">    :rtype: List[PhraseMatch]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">in</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">is_variant_of</span><span class="p">:</span>
+            <span class="n">match_phrase_string</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">is_variant_of</span><span class="p">[</span><span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span>
+            <span class="n">match_phrase</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">match_phrase_string</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">match_phrase</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">PhraseMatch</span><span class="p">(</span><span class="n">match_phrase</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="p">,</span>
+                            <span class="n">candidate</span><span class="o">.</span><span class="n">match_string</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span><span class="p">,</span> <span class="n">text_id</span><span class="o">=</span><span class="n">text</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+                            <span class="n">ignorecase</span><span class="o">=</span><span class="n">ignorecase</span><span class="p">)</span>
+        <span class="k">match</span><span class="o">.</span><span class="n">add_scores</span><span class="p">(</span><span class="n">skipgram_overlap</span><span class="o">=</span><span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_overlap</span><span class="p">)</span>
+        <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">matches</span></div>
+
+
+
+<div class="viewcode-block" id="validate_match_props">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.match_offsets.validate_match_props">[docs]</a>
+<span class="k">def</span> <span class="nf">validate_match_props</span><span class="p">(</span><span class="n">match_phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span> <span class="n">match_variant</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span>
+                         <span class="n">match_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">match_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate match properties.</span>
+
+<span class="sd">    :param match_phrase: the phrase that has been matched</span>
+<span class="sd">    :type match_phrase: Phrase</span>
+<span class="sd">    :param match_variant: the variant of the phrase that the match is based on</span>
+<span class="sd">    :type match_variant: Phrase</span>
+<span class="sd">    :param match_string: the text string that matches the variant phrase</span>
+<span class="sd">    :type match_string: str</span>
+<span class="sd">    :param match_offset: the offset of the match string in the text</span>
+<span class="sd">    :type match_offset: int</span>
+<span class="sd">    :return: None</span>
+<span class="sd">    :rtype: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">match_phrase</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;match_phrase: </span><span class="si">{</span><span class="n">match_phrase</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">match_phrase</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;match_phrase MUST be of class Phrase&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">match_variant</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;match_variant MUST be of class Phrase&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">match_string</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;match string MUST be a string&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_string</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;match_phrase: </span><span class="si">{</span><span class="n">match_phrase</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;match string cannot be empty string&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">match_offset</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;match_offset must be an integer&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match_offset</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;offset cannot be negative&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="adjust_match_start_offset">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.match_offsets.adjust_match_start_offset">[docs]</a>
+<span class="k">def</span> <span class="nf">adjust_match_start_offset</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">],</span> <span class="n">match_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                              <span class="n">match_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust the start offset if it is not at a word boundary.</span>
+
+<span class="sd">    :param text: the text object that contains the candidate match string</span>
+<span class="sd">    :type text: Dict[str, any]</span>
+<span class="sd">    :param match_string: the candidate match string</span>
+<span class="sd">    :type match_string: str</span>
+<span class="sd">    :param match_offset: the text offset of the candidate match string</span>
+<span class="sd">    :type match_offset: int</span>
+<span class="sd">    :return: the adjusted offset or None if the required adjustment is too big</span>
+<span class="sd">    :rtype: Union[int, None]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># adjust the start</span>
+    <span class="c1"># check if there match initial is a non-word character</span>
+    <span class="n">non_word_prefix</span> <span class="o">=</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">get_non_word_prefix</span><span class="p">(</span><span class="n">match_string</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">non_word_prefix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="c1"># match does not start with a non-word prefix, so check if it needs to be moved to the left</span>
+        <span class="k">if</span> <span class="n">match_offset</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># match is at the start of text and starts with word characters</span>
+            <span class="k">return</span> <span class="n">match_offset</span>
+        <span class="c1"># if character before match is first of text and not a word boundary, move left</span>
+        <span class="k">if</span> <span class="n">match_offset</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">text</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">non_word_affixes_1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">match_offset</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="c1"># if character before match is a word boundary, match offset is good</span>
+        <span class="k">if</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">match_offset</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">match_offset</span><span class="p">]</span> <span class="ow">in</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">non_word_affixes_1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">match_offset</span>
+        <span class="c1"># if penultimate character before match is a word boundary, move offset by -1</span>
+        <span class="k">elif</span> <span class="n">match_offset</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">match_offset</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="n">match_offset</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">non_word_affixes_1</span><span class="p">:</span>
+            <span class="c1"># move match_offset back by 1 to start at word boundary</span>
+            <span class="k">return</span> <span class="n">match_offset</span><span class="o">-</span><span class="mi">1</span>
+        <span class="c1"># if penultimate character before match is start of text, move offset by -2</span>
+        <span class="k">elif</span> <span class="n">match_offset</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">text</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">non_word_affixes_1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">match_offset</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="c1"># if two characters before match is a word boundary, move offset by -2</span>
+        <span class="k">elif</span> <span class="n">match_offset</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">match_offset</span><span class="o">-</span><span class="mi">3</span><span class="p">:</span><span class="n">match_offset</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">non_word_affixes_1</span><span class="p">:</span>
+            <span class="c1"># move match_offset back by 1 to start at word boundary</span>
+            <span class="k">return</span> <span class="n">match_offset</span><span class="o">-</span><span class="mi">2</span>
+        <span class="c1"># if the three characters preceding match are word characters, the start is wrong</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># match starts with a non-word-prefix, so move offset to after the prefix</span>
+        <span class="k">return</span> <span class="n">match_offset</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_word_prefix</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="adjust_match_end_offset">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.match_offsets.adjust_match_end_offset">[docs]</a>
+<span class="k">def</span> <span class="nf">adjust_match_end_offset</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">candidate_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                            <span class="n">text</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">],</span> <span class="n">end_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">punctuation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                            <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust the end offset if it is not at a word boundary.</span>
+
+<span class="sd">    :param phrase_string: the phrase string</span>
+<span class="sd">    :type phrase_string: str</span>
+<span class="sd">    :param candidate_string: the candidate match string</span>
+<span class="sd">    :type candidate_string: str</span>
+<span class="sd">    :param text: the text object that contains the candidate match string</span>
+<span class="sd">    :type text: Dict[str, any]</span>
+<span class="sd">    :param end_offset: the text offset of the candidate match string</span>
+<span class="sd">    :type end_offset: int</span>
+<span class="sd">    :param punctuation: the set of characters to treat as punctuation</span>
+<span class="sd">    :type punctuation: str</span>
+<span class="sd">    :param debug: level to show debug information</span>
+<span class="sd">    :type debug: int</span>
+<span class="sd">    :return: the adjusted offset or None if the required adjustment is too big</span>
+<span class="sd">    :rtype: Union[int, None]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># ugly hack: if phrase string ends with punctuation, use only whitespace as word end boundary</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">adjust_match_end_offset - start&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">phrase_string</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">punctuation</span><span class="p">:</span>
+        <span class="n">whitespace_only</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">phrase_string</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="s1">&#39; </span><span class="se">\t\r\n</span><span class="s1">&#39;</span> <span class="ow">and</span> <span class="n">phrase_string</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">punctuation</span><span class="p">:</span>
+        <span class="n">whitespace_only</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">whitespace_only</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">adjust_match_end_offset - whitespace_only:&#39;</span><span class="p">,</span> <span class="n">whitespace_only</span><span class="p">)</span>
+    <span class="n">phrase_end</span> <span class="o">=</span> <span class="n">map_string</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:],</span> <span class="n">punctuation</span><span class="p">,</span> <span class="n">whitespace_only</span><span class="o">=</span><span class="n">whitespace_only</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">adjust_match_end_offset - prhase_end:&#39;</span><span class="p">,</span> <span class="n">phrase_end</span><span class="p">)</span>
+    <span class="n">match_end</span> <span class="o">=</span> <span class="n">map_string</span><span class="p">(</span><span class="n">candidate_string</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:],</span> <span class="n">punctuation</span><span class="p">,</span> <span class="n">whitespace_only</span><span class="o">=</span><span class="n">whitespace_only</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">adjust_match_end_offset - match_end:&#39;</span><span class="p">,</span> <span class="n">match_end</span><span class="p">)</span>
+    <span class="n">text_suffix</span> <span class="o">=</span> <span class="n">map_string</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">end_offset</span><span class="p">:</span><span class="n">end_offset</span><span class="o">+</span><span class="mi">3</span><span class="p">],</span> <span class="n">punctuation</span><span class="p">,</span>
+                             <span class="n">whitespace_only</span><span class="o">=</span><span class="n">whitespace_only</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">adjust_match_end_offset - text_suffix:&#39;</span><span class="p">,</span> <span class="n">text_suffix</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">adjust_match_end_offset - match_end: </span><span class="si">{</span><span class="n">candidate_string</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span><span class="si">:</span><span class="s2"> &lt;4</span><span class="si">}</span><span class="se">\t</span><span class="s2">text_suffix: </span><span class="si">{</span><span class="n">text</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">][</span><span class="n">end_offset</span><span class="p">:</span><span class="n">end_offset</span><span class="o">+</span><span class="mi">3</span><span class="p">]</span><span class="si">:</span><span class="s2"> &gt;4</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">adjust_match_end_offset - mapped suffixes - match_end: #</span><span class="si">{</span><span class="n">match_end</span><span class="si">}</span><span class="s2">#</span><span class="se">\t</span><span class="s2">text_suffix: #</span><span class="si">{</span><span class="n">text_suffix</span><span class="si">}</span><span class="s2">#&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">calculate_end_shift</span><span class="p">(</span><span class="n">phrase_end</span><span class="p">,</span> <span class="n">match_end</span><span class="p">,</span> <span class="n">text_suffix</span><span class="p">,</span> <span class="n">end_offset</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;phrase_string: #</span><span class="si">{</span><span class="n">phrase_string</span><span class="si">}</span><span class="s2">#</span><span class="se">\t</span><span class="s2">candidate_string: #</span><span class="si">{</span><span class="n">candidate_string</span><span class="si">}</span><span class="s2">#&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;text: #</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">#&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;text_suffix: #</span><span class="si">{</span><span class="n">text_suffix</span><span class="si">}</span><span class="s2">#&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;phrase_end: #</span><span class="si">{</span><span class="n">phrase_end</span><span class="si">}</span><span class="s2">#&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;match_end: #</span><span class="si">{</span><span class="n">match_end</span><span class="si">}</span><span class="s2">#&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;whitespace_only: #</span><span class="si">{</span><span class="n">whitespace_only</span><span class="si">}</span><span class="s2">#&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+
+
+<div class="viewcode-block" id="adjust_match_offsets">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.match_offsets.adjust_match_offsets">[docs]</a>
+<span class="k">def</span> <span class="nf">adjust_match_offsets</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">candidate_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                         <span class="n">text</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">],</span> <span class="n">candidate_start_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                         <span class="n">candidate_end_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                         <span class="n">punctuation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">punctuation</span><span class="p">,</span>
+                         <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust the end offset if it is not at a word boundary.</span>
+
+<span class="sd">    :param phrase_string: the phrase string</span>
+<span class="sd">    :type phrase_string: str</span>
+<span class="sd">    :param candidate_string: the candidate match string</span>
+<span class="sd">    :type candidate_string: str</span>
+<span class="sd">    :param text: the text object that contains the candidate match string</span>
+<span class="sd">    :type text: Dict[str, any]</span>
+<span class="sd">    :param candidate_start_offset: the text offset of the start of the candidate match string</span>
+<span class="sd">    :type candidate_start_offset: int</span>
+<span class="sd">    :param candidate_end_offset: the text offset of the end of the candidate match string</span>
+<span class="sd">    :type candidate_end_offset: int</span>
+<span class="sd">    :param punctuation: the set of characters to treat as punctuation (defaults to string.punctuation)</span>
+<span class="sd">    :type punctuation: str</span>
+<span class="sd">    :param debug: level to show debug information</span>
+<span class="sd">    :type debug: int</span>
+<span class="sd">    :return: the adjusted offset or None if the required adjustment is too big</span>
+<span class="sd">    :rtype: Union[int, None]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">adjust_match_offset - phrase string:&quot;</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">adjust_match_offset - adjusting candidate string:&quot;</span><span class="p">,</span> <span class="n">candidate_string</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">punctuation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">punctuation</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">punctuation</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">adjust_match_offset - candidate_start_offset:&quot;</span><span class="p">,</span> <span class="n">candidate_start_offset</span><span class="p">)</span>
+    <span class="n">match_start_offset</span> <span class="o">=</span> <span class="n">adjust_match_start_offset</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">candidate_string</span><span class="p">,</span> <span class="n">candidate_start_offset</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">adjust_match_offset - match_start_offset:&quot;</span><span class="p">,</span> <span class="n">match_start_offset</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match_start_offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">match_end_offset</span> <span class="o">=</span> <span class="n">adjust_match_end_offset</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">,</span> <span class="n">candidate_string</span><span class="p">,</span>
+                                               <span class="n">text</span><span class="p">,</span> <span class="n">candidate_end_offset</span><span class="p">,</span> <span class="n">punctuation</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">adjust_match_offset - match_end_offset:&quot;</span><span class="p">,</span> <span class="n">match_end_offset</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match_end_offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="n">match_end_offset</span> <span class="o">&lt;=</span> <span class="n">match_start_offset</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;match_string&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">match_start_offset</span><span class="p">:</span><span class="n">match_end_offset</span><span class="p">],</span>
+        <span class="s2">&quot;match_start_offset&quot;</span><span class="p">:</span> <span class="n">match_start_offset</span><span class="p">,</span>
+        <span class="s2">&quot;match_end_offset&quot;</span><span class="p">:</span> <span class="n">match_end_offset</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="map_string">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.match_offsets.map_string">[docs]</a>
+<span class="k">def</span> <span class="nf">map_string</span><span class="p">(</span><span class="n">affix_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">punctuation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+               <span class="n">whitespace_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Turn affix string into type char representation. Types are &#39;w&#39; for non-whitespace char,</span>
+<span class="sd">    and &#39;s&#39; for whitespace char.</span>
+
+<span class="sd">    :param affix_string: a string</span>
+<span class="sd">    :type: str</span>
+<span class="sd">    :param punctuation: the set of characters to treat as punctuation</span>
+<span class="sd">    :type punctuation: str</span>
+<span class="sd">    :param whitespace_only: whether to treat only whitespace as word boundary or also include (some) punctuation</span>
+<span class="sd">    :type whitespace_only: bool</span>
+<span class="sd">    :param debug: level to show debug information</span>
+<span class="sd">    :type debug: int</span>
+<span class="sd">    :return: the type char representation</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">whitespace_only</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;s&#39;</span> <span class="k">if</span> <span class="n">char</span> <span class="ow">in</span> <span class="s1">&#39; </span><span class="se">\t\n\r</span><span class="s1">&#39;</span> <span class="k">else</span> <span class="s1">&#39;w&#39;</span> <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">affix_string</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;s&#39;</span> <span class="k">if</span> <span class="n">char</span> <span class="ow">in</span> <span class="s1">&#39; </span><span class="se">\t\n\r</span><span class="s1">&#39;</span> <span class="ow">or</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">punctuation</span> <span class="k">else</span> <span class="s1">&#39;w&#39;</span> <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">affix_string</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_end_shift">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.match_offsets.calculate_end_shift">[docs]</a>
+<span class="k">def</span> <span class="nf">calculate_end_shift</span><span class="p">(</span><span class="n">phrase_end</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">match_end</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text_suffix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">end_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine whether and how much to shift the end offset, based on trailing whitespace</span>
+<span class="sd">    for either the phrase or the match or both.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">phrase_end</span> <span class="o">==</span> <span class="n">match_end</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">end_offset</span>
+    <span class="k">if</span> <span class="n">phrase_end</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">match_end</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+        <span class="c1"># both phrase and match end in whitespace, so no need to shift</span>
+        <span class="k">return</span> <span class="n">end_offset</span>
+    <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;wss&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">end_offset</span> <span class="o">-</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">phrase_end</span> <span class="o">==</span> <span class="s2">&quot;www&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;www&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;w&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;ww&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;wws&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;www&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;wws&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">end_offset</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;wsw&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+                <span class="c1"># we assume the whitespace in the match is a misrecognised word character</span>
+                <span class="k">return</span> <span class="n">end_offset</span>
+            <span class="k">if</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">):</span>
+                <span class="c1"># we assume the whitespace in the match is correct</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;sww&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+                <span class="c1"># we assume the whitespace in the match is a misrecognised word character</span>
+                <span class="k">return</span> <span class="n">end_offset</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">):</span>
+                <span class="c1"># we assume the whitespace in the match is correct</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;sws&quot;</span><span class="p">:</span>
+            <span class="c1"># we assume the first whitespace in the match is a misrecognised word character</span>
+            <span class="k">return</span> <span class="n">end_offset</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;ssw&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">phrase_end</span> <span class="o">==</span> <span class="s2">&quot;wws&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;www&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">end_offset</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;w&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ww&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">match_end</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">end_offset</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">match_end</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">end_offset</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">phrase_end</span> <span class="o">==</span> <span class="s2">&quot;sww&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;sww&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;w&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;sws&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">end_offset</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;www&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;wsw&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;ws&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;ww&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;wws&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;ssw&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;w&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;ww&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;wws&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">phrase_end</span> <span class="o">==</span> <span class="s2">&quot;sws&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;www&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;sw&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;sws&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;sww&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">end_offset</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="k">elif</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;wsw&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">end_offset</span>
+            <span class="k">if</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">phrase_end</span> <span class="o">==</span> <span class="s2">&quot;wsw&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;wsw&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;w&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;www&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;s&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">end_offset</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;sw&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;sws&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;sww&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">end_offset</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">match_end</span> <span class="o">==</span> <span class="s2">&quot;ssw&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">text_suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">text_suffix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end_offset</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">phrase_end</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">phrase_end</span> <span class="o">==</span> <span class="n">match_end</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">end_offset</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">details</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;phrase_end </span><span class="si">{</span><span class="n">phrase_end</span><span class="si">}</span><span class="s2">, match_end </span><span class="si">{</span><span class="n">match_end</span><span class="si">}</span><span class="s2">, text_suffix </span><span class="si">{</span><span class="n">text_suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;combination not captured: </span><span class="si">{</span><span class="n">details</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

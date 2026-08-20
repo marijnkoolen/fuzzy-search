@@ -1,0 +1,601 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.analysis.subtoken &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.analysis.subtoken</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.analysis.subtoken</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Byte Pair Encoding (BPE) subword tokenization utilities.</span>
+
+<span class="sd">This module implements a simple BPE training algorithm operating on tokens</span>
+<span class="sd">split into characters (plus a trailing word-boundary marker). It builds a</span>
+<span class="sd">corpus of ``BPEToken`` objects, repeatedly finds the most frequent adjacent</span>
+<span class="sd">symbol pair using a ``FrequencyTracker`` index, merges that pair into a new</span>
+<span class="sd">symbol across all tokens, and updates the frequency index incrementally,</span>
+<span class="sd">producing a learned subword vocabulary.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+
+<div class="viewcode-block" id="BPEToken">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.BPEToken">[docs]</a>
+<span class="k">class</span> <span class="nc">BPEToken</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A token represented as a mutable list of BPE symbols.</span>
+
+<span class="sd">    Initially each symbol is a single character of the token, with a</span>
+<span class="sd">    trailing space symbol marking the end of the token. As BPE merges are</span>
+<span class="sd">    applied, adjacent symbols get combined into longer symbols.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        token (str): The original token string.</span>
+<span class="sd">        symbols (List[str]): The current list of symbols representing the token.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BPEToken.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.BPEToken.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes a BPEToken by splitting it into characters plus an end-of-word marker.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            token (str): The token string to represent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">char</span> <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">token</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39; &#39;</span><span class="p">]</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a string representation of the BPEToken.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(token=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="si">}</span><span class="s2">&#39;, symbols=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">symbol_pairs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;List[Tuple[str, str]]: All adjacent pairs of symbols in the token.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span></div>
+
+
+
+<div class="viewcode-block" id="FrequencyTracker">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker">[docs]</a>
+<span class="k">class</span> <span class="nc">FrequencyTracker</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tracks symbol-pair frequencies and supports fast lookup of the most frequent pair(s).</span>
+
+<span class="sd">    Frequencies are organized into buckets keyed first by frequency, then by the</span>
+<span class="sd">    combined character length of the symbol pair, so that the most frequent pair</span>
+<span class="sd">    (optionally the shortest among ties) can be retrieved without scanning all pairs.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        freq_buckets (Dict[int, Dict[int, Set[Tuple[str, str]]]]): Maps</span>
+<span class="sd">            frequency -&gt; combined symbol length -&gt; set of symbol pairs with that</span>
+<span class="sd">            frequency and length.</span>
+<span class="sd">        symbol_pair_freq (Dict[Tuple[str, str], int]): Maps each symbol pair to its</span>
+<span class="sd">            current frequency.</span>
+<span class="sd">        max_freq (int): The highest frequency currently present in ``freq_buckets``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># freq_buckets[freq][length] = set of elements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbol_pair_freq</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="FrequencyTracker.update">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.update">[docs]</a>
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbol_pair</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adjusts the frequency of a symbol pair by ``count`` and updates the buckets.</span>
+
+<span class="sd">        Removes the pair from its old frequency/length bucket (if any) and re-inserts</span>
+<span class="sd">        it into the bucket for its new frequency, also maintaining ``max_freq``. If the</span>
+<span class="sd">        new frequency is zero or below, the pair is removed entirely.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            symbol_pair (Tuple[str, str]): The symbol pair to update.</span>
+<span class="sd">            count (int): The (positive or negative) amount to add to the pair&#39;s frequency.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">symbol_pair</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">old_freq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbol_pair_freq</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">symbol_pair</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">new_freq</span> <span class="o">=</span> <span class="n">old_freq</span> <span class="o">+</span> <span class="n">count</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span> <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">symbol_pair</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">old_freq</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="n">old_freq</span><span class="p">][</span><span class="n">length</span><span class="p">]</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">symbol_pair</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="n">old_freq</span><span class="p">][</span><span class="n">length</span><span class="p">]:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="n">old_freq</span><span class="p">][</span><span class="n">length</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="n">old_freq</span><span class="p">]:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="n">old_freq</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">old_freq</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">new_freq</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">symbol_pair_freq</span><span class="p">[</span><span class="n">symbol_pair</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_freq</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="n">new_freq</span><span class="p">][</span><span class="n">length</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symbol_pair</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span><span class="p">,</span> <span class="n">new_freq</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">symbol_pair</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbol_pair_freq</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbol_pair_freq</span><span class="p">[</span><span class="n">symbol_pair</span><span class="p">]</span>  <span class="c1"># Remove entirely if frequency drops to 0 or below</span></div>
+
+
+<div class="viewcode-block" id="FrequencyTracker.most_frequent">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.most_frequent">[docs]</a>
+    <span class="k">def</span> <span class="nf">most_frequent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns one symbol pair with the current maximum frequency.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            length (int, optional): If given, restrict the search to symbol pairs whose</span>
+<span class="sd">                combined character length equals this value.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[Tuple[Tuple[str, str], int]]: A tuple of (symbol_pair, frequency),</span>
+<span class="sd">            or None if there is no pair (matching the length, if given).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">symbol_pairs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">symbol_pairs</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">symbol_pairs</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">min_length</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">length_bucket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span><span class="p">][</span><span class="n">min_length</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">length_bucket</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">length_bucket</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="FrequencyTracker.frequency_of">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.frequency_of">[docs]</a>
+    <span class="k">def</span> <span class="nf">frequency_of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbol_pair</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the current frequency of a symbol pair, or 0 if it is not tracked.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbol_pair_freq</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">symbol_pair</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FrequencyTracker.all_with_max_frequency">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.all_with_max_frequency">[docs]</a>
+    <span class="k">def</span> <span class="nf">all_with_max_frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns all symbol pairs that currently have the maximum frequency.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            length (int, optional): If given, restrict to symbol pairs whose combined</span>
+<span class="sd">                character length equals this value.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Set[Tuple[str, str]]: The set of symbol pairs at the maximum frequency.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="nb">set</span><span class="p">()))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="FrequencyTracker.most_frequent_shortest">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.most_frequent_shortest">[docs]</a>
+    <span class="k">def</span> <span class="nf">most_frequent_shortest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return one symbol pair with the highest frequency and, among ties, the shortest</span>
+<span class="sd">        combined string length.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[Tuple[Tuple[str, str], int, int]]: A tuple of (symbol_pair, frequency,</span>
+<span class="sd">            length), or None if no symbol pairs are tracked.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Get the inner dict: {length: set of symbol_pairents}</span>
+        <span class="n">length_buckets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_buckets</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">length_buckets</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">shortest_length</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">length_buckets</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">symbol_pairs</span> <span class="o">=</span> <span class="n">length_buckets</span><span class="p">[</span><span class="n">shortest_length</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">symbol_pairs</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">symbol_pairs</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_freq</span><span class="p">,</span> <span class="n">shortest_length</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="string_tokens_to_corpus">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.string_tokens_to_corpus">[docs]</a>
+<span class="k">def</span> <span class="nf">string_tokens_to_corpus</span><span class="p">(</span><span class="n">tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Counter</span><span class="p">[</span><span class="n">BPEToken</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Builds a BPE corpus from a list of token strings.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tokens (List[str]): The token strings, e.g. words from a document collection.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Counter[BPEToken, int]: A counter mapping each unique token (wrapped as a</span>
+<span class="sd">        BPEToken) to its frequency in ``tokens``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">token_freq</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+    <span class="n">corpus</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">string_token</span> <span class="ow">in</span> <span class="n">token_freq</span><span class="p">:</span>
+        <span class="n">bpe_token</span> <span class="o">=</span> <span class="n">BPEToken</span><span class="p">(</span><span class="n">string_token</span><span class="p">)</span>
+        <span class="n">corpus</span><span class="p">[</span><span class="n">bpe_token</span><span class="p">]</span> <span class="o">=</span> <span class="n">token_freq</span><span class="p">[</span><span class="n">string_token</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">corpus</span></div>
+
+
+
+<div class="viewcode-block" id="generate_symbol_pairs">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.generate_symbol_pairs">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_symbol_pairs</span><span class="p">(</span><span class="n">symbols</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns all adjacent pairs of symbols in a sequence.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[(</span><span class="n">symbols</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">symbols</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span></div>
+
+
+
+<div class="viewcode-block" id="generate_corpus_symbol_pairs">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.generate_corpus_symbol_pairs">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_corpus_symbol_pairs</span><span class="p">(</span><span class="n">corpus</span><span class="p">:</span> <span class="n">Counter</span><span class="p">[</span><span class="n">BPEToken</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">BPEToken</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Iterate over all tokens in a corpus and return all tuples of two</span>
+<span class="sd">    adjacent symbols together with their corresponding token&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">corpus</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">symbol_pair</span> <span class="ow">in</span> <span class="n">token</span><span class="o">.</span><span class="n">symbol_pairs</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">symbol_pair</span><span class="p">,</span> <span class="n">token</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="make_symbol_pair_freq">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.make_symbol_pair_freq">[docs]</a>
+<span class="k">def</span> <span class="nf">make_symbol_pair_freq</span><span class="p">(</span><span class="n">corpus</span><span class="p">:</span> <span class="n">Counter</span><span class="p">[</span><span class="n">BPEToken</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+                          <span class="n">symbol_pair_index</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">Set</span><span class="p">[</span><span class="n">BPEToken</span><span class="p">]]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Builds a FrequencyTracker of symbol-pair frequencies from a corpus and its symbol pair index.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        corpus (Counter[BPEToken, int]): Token frequencies in the corpus.</span>
+<span class="sd">        symbol_pair_index (Dict[Tuple[str, str], Set[BPEToken]]): Maps each symbol pair to</span>
+<span class="sd">            the set of tokens it occurs in.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        FrequencyTracker: A tracker initialised with each symbol pair&#39;s total frequency,</span>
+<span class="sd">        summed over the tokens it occurs in.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">symbol_pair_freq</span> <span class="o">=</span> <span class="n">FrequencyTracker</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">symbol_pair</span> <span class="ow">in</span> <span class="n">symbol_pair_index</span><span class="p">:</span>
+        <span class="n">freq</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">corpus</span><span class="p">[</span><span class="n">token</span><span class="p">]</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">symbol_pair_index</span><span class="p">[</span><span class="n">symbol_pair</span><span class="p">]])</span>
+        <span class="n">symbol_pair_freq</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">symbol_pair</span><span class="p">,</span> <span class="n">freq</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">symbol_pair_freq</span></div>
+
+
+
+<div class="viewcode-block" id="index_symbol_pair">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.index_symbol_pair">[docs]</a>
+<span class="k">def</span> <span class="nf">index_symbol_pair</span><span class="p">(</span><span class="n">corpus</span><span class="p">:</span> <span class="n">Counter</span><span class="p">[</span><span class="n">BPEToken</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">Set</span><span class="p">[</span><span class="n">BPEToken</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Builds an index mapping each adjacent symbol pair to the set of tokens it occurs in.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        corpus (Counter[BPEToken, int]): The tokens in the corpus.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict[Tuple[str, str], Set[BPEToken]]: Maps each symbol pair to the tokens containing it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">symbol_pair_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">symbol_pair</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">generate_corpus_symbol_pairs</span><span class="p">(</span><span class="n">corpus</span><span class="p">):</span>
+        <span class="n">symbol_pair_index</span><span class="p">[</span><span class="n">symbol_pair</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">symbol_pair_index</span></div>
+
+
+
+<div class="viewcode-block" id="merge_symbols_in_token">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.merge_symbols_in_token">[docs]</a>
+<span class="k">def</span> <span class="nf">merge_symbols_in_token</span><span class="p">(</span><span class="n">merge_symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="n">BPEToken</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a new symbol sequence for a token with every occurrence of an adjacent</span>
+<span class="sd">    symbol pair merged into a single combined symbol.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        merge_symbol (str): The concatenated string of the symbol pair being merged</span>
+<span class="sd">            (used to detect matching adjacent pairs in the token&#39;s symbol list).</span>
+<span class="sd">        token (BPEToken): The token whose symbols are being merged.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[str, ...]: The token&#39;s new symbol sequence, with matching adjacent pairs</span>
+<span class="sd">        replaced by the merged symbol.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_symbols</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">skip</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">ti</span><span class="p">,</span> <span class="n">symbol_pair</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">symbol_pairs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">skip</span><span class="p">:</span>
+            <span class="n">skip</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">continue</span>
+        <span class="n">symbol_pair</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">symbol_pair</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">symbol_pair</span> <span class="o">==</span> <span class="n">merge_symbol</span><span class="p">:</span>
+            <span class="n">skip</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">new_symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">symbol_pair</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">skip</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">new_symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="n">ti</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">skip</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">new_symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">new_symbols</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="find_new_symbol_pairs">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.find_new_symbol_pairs">[docs]</a>
+<span class="k">def</span> <span class="nf">find_new_symbol_pairs</span><span class="p">(</span><span class="n">merge_symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Finds the new adjacent symbol pairs introduced around each occurrence of a merged symbol.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        merge_symbol (str): The newly merged symbol to search for in ``token``.</span>
+<span class="sd">        token (Tuple[str, ...]): The token&#39;s (already merged) symbol sequence.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[Tuple[str, str]]: The new symbol pairs formed with ``merge_symbol``&#39;s neighbours.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_pairs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">token</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">merge_symbol</span><span class="p">:</span>
+            <span class="c1"># print(f&quot;i: {i}\ttoken[i]: {token[i]}&quot;)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">new_pair</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">token</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">new_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_pair</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">new_pair</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">token</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">new_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_pair</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new_pairs</span></div>
+
+
+
+<div class="viewcode-block" id="compare_token_symbol_pairs">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.compare_token_symbol_pairs">[docs]</a>
+<span class="k">def</span> <span class="nf">compare_token_symbol_pairs</span><span class="p">(</span><span class="n">token1</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span>
+                                    <span class="n">token2</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">Set</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">Set</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compares the adjacent symbol pairs of two symbol sequences (e.g. a token before</span>
+<span class="sd">    and after a merge).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        token1 (Union[List[str], Tuple[str, ...]]): The first symbol sequence.</span>
+<span class="sd">        token2 (Union[List[str], Tuple[str, ...]]): The second symbol sequence.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[Set, Set, Set]: A tuple of (pairs present in both, pairs only in</span>
+<span class="sd">        ``token1``, pairs only in ``token2``).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pairs1</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">generate_symbol_pairs</span><span class="p">(</span><span class="n">token1</span><span class="p">))</span>
+    <span class="n">pairs2</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">generate_symbol_pairs</span><span class="p">(</span><span class="n">token2</span><span class="p">))</span>
+    <span class="n">overlap</span> <span class="o">=</span> <span class="n">pairs1</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">pairs2</span><span class="p">)</span>
+    <span class="n">only1</span> <span class="o">=</span> <span class="n">pairs1</span> <span class="o">-</span> <span class="n">pairs2</span>
+    <span class="n">only2</span> <span class="o">=</span> <span class="n">pairs2</span> <span class="o">-</span> <span class="n">pairs1</span>
+    <span class="k">return</span> <span class="n">overlap</span><span class="p">,</span> <span class="n">only1</span><span class="p">,</span> <span class="n">only2</span></div>
+
+
+
+<div class="viewcode-block" id="merge_symbols_in_tokens">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.merge_symbols_in_tokens">[docs]</a>
+<span class="k">def</span> <span class="nf">merge_symbols_in_tokens</span><span class="p">(</span><span class="n">symbol_pair_index</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">Set</span><span class="p">[</span><span class="n">BPEToken</span><span class="p">]],</span>
+                            <span class="n">symbol_pair_freq</span><span class="p">:</span> <span class="n">FrequencyTracker</span><span class="p">,</span>
+                            <span class="n">corpus</span><span class="p">:</span> <span class="n">Counter</span><span class="p">[</span><span class="n">BPEToken</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">merge_symbols</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies a BPE merge of ``merge_symbols`` to every token containing it, updating</span>
+<span class="sd">    the symbol pair index and frequency tracker in place.</span>
+
+<span class="sd">    For each affected token, this computes which symbol pairs disappear and which new</span>
+<span class="sd">    ones appear as a result of the merge (via :func:`compare_token_symbol_pairs`), removes</span>
+<span class="sd">    the disappearing pairs from the index/frequencies, adds the new ones, and finally</span>
+<span class="sd">    removes the now-fully-merged ``merge_symbols`` entry from the index.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        symbol_pair_index (Dict[Tuple[str, str], Set[BPEToken]]): The symbol pair to</span>
+<span class="sd">            tokens index, updated in place.</span>
+<span class="sd">        symbol_pair_freq (FrequencyTracker): The frequency tracker, updated in place.</span>
+<span class="sd">        corpus (Counter[BPEToken, int]): Token frequencies in the corpus.</span>
+<span class="sd">        merge_symbols (Tuple[str, str]): The symbol pair to merge.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">merge_symbol</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">merge_symbols</span><span class="p">)</span>
+    <span class="c1"># print(f&quot;corpus: {corpus}&quot;)</span>
+    <span class="n">update_tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">token</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">symbol_pair_index</span><span class="p">[</span><span class="n">merge_symbols</span><span class="p">]]</span>
+    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">update_tokens</span><span class="p">:</span>
+        <span class="n">new_symbols</span> <span class="o">=</span> <span class="n">merge_symbols_in_token</span><span class="p">(</span><span class="n">merge_symbol</span><span class="p">,</span> <span class="n">token</span><span class="p">)</span>
+        <span class="c1"># print(f&quot;token: {token}\tnew_token: {new_token}&quot;)</span>
+        <span class="c1"># find the two symbols pairs that are only in the old tokens</span>
+        <span class="c1"># and those only in the new token</span>
+        <span class="n">overlap</span><span class="p">,</span> <span class="n">only1</span><span class="p">,</span> <span class="n">only2</span> <span class="o">=</span> <span class="n">compare_token_symbol_pairs</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">symbols</span><span class="p">,</span> <span class="n">new_symbols</span><span class="p">)</span>
+        <span class="c1"># print(f&quot;overlap: {overlap}\tonly1: {only1}\tonly2: {only2}&quot;)</span>
+        <span class="c1"># update the old two symbols index and frequency</span>
+        <span class="k">for</span> <span class="n">old_symbol_pair</span> <span class="ow">in</span> <span class="n">only1</span><span class="p">:</span>
+            <span class="n">symbol_pair_index</span><span class="p">[</span><span class="n">old_symbol_pair</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+            <span class="n">symbol_pair_freq</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">old_symbol_pair</span><span class="p">,</span> <span class="o">-</span><span class="n">corpus</span><span class="p">[</span><span class="n">token</span><span class="p">])</span>
+            <span class="c1"># print(f&quot;updating symbol_pair_freq for old symbol_pair &quot;</span>
+            <span class="c1">#       f&quot;{old_symbol_pair}: {symbol_pair_freq[old_symbol_pair]}&quot;)</span>
+        <span class="c1"># update the new two symbols index and frequency</span>
+        <span class="k">for</span> <span class="n">new_symbol_pair</span> <span class="ow">in</span> <span class="n">only2</span><span class="p">:</span>
+            <span class="n">symbol_pair_index</span><span class="p">[</span><span class="n">new_symbol_pair</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+            <span class="n">symbol_pair_freq</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_symbol_pair</span><span class="p">,</span> <span class="n">corpus</span><span class="p">[</span><span class="n">token</span><span class="p">])</span>
+            <span class="c1"># print(f&quot;updating symbol_pair_freq for new symbol_pair &quot;</span>
+            <span class="c1">#       f&quot;{new_symbol_pairs}: {symbol_pair_freq[new_symbol_pairs]}&quot;)</span>
+        <span class="c1"># keep track of all old tokens so we can remove them from the corpus</span>
+        <span class="n">token</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="n">new_symbols</span>
+    <span class="c1"># there should be no more tokens containing the two merge symbols,</span>
+    <span class="c1"># so remove them from the two symbols index</span>
+    <span class="k">del</span> <span class="n">symbol_pair_index</span><span class="p">[</span><span class="n">merge_symbols</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="generate_vocab">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.generate_vocab">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_vocab</span><span class="p">(</span><span class="n">corpus</span><span class="p">:</span> <span class="n">Counter</span><span class="p">[</span><span class="n">BPEToken</span><span class="p">,</span> <span class="nb">int</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Collects the set of all distinct symbols currently used across a corpus of BPETokens.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        corpus (Counter[BPEToken, int]): The tokens in the corpus.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Set[str]: The set of distinct symbols in the corpus.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">vocab</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">corpus</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">token</span><span class="o">.</span><span class="n">symbols</span><span class="p">:</span>
+            <span class="n">vocab</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">vocab</span></div>
+
+
+
+<div class="viewcode-block" id="prune_symbol_pair_freq">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.prune_symbol_pair_freq">[docs]</a>
+<span class="k">def</span> <span class="nf">prune_symbol_pair_freq</span><span class="p">(</span><span class="n">symbol_pair_freq</span><span class="p">:</span> <span class="n">Counter</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">int</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Removes symbol pairs with a frequency of zero from a symbol-pair frequency counter, in place.&quot;&quot;&quot;</span>
+    <span class="n">remove_symbol_pair</span> <span class="o">=</span> <span class="p">[</span><span class="n">symbol_pair</span> <span class="k">for</span> <span class="n">symbol_pair</span> <span class="ow">in</span> <span class="n">symbol_pair_freq</span> <span class="k">if</span> <span class="n">symbol_pair_freq</span><span class="p">[</span><span class="n">symbol_pair</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">num_freqs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">symbol_pair_freq</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;remove </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">remove_symbol_pair</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">symbol_pair_freq</span><span class="p">)</span><span class="si">}</span><span class="s2"> symbol_pair, </span><span class="si">{</span><span class="n">num_freqs</span><span class="si">}</span><span class="s2"> distinct frequencies&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">symbol_pair</span> <span class="ow">in</span> <span class="n">remove_symbol_pair</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">symbol_pair_freq</span><span class="p">[</span><span class="n">symbol_pair</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="make_byte_pair_encoding">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.make_byte_pair_encoding">[docs]</a>
+<span class="k">def</span> <span class="nf">make_byte_pair_encoding</span><span class="p">(</span><span class="n">tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trains a Byte Pair Encoding vocabulary from a list of token strings.</span>
+
+<span class="sd">    Iteratively merges the most frequent (and, among ties, shortest) adjacent symbol</span>
+<span class="sd">    pair across the corpus for ``k`` iterations, growing the vocabulary by one merged</span>
+<span class="sd">    symbol per iteration.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tokens (List[str]): The token strings (e.g. words) to train the BPE model on.</span>
+<span class="sd">        k (int): The number of merge iterations (and roughly the number of new</span>
+<span class="sd">            subword symbols to learn).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Set[str]: The learned vocabulary of symbols, including the original characters</span>
+<span class="sd">        and the merged subword units.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">corpus</span> <span class="o">=</span> <span class="n">string_tokens_to_corpus</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+    <span class="n">symbol_pair_index</span> <span class="o">=</span> <span class="n">index_symbol_pair</span><span class="p">(</span><span class="n">corpus</span><span class="p">)</span>
+    <span class="n">symbol_pair_freq</span> <span class="o">=</span> <span class="n">make_symbol_pair_freq</span><span class="p">(</span><span class="n">corpus</span><span class="p">,</span> <span class="n">symbol_pair_index</span><span class="p">)</span>
+    <span class="n">vocab</span> <span class="o">=</span> <span class="n">generate_vocab</span><span class="p">(</span><span class="n">corpus</span><span class="p">)</span>
+    <span class="c1"># print(f&quot;vocab: {vocab}&quot;)</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">step_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+        <span class="c1"># print(&quot;\n&quot;)</span>
+        <span class="c1"># print(f&quot;corpus: {corpus}&quot;)</span>
+        <span class="c1"># print(f&quot;symbol_pair_index: &quot;)</span>
+        <span class="c1"># for symbol_pair in symbol_pair_index:</span>
+        <span class="c1">#     print(f&quot;    {symbol_pair}:\t{symbol_pair_index[symbol_pair]}&quot;)</span>
+        <span class="n">merge_symbols</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">length</span> <span class="o">=</span> <span class="n">symbol_pair_freq</span><span class="o">.</span><span class="n">most_frequent_shortest</span><span class="p">()</span>
+        <span class="c1"># print(f&quot;symbol_pair_freq: &quot;)</span>
+        <span class="c1"># for symbol_pair in symbol_pair_freq.freq_buckets[freq][length]:</span>
+        <span class="c1">#     print(f&quot;    {symbol_pair}:\tfreq: {freq}\tlength: {length}&quot;)</span>
+
+        <span class="c1"># print(f&quot;merge_symbols: {merge_symbols}&quot;)</span>
+        <span class="n">merge_symbols_in_tokens</span><span class="p">(</span><span class="n">symbol_pair_index</span><span class="p">,</span> <span class="n">symbol_pair_freq</span><span class="p">,</span> <span class="n">corpus</span><span class="p">,</span> <span class="n">merge_symbols</span><span class="p">)</span>
+        <span class="n">merge_symbol</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">merge_symbols</span><span class="p">)</span>
+        <span class="n">vocab</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">merge_symbol</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">iteration</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># prune_symbol_pair_freq(symbol_pair_freq)</span>
+            <span class="n">step_end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">took</span> <span class="o">=</span> <span class="n">step_end</span> <span class="o">-</span> <span class="n">step_start</span>
+            <span class="n">total</span> <span class="o">=</span> <span class="n">step_end</span> <span class="o">-</span> <span class="n">start</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;iteration </span><span class="si">{</span><span class="n">iteration</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> took </span><span class="si">{</span><span class="n">took</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> seconds, total </span><span class="si">{</span><span class="n">total</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds - &quot;</span>
+                  <span class="sa">f</span><span class="s2">&quot;merge_symbols: </span><span class="si">{</span><span class="n">merge_symbols</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">merge_symbol</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="n">step_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">vocab</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,561 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.tokenization.string &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.tokenization.string</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.tokenization.string</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;String-level helper functions for fuzzy term comparison.</span>
+
+<span class="sd">Provides character ngram generation, ngram/character overlap scoring,</span>
+<span class="sd">Levenshtein-based similarity scoring, skipgram generation for strings and</span>
+<span class="sd">tokens, and small utilities for stripping non-word prefixes/suffixes.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span>
+
+<span class="kn">from</span> <span class="nn">Levenshtein</span> <span class="kn">import</span> <span class="n">distance</span> <span class="k">as</span> <span class="n">score_distance</span>
+<span class="kn">from</span> <span class="nn">Levenshtein</span> <span class="kn">import</span> <span class="n">ratio</span> <span class="k">as</span> <span class="n">score_ratio</span>
+
+
+<span class="c1">#################################</span>
+<span class="c1"># String manipulation functions #</span>
+<span class="c1">#################################</span>
+
+<div class="viewcode-block" id="make_ngrams">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.make_ngrams">[docs]</a>
+<span class="k">def</span> <span class="nf">make_ngrams</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Turn a term string into a list of ngrams of size n</span>
+
+<span class="sd">    :param text: a text string</span>
+<span class="sd">    :type text: str</span>
+<span class="sd">    :param n: the ngram size</span>
+<span class="sd">    :type n: int</span>
+<span class="sd">    :return: a list of ngrams</span>
+<span class="sd">    :rtype: List[str]&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;text must be a string&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;n must be a positive integer&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;n must be a positive integer&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;#</span><span class="si">{t}</span><span class="s2">#&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
+    <span class="n">max_start</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">-</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_start</span><span class="p">)]</span></div>
+
+
+
+<span class="c1">#####################################</span>
+<span class="c1"># Term similarity scoring functions #</span>
+<span class="c1">#####################################</span>
+
+
+<div class="viewcode-block" id="score_ngram_overlap">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.score_ngram_overlap">[docs]</a>
+<span class="k">def</span> <span class="nf">score_ngram_overlap</span><span class="p">(</span><span class="n">term1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">term2</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Score the number of overlapping ngrams between two terms</span>
+
+<span class="sd">    :param term1: a first term string</span>
+<span class="sd">    :type term1: str</span>
+<span class="sd">    :param term2: a second term string</span>
+<span class="sd">    :type term2: str</span>
+<span class="sd">    :param ngram_size: the character ngram size</span>
+<span class="sd">    :type ngram_size: int</span>
+<span class="sd">    :return: the number of overlapping ngrams</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">term1_ngrams</span> <span class="o">=</span> <span class="n">make_ngrams</span><span class="p">(</span><span class="n">term1</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">)</span>
+    <span class="n">term2_ngrams</span> <span class="o">=</span> <span class="n">make_ngrams</span><span class="p">(</span><span class="n">term2</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">)</span>
+    <span class="n">overlap</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">ngram</span> <span class="ow">in</span> <span class="n">term1_ngrams</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ngram</span> <span class="ow">in</span> <span class="n">term2_ngrams</span><span class="p">:</span>
+            <span class="n">term2_ngrams</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">term2_ngrams</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ngram</span><span class="p">))</span>
+            <span class="n">overlap</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">overlap</span></div>
+
+
+
+<div class="viewcode-block" id="score_ngram_overlap_ratio">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.score_ngram_overlap_ratio">[docs]</a>
+<span class="k">def</span> <span class="nf">score_ngram_overlap_ratio</span><span class="p">(</span><span class="n">term1</span><span class="p">,</span> <span class="n">term2</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Score the number of overlapping ngrams between two terms as proportion of the length</span>
+<span class="sd">    of the first term</span>
+
+<span class="sd">    :param term1: a term string</span>
+<span class="sd">    :type term1: str</span>
+<span class="sd">    :param term2: a term string</span>
+<span class="sd">    :type term2: str</span>
+<span class="sd">    :param ngram_size: the character ngram size</span>
+<span class="sd">    :type ngram_size: int</span>
+<span class="sd">    :return: the number of overlapping ngrams</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">max_overlap</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">make_ngrams</span><span class="p">(</span><span class="n">term1</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">))</span>
+    <span class="n">overlap</span> <span class="o">=</span> <span class="n">score_ngram_overlap</span><span class="p">(</span><span class="n">term1</span><span class="p">,</span> <span class="n">term2</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">overlap</span> <span class="o">/</span> <span class="n">max_overlap</span></div>
+
+
+
+<div class="viewcode-block" id="score_char_overlap_ratio">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.score_char_overlap_ratio">[docs]</a>
+<span class="k">def</span> <span class="nf">score_char_overlap_ratio</span><span class="p">(</span><span class="n">term1</span><span class="p">,</span> <span class="n">term2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Score the number of overlapping characters between two terms as proportion of the length</span>
+<span class="sd">    of the first term</span>
+
+<span class="sd">    :param term1: a term string</span>
+<span class="sd">    :type term1: str</span>
+<span class="sd">    :param term2: a term string</span>
+<span class="sd">    :type term2: str</span>
+<span class="sd">    :return: the number of overlapping ngrams</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">max_overlap</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">term1</span><span class="p">)</span>
+    <span class="n">overlap</span> <span class="o">=</span> <span class="n">score_char_overlap</span><span class="p">(</span><span class="n">term1</span><span class="p">,</span> <span class="n">term2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">overlap</span> <span class="o">/</span> <span class="n">max_overlap</span></div>
+
+
+
+<div class="viewcode-block" id="score_char_overlap">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.score_char_overlap">[docs]</a>
+<span class="k">def</span> <span class="nf">score_char_overlap</span><span class="p">(</span><span class="n">term1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">term2</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Count the number of overlapping character tokens in two strings.</span>
+
+<span class="sd">    :param term1: a term string</span>
+<span class="sd">    :type term1: str</span>
+<span class="sd">    :param term2: a term string</span>
+<span class="sd">    :type term2: str</span>
+<span class="sd">    :return: the number of overlapping ngrams</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_char_matches</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">term2</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">term1</span><span class="p">:</span>
+            <span class="n">term1</span> <span class="o">=</span> <span class="n">term1</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">num_char_matches</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">num_char_matches</span></div>
+
+
+
+<div class="viewcode-block" id="score_levenshtein_similarity_ratio">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.score_levenshtein_similarity_ratio">[docs]</a>
+<span class="k">def</span> <span class="nf">score_levenshtein_similarity_ratio</span><span class="p">(</span><span class="n">term1</span><span class="p">,</span> <span class="n">term2</span><span class="p">,</span> <span class="n">score_cutoff</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Score the levenshtein similarity between two terms</span>
+
+<span class="sd">    :param term1: a term string</span>
+<span class="sd">    :type term1: str</span>
+<span class="sd">    :param term2: a term string</span>
+<span class="sd">    :type term2: str</span>
+<span class="sd">    :param score_cutoff: the maximum distance beyond which distance calculation should be cut off</span>
+<span class="sd">    :type score_cutoff: int</span>
+<span class="sd">    :return: the number of overlapping ngrams</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># max_distance = max(len(term1), len(term2))</span>
+    <span class="c1"># distance = score_levenshtein_distance(term1, term2)</span>
+    <span class="c1"># distance = score_distance(term1, term2, score_cutoff=score_cutoff)</span>
+    <span class="k">return</span> <span class="n">score_ratio</span><span class="p">(</span><span class="n">term1</span><span class="p">,</span> <span class="n">term2</span><span class="p">)</span></div>
+
+    <span class="c1"># return 1 - distance / max_distance</span>
+
+
+<div class="viewcode-block" id="score_levenshtein_distance">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.score_levenshtein_distance">[docs]</a>
+<span class="k">def</span> <span class="nf">score_levenshtein_distance</span><span class="p">(</span><span class="n">term1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">term2</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate Levenshtein distance between two string.</span>
+
+<span class="sd">    :param term1: a term string</span>
+<span class="sd">    :type term1: str</span>
+<span class="sd">    :param term2: a term string</span>
+<span class="sd">    :type term2: str</span>
+<span class="sd">    :return: the number of overlapping ngrams</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">term1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">term2</span><span class="p">):</span>
+        <span class="n">term1</span><span class="p">,</span> <span class="n">term2</span> <span class="o">=</span> <span class="n">term2</span><span class="p">,</span> <span class="n">term1</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">term1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i2</span><span class="p">,</span> <span class="n">c2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">term2</span><span class="p">):</span>
+        <span class="n">distances_</span> <span class="o">=</span> <span class="p">[</span><span class="n">i2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i1</span><span class="p">,</span> <span class="n">c1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">term1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">c1</span> <span class="o">==</span> <span class="n">c2</span><span class="p">:</span>
+                <span class="n">distances_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">distances</span><span class="p">[</span><span class="n">i1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">distances_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="nb">min</span><span class="p">((</span><span class="n">distances</span><span class="p">[</span><span class="n">i1</span><span class="p">],</span> <span class="n">distances</span><span class="p">[</span><span class="n">i1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">distances_</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])))</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="n">distances_</span>
+    <span class="k">return</span> <span class="n">distances</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="SkipGram">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram">[docs]</a>
+<span class="k">class</span> <span class="nc">SkipGram</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a single skipgram extracted from a string.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        string (str): The skipgram&#39;s character string.</span>
+<span class="sd">        start_offset (int): The character offset where the skipgram starts.</span>
+<span class="sd">        end_offset (int): The character offset where the skipgram ends.</span>
+<span class="sd">        length (int): The span (in characters) covered by the skipgram in the source string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SkipGram.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skipgram_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">skipgram_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the SkipGram instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            skipgram_string (str): The skipgram&#39;s character string.</span>
+<span class="sd">            start_offset (int): The character offset where the skipgram starts.</span>
+<span class="sd">            end_offset (int): The character offset where the skipgram ends.</span>
+<span class="sd">            skipgram_length (int): The span (in characters) covered by the skipgram.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">string</span> <span class="o">=</span> <span class="n">skipgram_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_offset</span> <span class="o">=</span> <span class="n">start_offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_offset</span> <span class="o">=</span> <span class="n">end_offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">skipgram_length</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a string representation of the SkipGram.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(string=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="si">}</span><span class="s2">&#39;, start_offset=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">start_offset</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;end_offset=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">end_offset</span><span class="si">}</span><span class="s2">, length=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="insert_skips">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.insert_skips">[docs]</a>
+<span class="k">def</span> <span class="nf">insert_skips</span><span class="p">(</span><span class="n">window</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">skipgram_combinations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;For a given skip gram window, return all skip grams for a given configuration.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        window (str): A substring (the sliding window) from which skipgrams are built.</span>
+<span class="sd">            The first character of the window is always included.</span>
+<span class="sd">        skipgram_combinations (List[Tuple[int]]): Index combinations (relative to ``window``,</span>
+<span class="sd">            excluding index 0) specifying which characters after the first to combine.</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        Tuple[str, int, Tuple[int, ...]]: The skipgram string, the (1-based) length spanned</span>
+<span class="sd">        within the window, and the index combination (including the leading 0) used to</span>
+<span class="sd">        build it. Combinations whose indexes fall outside ``window`` are silently skipped.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">combination</span> <span class="ow">in</span> <span class="n">skipgram_combinations</span><span class="p">:</span>
+        <span class="n">skip_gram</span> <span class="o">=</span> <span class="n">window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">combination</span><span class="p">:</span>
+                <span class="n">skip_gram</span> <span class="o">+=</span> <span class="n">window</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">yield</span> <span class="n">skip_gram</span><span class="p">,</span> <span class="n">combination</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,)</span> <span class="o">+</span> <span class="n">combination</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="text2skipgrams">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.text2skipgrams">[docs]</a>
+<span class="k">def</span> <span class="nf">text2skipgrams</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">skip_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">SkipGram</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Turn a text string into a list of skipgrams.</span>
+
+<span class="sd">    :param text: an text string</span>
+<span class="sd">    :type text: str</span>
+<span class="sd">    :param ngram_size: an integer indicating the number of characters in the ngram</span>
+<span class="sd">    :type ngram_size: int</span>
+<span class="sd">    :param skip_size: an integer indicating how many skip characters in the ngrams</span>
+<span class="sd">    :type skip_size: int</span>
+<span class="sd">    :return: An iterator returning tuples of skip_gram and offset</span>
+<span class="sd">    :rtype: Generator[tuple]</span>
+
+<span class="sd">    Algorithm:</span>
+<span class="sd">        A sliding window of size ``ngram_size + skip_size`` is moved one character at a</span>
+<span class="sd">        time across ``text``. For each window position, ``insert_skips`` enumerates all</span>
+<span class="sd">        ways of picking ``ngram_size - 1`` characters (in order, after the first) from the</span>
+<span class="sd">        window to combine with the window&#39;s first character, producing all skipgrams of</span>
+<span class="sd">        ``ngram_size`` characters that allow up to ``skip_size`` skipped characters between</span>
+<span class="sd">        them. ``ngram_size == 1`` and very short texts are handled as special cases that</span>
+<span class="sd">        bypass the windowing logic.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ngram_size</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">skip_size</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ngram_size must be a positive integer, skip_size must be a positive integer or zero&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ngram_size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ci</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">SkipGram</span><span class="p">(</span><span class="n">skipgram_string</span><span class="o">=</span><span class="n">char</span><span class="p">,</span> <span class="n">start_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                           <span class="n">end_offset</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">-</span> <span class="n">ci</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">skipgram_length</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">ngram_size</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">SkipGram</span><span class="p">(</span><span class="n">skipgram_string</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">start_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">skipgram_length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">indexes</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">+</span><span class="n">skip_size</span><span class="p">)]</span>
+    <span class="n">skipgram_combinations</span> <span class="o">=</span> <span class="p">[</span><span class="n">combination</span> <span class="k">for</span> <span class="n">combination</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">indexes</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">ngram_size</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">start_offset</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">end_offset</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">-</span> <span class="n">start_offset</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">start_offset</span><span class="p">:</span><span class="n">start_offset</span><span class="o">+</span><span class="n">ngram_size</span><span class="o">+</span><span class="n">skip_size</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">skipgram</span><span class="p">,</span> <span class="n">skipgram_length</span><span class="p">,</span> <span class="n">combination</span> <span class="ow">in</span> <span class="n">insert_skips</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">skipgram_combinations</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">SkipGram</span><span class="p">(</span><span class="n">skipgram_string</span><span class="o">=</span><span class="n">skipgram</span><span class="p">,</span> <span class="n">start_offset</span><span class="o">=</span><span class="n">start_offset</span><span class="p">,</span>
+                           <span class="n">end_offset</span><span class="o">=</span><span class="n">end_offset</span><span class="p">,</span> <span class="n">skipgram_length</span><span class="o">=</span><span class="n">skipgram_length</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="token2skipgrams">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.token2skipgrams">[docs]</a>
+<span class="k">def</span> <span class="nf">token2skipgrams</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">skip_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="n">pad_token</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">SkipGram</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Turn a (padded) token string into a list of skipgrams.</span>
+
+<span class="sd">    :param token: a token string</span>
+<span class="sd">    :type token: str</span>
+<span class="sd">    :param ngram_size: an integer indicating the number of characters in the ngram</span>
+<span class="sd">    :type ngram_size: int</span>
+<span class="sd">    :param skip_size: an integer indicating how many skip characters in the ngrams</span>
+<span class="sd">    :type skip_size: int</span>
+<span class="sd">    :param pad_token: a boolean flag to indicate whether padding should be included</span>
+<span class="sd">                     at the boundaries of the token</span>
+<span class="sd">    :type pad_token: bool</span>
+<span class="sd">    :return: An iterator returning tuples of skip_gram and offset</span>
+<span class="sd">    :rtype: Generator[tuple]</span>
+
+<span class="sd">    Algorithm:</span>
+<span class="sd">        Like :func:`text2skipgrams`, but operates on a single token instead of running</span>
+<span class="sd">        text, and optionally pads the token with ``#`` characters on both sides (using</span>
+<span class="sd">        ``ngram_size - 1`` padding characters) so that skipgrams near the token boundaries</span>
+<span class="sd">        are generated consistently with skipgrams in the middle of the token. The padded</span>
+<span class="sd">        token is scanned with the same sliding-window/``insert_skips`` approach, after</span>
+<span class="sd">        which offsets and combination indexes are corrected back to the un-padded token&#39;s</span>
+<span class="sd">        coordinate space, and combination indexes that fall in the padding are dropped.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">token_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ngram_size</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">skip_size</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ngram_size must be a positive integer, skip_size must be a positive integer or zero&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pad_token</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">pad_size</span> <span class="o">=</span> <span class="n">ngram_size</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">padded_token</span> <span class="o">=</span> <span class="s1">&#39;#&#39;</span> <span class="o">*</span> <span class="n">pad_size</span> <span class="o">+</span> <span class="n">token</span> <span class="o">+</span> <span class="s1">&#39;#&#39;</span> <span class="o">*</span> <span class="n">pad_size</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pad_size</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">padded_token</span> <span class="o">=</span> <span class="n">token</span>
+    <span class="k">if</span> <span class="n">ngram_size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ci</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">token</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">SkipGram</span><span class="p">(</span><span class="n">skipgram_string</span><span class="o">=</span><span class="n">char</span><span class="p">,</span> <span class="n">start_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                           <span class="n">end_offset</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="o">-</span> <span class="n">ci</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">skipgram_length</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">token_length</span> <span class="o">&lt;=</span> <span class="n">ngram_size</span> <span class="ow">and</span> <span class="n">pad_token</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">SkipGram</span><span class="p">(</span><span class="n">skipgram_string</span><span class="o">=</span><span class="n">token</span><span class="p">,</span> <span class="n">start_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                       <span class="n">end_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">skipgram_length</span><span class="o">=</span><span class="n">token_length</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">indexes</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ngram_size</span> <span class="o">+</span> <span class="n">skip_size</span><span class="p">)]</span>
+        <span class="n">skipgram_combinations</span> <span class="o">=</span> <span class="p">[</span><span class="n">combination</span> <span class="k">for</span> <span class="n">combination</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">indexes</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">ngram_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="c1"># print(skipgram_combinations)</span>
+        <span class="k">for</span> <span class="n">start_offset</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">padded_token</span><span class="p">)):</span>
+            <span class="n">padded_start</span> <span class="o">=</span> <span class="n">start_offset</span>
+            <span class="n">window</span> <span class="o">=</span> <span class="n">padded_token</span><span class="p">[</span><span class="n">start_offset</span><span class="p">:</span><span class="n">start_offset</span><span class="o">+</span><span class="n">ngram_size</span><span class="o">+</span><span class="n">skip_size</span><span class="p">]</span>
+            <span class="c1"># start_offset = 0 if start_offset &lt; pad_size else start_offset - pad_size</span>
+            <span class="n">end_offset</span> <span class="o">=</span> <span class="n">token_length</span> <span class="o">-</span> <span class="n">start_offset</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="c1"># print()</span>
+            <span class="c1"># print(f&#39;padded_token: {padded_token}&#39;)</span>
+            <span class="c1"># print(f&quot;start_offset: {start_offset}&quot;)</span>
+            <span class="c1"># print(f&quot;end_offset: {end_offset}&quot;)</span>
+            <span class="c1"># print(f&quot;window: {window}&quot;)</span>
+            <span class="k">if</span> <span class="n">end_offset</span> <span class="o">&gt;</span> <span class="n">token_length</span><span class="p">:</span>
+                <span class="n">end_offset</span> <span class="o">=</span> <span class="n">token_length</span>
+            <span class="k">for</span> <span class="n">skipgram</span><span class="p">,</span> <span class="n">skipgram_length</span><span class="p">,</span> <span class="n">combination</span> <span class="ow">in</span> <span class="n">insert_skips</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">skipgram_combinations</span><span class="p">):</span>
+                <span class="c1"># print(f&quot;combination: {combination}&quot;)</span>
+                <span class="n">combination</span> <span class="o">=</span> <span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="n">padded_start</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">combination</span> <span class="k">if</span> <span class="n">pad_size</span> <span class="o">&lt;=</span> <span class="n">idx</span><span class="o">+</span><span class="n">padded_start</span> <span class="o">&lt;</span> <span class="n">token_length</span><span class="o">+</span><span class="n">pad_size</span><span class="p">]</span>
+                <span class="c1"># print(f&quot;combination: {combination}&quot;)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">combination</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">skipgram_length</span> <span class="o">=</span> <span class="n">combination</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">combination</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">start_offset</span> <span class="o">=</span> <span class="n">combination</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">pad_size</span>
+                <span class="c1"># print(f&quot;padded_start: {padded_start}\tstart_offset: {start_offset}\t&quot;</span>
+                <span class="c1">#       f&quot;combintation: {combination}\tskipgram: {skipgram}\tskipgram_length: {skipgram_length}&quot;)</span>
+                <span class="c1"># if pad_token is True and all([char == &#39;#&#39; for char in skipgram]):</span>
+                <span class="c1">#     continue</span>
+                <span class="c1"># if start_offset + skipgram_length &gt; token_length:</span>
+                <span class="c1">#     skipgram_length = token_length - start_offset</span>
+                <span class="k">yield</span> <span class="n">SkipGram</span><span class="p">(</span><span class="n">skipgram_string</span><span class="o">=</span><span class="n">skipgram</span><span class="p">,</span> <span class="n">start_offset</span><span class="o">=</span><span class="n">start_offset</span><span class="p">,</span>
+                               <span class="n">end_offset</span><span class="o">=</span><span class="n">end_offset</span><span class="p">,</span> <span class="n">skipgram_length</span><span class="o">=</span><span class="n">skipgram_length</span><span class="p">)</span></div>
+
+
+
+<span class="n">non_word_affixes_2</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;. &quot;</span><span class="p">,</span> <span class="s2">&quot;, &quot;</span><span class="p">,</span> <span class="s2">&quot;! &quot;</span><span class="p">,</span> <span class="s2">&quot;? &quot;</span><span class="p">,</span>
+    <span class="s2">&quot; (&quot;</span><span class="p">,</span> <span class="s2">&quot;) &quot;</span><span class="p">,</span> <span class="s2">&quot;).&quot;</span><span class="p">,</span> <span class="s2">&quot;)!&quot;</span><span class="p">,</span> <span class="s2">&quot;),&quot;</span><span class="p">,</span> <span class="s2">&quot;)?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot; [&quot;</span><span class="p">,</span> <span class="s2">&quot;] &quot;</span><span class="p">,</span> <span class="s2">&quot;].&quot;</span><span class="p">,</span> <span class="s2">&quot;]!&quot;</span><span class="p">,</span> <span class="s2">&quot;],&quot;</span><span class="p">,</span> <span class="s2">&quot;]?&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">non_word_affixes_1</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="get_non_word_prefix">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.get_non_word_prefix">[docs]</a>
+<span class="k">def</span> <span class="nf">get_non_word_prefix</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a string has a non-word prefix and return it.</span>
+
+<span class="sd">    :param string: the string from which the prefix is to be return</span>
+<span class="sd">    :type string: str</span>
+<span class="sd">    :return: the non-word prefix</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">string</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">non_word_affixes_2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">string</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">string</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">non_word_affixes_1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">string</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="get_non_word_suffix">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.get_non_word_suffix">[docs]</a>
+<span class="k">def</span> <span class="nf">get_non_word_suffix</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a string has a non-word suffix and return it.</span>
+
+<span class="sd">    :param string: the string from which the suffix is to be return</span>
+<span class="sd">    :type string: str</span>
+<span class="sd">    :return: the non-word suffix</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="ow">in</span> <span class="n">non_word_affixes_2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">string</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="k">elif</span> <span class="n">string</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span> <span class="ow">in</span> <span class="n">non_word_affixes_1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">string</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="strip_prefix">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.strip_prefix">[docs]</a>
+<span class="k">def</span> <span class="nf">strip_prefix</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Strip non-word prefix from string ending.</span>
+
+<span class="sd">    :param string: the string from which the prefix is to be stripped</span>
+<span class="sd">    :type string: str</span>
+<span class="sd">    :return: the stripped string</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">string</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">non_word_affixes_2</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="k">elif</span> <span class="n">string</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">]:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="k">elif</span> <span class="n">string</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">]:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">return</span> <span class="n">string</span></div>
+
+
+
+<div class="viewcode-block" id="strip_suffix">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.strip_suffix">[docs]</a>
+<span class="k">def</span> <span class="nf">strip_suffix</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Strip non-word suffix from string ending.</span>
+
+<span class="sd">    :param string: the string from which the suffix is to be stripped</span>
+<span class="sd">    :type string: str</span>
+<span class="sd">    :return: the stripped string</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">string</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">]:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">string</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;, &quot;</span><span class="p">,</span> <span class="s2">&quot;. &quot;</span><span class="p">,</span> <span class="s2">&quot;! &quot;</span><span class="p">,</span> <span class="s2">&quot;? &quot;</span><span class="p">]:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">string</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">]:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">string</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

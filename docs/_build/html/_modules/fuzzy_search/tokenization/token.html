@@ -1,0 +1,825 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.tokenization.token &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.tokenization.token</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.tokenization.token</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Core data structures for tokens, documents, annotations and tokenizers.</span>
+
+<span class="sd">This module defines the basic building blocks used throughout the fuzzy_search</span>
+<span class="sd">library to represent tokenized text: ``Token`` and ``Doc`` for the tokenized</span>
+<span class="sd">representation of a document, ``Annotation`` and ``Tag`` for spans of text with</span>
+<span class="sd">metadata, and several ``Tokenizer`` implementations for turning raw text into</span>
+<span class="sd">``Token`` objects.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+
+<div class="viewcode-block" id="Annotation">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Annotation">[docs]</a>
+<span class="k">class</span> <span class="nc">Annotation</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents an annotation in a document.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        tag_type (str): The type of the tag.</span>
+<span class="sd">        text (str): The text of the annotation.</span>
+<span class="sd">        offset (int): The starting index of the annotation.</span>
+<span class="sd">        end (int): The ending index of the annotation (offset + length of the text).</span>
+<span class="sd">        doc_id (str, optional): The ID of the document the annotation belongs to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Annotation.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Annotation.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the Annotation instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_type (str): The type of the tag.</span>
+<span class="sd">            text (str): The text of the annotation.</span>
+<span class="sd">            offset (int): The starting index of the annotation.</span>
+<span class="sd">            doc_id (str, optional): The ID of the document the annotation belongs to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tag_type</span> <span class="o">=</span> <span class="n">tag_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doc_id</span> <span class="o">=</span> <span class="n">doc_id</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Tag">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tag">[docs]</a>
+<span class="k">class</span> <span class="nc">Tag</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a tag in a document, containing both the tag&#39;s type and text.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        type (str): The type of the tag.</span>
+<span class="sd">        text (str): The text content of the tag.</span>
+<span class="sd">        offset (int): The starting index of the tag in the document.</span>
+<span class="sd">        tag_string (str): The full tag string, including opening and closing tags.</span>
+<span class="sd">        end (int): The ending index of the tag (offset + length of the tag string).</span>
+<span class="sd">        doc_id (str, optional): The ID of the document the tag belongs to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Tag.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tag.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the Tag instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_type (str): The type of the tag.</span>
+<span class="sd">            text (str): The text content of the tag.</span>
+<span class="sd">            offset (int): The starting index of the tag.</span>
+<span class="sd">            doc_id (str, optional): The ID of the document the tag belongs to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">tag_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tag_string</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&lt;</span><span class="si">{</span><span class="n">tag_type</span><span class="si">}</span><span class="s2">&gt;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&lt;/</span><span class="si">{</span><span class="n">tag_type</span><span class="si">}</span><span class="s2">&gt;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tag_string</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doc_id</span> <span class="o">=</span> <span class="n">doc_id</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Token">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token">[docs]</a>
+<span class="k">class</span> <span class="nc">Token</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a token in a document.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        string (str): The original string of the token.</span>
+<span class="sd">        index (int): The index of the token in the document.</span>
+<span class="sd">        char_index (int): The character index of the token in the document.</span>
+<span class="sd">        doc_id (str, optional): The ID of the document the token belongs to.</span>
+<span class="sd">        metadata (dict, optional): Additional metadata associated with the token.</span>
+<span class="sd">        normalised_string (str): The normalized version of the token.</span>
+<span class="sd">        label (set): A set of labels assigned to the token.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Token.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">char_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">normalised_string</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">char_end_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the Token instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            string (str): The original string of the token.</span>
+<span class="sd">            index (int): The index of the token in the document.</span>
+<span class="sd">            char_index (int): The character index of the token in the document.</span>
+<span class="sd">            doc_id (str, optional): The ID of the document the token belongs to.</span>
+<span class="sd">            normalised_string (str, optional): The normalized version of the token.</span>
+<span class="sd">            label (str, set, list, optional): Labels associated with the token.</span>
+<span class="sd">            char_index (int): The character index of the token from the end of the document.</span>
+<span class="sd">            metadata (dict, optional): Additional metadata associated with the token.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">string</span> <span class="o">=</span> <span class="n">string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">char_index</span> <span class="o">=</span> <span class="n">char_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">char_end_index</span> <span class="o">=</span> <span class="n">char_end_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doc_id</span> <span class="o">=</span> <span class="n">doc_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span> <span class="k">if</span> <span class="n">metadata</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalised_string</span> <span class="o">=</span> <span class="n">normalised_string</span> <span class="k">if</span> <span class="n">normalised_string</span> <span class="k">else</span> <span class="n">string</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="p">{</span><span class="n">label</span><span class="p">}</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="nb">set</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;token label must be of type &quot;str&quot;, &quot;set&quot; or &quot;list&quot;, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">label</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a string representation of the Token.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: A string representation of the token&#39;s normalized string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">normalised_string</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the length of the token.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The length of the normalized string of the token.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalised_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Token.lower">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.lower">[docs]</a>
+    <span class="k">def</span> <span class="nf">lower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Converts the normalized string of the token to lowercase.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalised_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalised_string</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">i</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the index of the token.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The index of the token.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">t</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the original string of the token.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The original string of the token.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the normalized string of the token.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The normalized string of the token.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalised_string</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">l</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the labels associated with the token.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            set: A set of labels associated with the token.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span>
+
+<div class="viewcode-block" id="Token.has_label">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.has_label">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if the token has a specific label.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            label (str): The label to check for.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the token has the label, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">label</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span></div>
+
+
+<div class="viewcode-block" id="Token.update">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.update">[docs]</a>
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">normalised_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Token&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new token with an updated normalized string.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            normalised_string (str): The updated normalized string.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Token: A new token with the updated normalized string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">string</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">,</span> <span class="n">char_index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">char_index</span><span class="p">,</span>
+                     <span class="n">normalised_string</span><span class="o">=</span><span class="n">normalised_string</span><span class="p">,</span>
+                     <span class="n">metadata</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Doc">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc">[docs]</a>
+<span class="k">class</span> <span class="nc">Doc</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a document containing a list of tokens.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        text (str): The text of the document.</span>
+<span class="sd">        id (str): The ID of the document.</span>
+<span class="sd">        tokens (list): A list of Token objects representing the document&#39;s tokens.</span>
+<span class="sd">        token_orig_set (dict): A dictionary mapping original token strings to lists of tokens.</span>
+<span class="sd">        token_norm_set (dict): A dictionary mapping normalized token strings to lists of tokens.</span>
+<span class="sd">        label_token_index (defaultdict): A dictionary mapping labels to sets of tokens.</span>
+<span class="sd">        metadata (dict): Metadata associated with the document.</span>
+<span class="sd">        annotations (list): A list of annotations associated with the document.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Doc.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a Document instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text (str): The text content of the document.</span>
+<span class="sd">            doc_id (str): The ID of the document.</span>
+<span class="sd">            tokens (List[Token]): A list of Token objects representing the document&#39;s tokens.</span>
+<span class="sd">            metadata (dict, optional): Metadata associated with the document.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">doc_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokens</span> <span class="o">=</span> <span class="n">tokens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">token_orig_set</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">token_norm_set</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_token_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span> <span class="k">if</span> <span class="n">metadata</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotation</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">token</span><span class="o">.</span><span class="n">label</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">label_token_index</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_orig_set</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">token_orig_set</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">token</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">token_orig_set</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_norm_set</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">token_norm_set</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">token</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">token_norm_set</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a string representation of the document.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: A string representation of the document, including its ID, metadata, and tokens.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Doc(id=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&#39;, metadata=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="si">}</span><span class="s2">, text=</span><span class="se">\&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">, tokens=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tokens</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the number of normalized tokens in the document.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The number of normalized tokens in the document.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalized</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves a token by index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item (int): The index of the token to retrieve.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Token: The token at the specified index.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokens</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Iterates over the tokens in the document.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            Token: Each token in the document.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokens</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">token</span>
+
+    <span class="k">def</span> <span class="nf">_has_original_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if the token exists in the original set of tokens.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            token (str): The original token string.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the token exists in the original set, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">token</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_orig_set</span>
+
+    <span class="k">def</span> <span class="nf">_has_normalised_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if the token exists in the normalized set of tokens.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            token (str): The normalized token string.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the token exists in the normalized set, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">token</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_norm_set</span>
+
+<div class="viewcode-block" id="Doc.has_token">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.has_token">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if the document contains a specific token.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            token (Union[str, Token]): A token string or a Token object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the token exists in the document, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_token</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">token</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_original_token</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">t</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_normalised_token</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Doc.get_token">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.get_token">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Token</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves a token (or tokens) from the document based on the token string.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            token_string (str): The token string to look up.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Union[Token, List[Token]]: A Token object or a list of Token objects that match the token string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">token_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_orig_set</span><span class="p">:</span>
+            <span class="n">token_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_orig_set</span><span class="p">[</span><span class="n">token_string</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">token_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_norm_set</span><span class="p">:</span>
+            <span class="n">token_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_norm_set</span><span class="p">[</span><span class="n">token_string</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">token_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">token_list</span></div>
+
+
+<div class="viewcode-block" id="Doc.add_annotations">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.add_annotations">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annotations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotation</span><span class="p">],</span> <span class="n">replace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds annotations to the document.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            annotations (List[Annotation]): A list of Annotation objects to add.</span>
+<span class="sd">            replace (bool): whether to replace existing annotation or add (default is False).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span> <span class="o">=</span> <span class="n">annotations</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves a list of original tokens in the document.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: A list of the original tokens.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">t</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokens</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">normalized</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves a list of normalized tokens in the document.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: A list of the normalized tokens.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokens</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="Tokenizer">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer">[docs]</a>
+<span class="k">class</span> <span class="nc">Tokenizer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A base class for tokenizing a document into tokens.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        ignorecase (bool): Flag indicating whether to ignore case when tokenizing.</span>
+<span class="sd">        include_boundary_tokens (bool): Flag indicating whether to include boundary tokens.</span>
+<span class="sd">        remove_punctuation (bool): Flag indicating whether to remove punctuation from tokens.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Tokenizer.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">include_boundary_tokens</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">remove_punctuation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">split_pattern</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;(\S+)&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the Tokenizer instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ignorecase (bool, optional): Whether to ignore case when tokenizing. Defaults to False.</span>
+<span class="sd">            include_boundary_tokens (bool, optional): Whether to include boundary tokens. Defaults to False.</span>
+<span class="sd">            remove_punctuation (bool, optional): Whether to remove punctuation. Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="o">=</span> <span class="n">ignorecase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">include_boundary_tokens</span> <span class="o">=</span> <span class="n">include_boundary_tokens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_punctuation</span> <span class="o">=</span> <span class="n">remove_punctuation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">split_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">split_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nltk_wp_tokenizer</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nltk_wp_tokenizer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The NLTK ``WordPunctTokenizer`` used by the base :meth:`_string_tokenizer`.</span>
+
+<span class="sd">        Constructed lazily (and NLTK imported lazily) on first access, since NLTK is a</span>
+<span class="sd">        relatively expensive import and subclasses such as :class:`RegExTokenizer` and</span>
+<span class="sd">        :class:`CustomTokenizer` override :meth:`_string_tokenizer` and never need it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nltk_wp_tokenizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">nltk.tokenize</span> <span class="kn">import</span> <span class="n">WordPunctTokenizer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nltk_wp_tokenizer</span> <span class="o">=</span> <span class="n">WordPunctTokenizer</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nltk_wp_tokenizer</span>
+
+    <span class="k">def</span> <span class="nf">_string_tokenizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Split text into (token_string, char_index) pairs using the NLTK</span>
+<span class="sd">        word/punctuation tokenizer, optionally dropping non-alphanumeric tokens.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">si</span><span class="p">,</span> <span class="n">token_span</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nltk_wp_tokenizer</span><span class="o">.</span><span class="n">span_tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">)):</span>
+            <span class="n">token_string</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">token_span</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">token_span</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_punctuation</span> <span class="ow">is</span> <span class="kc">True</span> <span class="ow">and</span> <span class="n">token_string</span><span class="o">.</span><span class="n">isalnum</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">char_index</span> <span class="o">=</span> <span class="n">token_span</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">yield</span> <span class="n">token_string</span><span class="p">,</span> <span class="n">char_index</span>
+
+    <span class="k">def</span> <span class="nf">_tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Token</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tokenizes the input text into a list of strings.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text (str): The text to tokenize.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: A list of tokens.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">doc_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_boundary_tokens</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">start_token</span> <span class="o">=</span> <span class="n">Token</span><span class="p">(</span><span class="s1">&#39;&lt;DOC&gt;&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">char_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">char_end_index</span><span class="o">=</span><span class="n">doc_length</span><span class="p">,</span> <span class="n">normalised_string</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">start_token</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">token_string</span><span class="p">,</span> <span class="n">char_index</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_string_tokenizer</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+            <span class="n">char_end_index</span> <span class="o">=</span> <span class="n">doc_length</span> <span class="o">-</span> <span class="p">(</span><span class="n">char_index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_string</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">token</span> <span class="o">=</span> <span class="n">Token</span><span class="p">(</span><span class="n">token_string</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">),</span> <span class="n">char_index</span><span class="o">=</span><span class="n">char_index</span><span class="p">,</span>
+                          <span class="n">char_end_index</span><span class="o">=</span><span class="n">char_end_index</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">token</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_boundary_tokens</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">end_token</span> <span class="o">=</span> <span class="n">Token</span><span class="p">(</span><span class="s1">&#39;&lt;/DOC&gt;&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">),</span> <span class="n">char_index</span><span class="o">=</span><span class="n">doc_length</span><span class="p">,</span> <span class="n">char_end_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">normalised_string</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end_token</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tokens</span>
+
+<div class="viewcode-block" id="Tokenizer.tokenize">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.tokenize">[docs]</a>
+    <span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Token</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tokenizes the input document text and returns a list of documents.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            doc_text (str): The text of the document to tokenize.</span>
+<span class="sd">            doc_id (str, optional): The ID of the document. Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Doc: A Doc object containing the tokenized text.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">token_strings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tokenize</span><span class="p">(</span><span class="n">doc_text</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">doc_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">token_strings</span><span class="p">:</span>
+                <span class="n">token</span><span class="o">.</span><span class="n">doc_id</span> <span class="o">=</span> <span class="n">doc_id</span>
+        <span class="k">return</span> <span class="n">token_strings</span></div>
+
+
+<div class="viewcode-block" id="Tokenizer.tokenize_doc">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.tokenize_doc">[docs]</a>
+    <span class="k">def</span> <span class="nf">tokenize_doc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tokenizes the input document text and returns a Doc object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            doc_text (str): The text of the document to tokenize.</span>
+<span class="sd">            doc_id (str, optional): The ID of the document. Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Doc: A Doc object containing the tokenized text.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">doc_text</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Doc</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">doc_text</span><span class="p">,</span> <span class="n">doc_id</span><span class="o">=</span><span class="n">doc_id</span><span class="p">,</span> <span class="n">tokens</span><span class="o">=</span><span class="n">tokens</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RegExTokenizer">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.RegExTokenizer">[docs]</a>
+<span class="k">class</span> <span class="nc">RegExTokenizer</span><span class="p">(</span><span class="n">Tokenizer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A tokenizer that splits text into tokens using a regular expression pattern.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        split_pattern (str): The regular expression pattern used to split the text into tokens.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RegExTokenizer.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.RegExTokenizer.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">include_boundary_tokens</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">split_pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;\s+&quot;</span><span class="p">,</span> <span class="n">token_pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the RegExTokenizer instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ignorecase (bool, optional): Whether to ignore case when tokenizing. Defaults to False.</span>
+<span class="sd">            include_boundary_tokens (bool, optional): Whether to include boundary tokens. Defaults to False.</span>
+<span class="sd">            split_pattern (str, optional): The regular expression pattern used to split the text. Defaults to r&#39;\b&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ignorecase</span><span class="o">=</span><span class="n">ignorecase</span><span class="p">,</span> <span class="n">include_boundary_tokens</span><span class="o">=</span><span class="n">include_boundary_tokens</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_punctuation</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">token_pattern</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">split_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">token_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">token_pattern</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_string_tokenizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_token_pattern_tokenizer</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">split_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">split_pattern</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">token_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_string_tokenizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split_pattern_tokenizer</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_split_pattern_tokenizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">split_matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">match</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_pattern</span><span class="p">,</span> <span class="n">text</span><span class="p">)]</span>
+        <span class="n">char_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">split_match</span> <span class="ow">in</span> <span class="n">split_matches</span><span class="p">:</span>
+            <span class="n">token_end</span> <span class="o">=</span> <span class="n">split_match</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="n">token_string</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">char_index</span><span class="p">:</span><span class="n">token_end</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_string</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># only yield tokens that have at least one character</span>
+                <span class="k">yield</span> <span class="n">token_string</span><span class="p">,</span> <span class="n">char_index</span>
+            <span class="n">char_index</span> <span class="o">=</span> <span class="n">split_match</span><span class="o">.</span><span class="n">end</span><span class="p">()</span>
+        <span class="n">token_string</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">char_index</span><span class="p">:]</span>
+        <span class="k">yield</span> <span class="n">token_string</span><span class="p">,</span> <span class="n">char_index</span>
+
+    <span class="k">def</span> <span class="nf">_token_pattern_tokenizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">token_matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">match</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token_pattern</span><span class="p">,</span> <span class="n">text</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">token_match</span> <span class="ow">in</span> <span class="n">token_matches</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">token_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">token_match</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="CustomTokenizer">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.CustomTokenizer">[docs]</a>
+<span class="k">class</span> <span class="nc">CustomTokenizer</span><span class="p">(</span><span class="n">Tokenizer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A tokenizer that uses a custom tokenizer function provided by the user.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        tokenizer_func (Callable): A user-defined function for tokenizing text.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CustomTokenizer.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.CustomTokenizer.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokenizer_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the CustomTokenizer instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tokenizer_func (Callable): The custom function to use for tokenizing the text.</span>
+<span class="sd">            **kwargs: Additional arguments passed to the parent Tokenizer class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_func</span> <span class="o">=</span> <span class="n">tokenizer_func</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tokenizes the input text using the custom tokenizer function.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text (str): The text to tokenize.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: A list of tokens generated by the custom tokenizer function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_func</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_strings_to_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">],</span> <span class="n">token_strings</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Token</span><span class="p">]:</span>
+        <span class="c1"># dummy_text = f&quot;&lt;doc&gt; {doc[&#39;text&#39;]} &lt;/doc&gt;&quot; if self.include_boundary_tokens else doc[&#39;text&#39;]</span>
+        <span class="c1"># if self.include_boundary_tokens:</span>
+        <span class="c1">#     token_strings = [&#39;&lt;DOC&gt;&#39;] + token_strings + [&#39;&lt;/DOC&gt;&#39;]</span>
+        <span class="n">dummy_text</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">doc_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_boundary_tokens</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">start_token</span> <span class="o">=</span> <span class="n">Token</span><span class="p">(</span><span class="s1">&#39;&lt;DOC&gt;&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">char_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">char_end_index</span><span class="o">=</span><span class="n">doc_length</span><span class="p">,</span> <span class="n">normalised_string</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">start_token</span><span class="p">)</span>
+        <span class="n">prefix_text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">ti</span><span class="p">,</span> <span class="n">token_string</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">token_strings</span><span class="p">):</span>
+            <span class="n">dummy_char_index</span> <span class="o">=</span> <span class="n">dummy_text</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">token_string</span><span class="p">)</span>
+            <span class="n">char_index</span> <span class="o">=</span> <span class="n">dummy_char_index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">prefix_text</span><span class="p">)</span>
+            <span class="n">char_end_index</span> <span class="o">=</span> <span class="n">doc_length</span> <span class="o">-</span> <span class="p">(</span><span class="n">char_index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_string</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">prefix_text</span> <span class="o">+=</span> <span class="n">dummy_text</span><span class="p">[:</span><span class="n">dummy_char_index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_string</span><span class="p">)]</span>
+            <span class="n">dummy_text</span> <span class="o">=</span> <span class="n">dummy_text</span><span class="p">[</span><span class="n">dummy_char_index</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">token_string</span><span class="p">):]</span>
+            <span class="n">token</span> <span class="o">=</span> <span class="n">Token</span><span class="p">(</span><span class="n">token_string</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">),</span> <span class="n">char_index</span><span class="o">=</span><span class="n">char_index</span><span class="p">,</span> <span class="n">doc_id</span><span class="o">=</span><span class="n">doc</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+                          <span class="n">char_end_index</span><span class="o">=</span><span class="n">char_end_index</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_boundary_tokens</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ti</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">ti</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_strings</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">token</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_boundary_tokens</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">end_token</span> <span class="o">=</span> <span class="n">Token</span><span class="p">(</span><span class="s1">&#39;&lt;/DOC&gt;&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">),</span> <span class="n">char_index</span><span class="o">=</span><span class="n">doc_length</span><span class="p">,</span> <span class="n">char_end_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">normalised_string</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end_token</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tokens</span>
+
+<div class="viewcode-block" id="CustomTokenizer.tokenize">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.CustomTokenizer.tokenize">[docs]</a>
+    <span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Token</span><span class="p">]:</span>
+        <span class="n">token_strings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tokenize</span><span class="p">(</span><span class="n">doc_text</span><span class="p">)</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">doc_text</span><span class="p">}</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strings_to_tokens</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">token_strings</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tokens</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="update_token">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.update_token">[docs]</a>
+<span class="k">def</span> <span class="nf">update_token</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="n">Token</span><span class="p">,</span> <span class="n">new_normalised</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Token</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a new Token instance by updating the normalization string of an existing token.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        token (Token): The original Token object to be updated.</span>
+<span class="sd">        new_normalised (str): The new normalized string for the token.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Token: A new Token object with the updated normalization string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">string</span><span class="o">=</span><span class="n">token</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">token</span><span class="o">.</span><span class="n">i</span><span class="p">,</span> <span class="n">char_index</span><span class="o">=</span><span class="n">token</span><span class="o">.</span><span class="n">char_index</span><span class="p">,</span>
+                 <span class="n">normalised_string</span><span class="o">=</span><span class="n">new_normalised</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">metadata</span><span class="p">),</span>
+                 <span class="n">char_end_index</span><span class="o">=</span><span class="n">token</span><span class="o">.</span><span class="n">char_end_index</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="tokens2string">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.tokens2string">[docs]</a>
+<span class="k">def</span> <span class="nf">tokens2string</span><span class="p">(</span><span class="n">tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reconstruct an approximate original string from a list of tokens.</span>
+
+<span class="sd">    Tokens are joined using their original character indices, padding with</span>
+<span class="sd">    spaces to align each token&#39;s text at its ``char_index`` position.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tokens (List[Token]): The tokens to join, assumed to be in order.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The reconstructed string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">char_index</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">char_index</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+            <span class="n">string</span> <span class="o">+=</span> <span class="s1">&#39; &#39;</span> <span class="o">*</span> <span class="n">diff</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="n">token</span><span class="o">.</span><span class="n">t</span>
+    <span class="k">return</span> <span class="n">string</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

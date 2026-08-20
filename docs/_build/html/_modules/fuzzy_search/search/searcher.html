@@ -1,0 +1,496 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.search.searcher &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.search.searcher</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.search.searcher</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Base fuzzy searcher class.</span>
+
+<span class="sd">Defines :class:`FuzzySearcher`, which indexes phrases (and their variants and</span>
+<span class="sd">distractors) using character skipgrams and provides the core skipgram-based</span>
+<span class="sd">matching logic that other, more specialized searchers in this package build</span>
+<span class="sd">upon.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">fuzzy_search._version</span> <span class="kn">import</span> <span class="n">__version__</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.skip_match</span> <span class="kn">import</span> <span class="n">SkipMatches</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.phrase_match</span> <span class="kn">import</span> <span class="n">PhraseMatch</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase</span> <span class="kn">import</span> <span class="n">Phrase</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase_model</span> <span class="kn">import</span> <span class="n">PhraseModel</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.search.config</span> <span class="kn">import</span> <span class="n">default_config</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.string</span> <span class="kn">import</span> <span class="n">text2skipgrams</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.token</span> <span class="kn">import</span> <span class="n">Tokenizer</span>
+
+
+<div class="viewcode-block" id="FuzzySearcher">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher">[docs]</a>
+<span class="k">class</span> <span class="nc">FuzzySearcher</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FuzzySearcher.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">phrase_model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">],</span> <span class="n">PhraseModel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">config</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Tokenizer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This class represents the basic fuzzy searcher. You can pass a list of phrases or a phrase model and</span>
+<span class="sd">        configuration dictionary that overrides the default configuration values. The default config dictionary</span>
+<span class="sd">        is available via `fuzzy_search.default_config`.</span>
+
+<span class="sd">        To set e.g. the character ngram_size to 3 and the skip_size to 1 use the following dictionary::</span>
+
+<span class="sd">            config = {</span>
+<span class="sd">                &#39;ngram_size&#39;: 3,</span>
+<span class="sd">                &#39;skip_size&#39;: 1</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param phrase_list: a list of phrases (a list of strings or more complex dictionaries with phrases and variants)</span>
+<span class="sd">        :type phrase_list: list</span>
+<span class="sd">        :param phrase_model: a phrase model</span>
+<span class="sd">        :type phrase_model: PhraseModel</span>
+<span class="sd">        :param config: a configuration dictionary to override default configuration properties.</span>
+<span class="sd">            Only the properties present in the config dictionary are updated.</span>
+<span class="sd">        :type config: dict</span>
+<span class="sd">        :param tokenizer: a tokenizer instance (default tokenizer splits on whitespace)</span>
+<span class="sd">        :type tokenizer: Tokenizer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__version__</span> <span class="o">=</span> <span class="n">__version__</span>
+        <span class="c1"># default configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">char_match_threshold</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ngram_threshold</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_threshold</span> <span class="o">=</span> <span class="mf">0.2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">levenshtein_threshold</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_length_variance</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allow_overlapping_matches</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skip_exact_matching</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_word_boundaries</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">known_candidates</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distractor_terms</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">early_skipgram_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">late_skipgram_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variant_map</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_variant</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variant_skipgram_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variant_early_skipgram_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variant_late_skipgram_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">include_variants</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter_distractors</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distractor_map</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_distractor</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distractor_skipgram_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distractor_early_skipgram_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distractor_late_skipgram_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrases</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">Phrase</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variants</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">Phrase</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distractors</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">Phrase</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">PhraseModel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">punctuation</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">punctuation</span>
+        <span class="c1"># non-default configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">default_config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">tokenizer</span> <span class="k">if</span> <span class="n">tokenizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Tokenizer</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">config</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phrase_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">phrase_model</span> <span class="o">=</span> <span class="n">PhraseModel</span><span class="p">(</span><span class="n">phrases</span><span class="o">=</span><span class="n">phrase_list</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">index_phrase_model</span><span class="p">(</span><span class="n">phrase_model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phrase_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase_model</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase_model</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">phrase_model</span> <span class="o">=</span> <span class="n">PhraseModel</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">phrase_model</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase_model</span><span class="p">,</span> <span class="n">PhraseModel</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;invalid phrase_model type, should PhraseModel or a list of dictionaries&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">index_phrase_model</span><span class="p">(</span><span class="n">phrase_model</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FuzzySearcher.configure">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.configure">[docs]</a>
+    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure the fuzzy searcher with a given config object.</span>
+
+<span class="sd">        :param config: a config dictionary</span>
+<span class="sd">        :type config: Dict[str, Union[str, int, float]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;char_match_threshold&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">char_match_threshold</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;char_match_threshold&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;ngram_threshold&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ngram_threshold</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;ngram_threshold&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;skipgram_threshold&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_threshold</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;skipgram_threshold&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;levenshtein_threshold&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">levenshtein_threshold</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;levenshtein_threshold&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;max_length_variance&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_length_variance</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;max_length_variance&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;use_word_boundaries&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">use_word_boundaries</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;use_word_boundaries&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;ignorecase&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;ignorecase&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;ngram_size&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;ngram_size&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;skip_size&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;skip_size&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;include_variants&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">include_variants</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;include_variants&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;filter_distractors&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filter_distractors</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;filter_distractors&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;skip_exact_matching&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skip_exact_matching</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;skip_exact_matching&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;allow_overlapping_matches&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">allow_overlapping_matches</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;allow_overlapping_matches&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;punctuation&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">punctuation</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;punctuation&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;debug&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;debug&quot;</span><span class="p">]</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_debug_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the higher of the given debug level and the searcher&#39;s configured debug level.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">debug</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span>
+
+<div class="viewcode-block" id="FuzzySearcher.index_phrase_model">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.index_phrase_model">[docs]</a>
+    <span class="k">def</span> <span class="nf">index_phrase_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]],</span> <span class="n">PhraseModel</span><span class="p">],</span>
+                           <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a phrase model to search for phrases in texts.</span>
+
+<span class="sd">        :param phrase_model: a phrase model, either as dictionary or as PhraseModel object</span>
+<span class="sd">        :type phrase_model: Union[List[Dict[str, Union[str, int, float, list]]], PhraseModel]</span>
+<span class="sd">        :param debug: level to show debug information</span>
+<span class="sd">        :type debug: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">debug</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_debug_level</span><span class="p">(</span><span class="n">debug</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase_model</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">phrase_model</span> <span class="o">=</span> <span class="n">PhraseModel</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">phrase_model</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span> <span class="o">=</span> <span class="n">phrase_model</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">.index_phrase_model - calling index_phrases()&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_phrases</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_index</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">.index_phrase_model - calling index_variants()&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_variants</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">phrase_model</span><span class="o">.</span><span class="n">variant_index</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">.index_phrase_model - calling index_distractors()&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_distractors</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">phrase_model</span><span class="o">.</span><span class="n">distractor_index</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span></div>
+
+
+<div class="viewcode-block" id="FuzzySearcher.index_phrases">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.index_phrases">[docs]</a>
+    <span class="k">def</span> <span class="nf">index_phrases</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrases</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a list of phrases to search for in texts.</span>
+
+<span class="sd">        :param phrases: a list of phrases, either as string or as Phrase objects</span>
+<span class="sd">        :type phrases: List[Union[str, Phrase]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">phrases</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">phrase</span> <span class="o">=</span> <span class="n">Phrase</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">ngram_size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">:</span>
+                <span class="n">searcher_size</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;phrase has different ngram_size (</span><span class="si">{</span><span class="n">phrase</span><span class="o">.</span><span class="n">ngram_size</span><span class="si">}</span><span class="s2">) than </span><span class="si">{</span><span class="n">searcher_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">skip_size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">:</span>
+                <span class="n">searcher_size</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;phrase has different skip_size (</span><span class="si">{</span><span class="n">phrase</span><span class="o">.</span><span class="n">skip_size</span><span class="si">}</span><span class="s2">) than </span><span class="si">{</span><span class="n">searcher_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phrases</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span><span class="p">:</span>
+                <span class="c1"># print(f&#39;indexing phrase {phrase.phrase_string} with lowercase&#39;)</span>
+                <span class="k">for</span> <span class="n">skipgram</span> <span class="ow">in</span> <span class="n">phrase</span><span class="o">.</span><span class="n">skipgrams_lower</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_index</span><span class="p">[</span><span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">phrase</span><span class="o">.</span><span class="n">early_skipgram_index_lower</span><span class="p">:</span>
+                    <span class="c1"># print(&#39;early skipgram_string:&#39;, skipgram_string)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">early_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">phrase</span><span class="o">.</span><span class="n">late_skipgram_index_lower</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">late_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">skipgram</span> <span class="ow">in</span> <span class="n">phrase</span><span class="o">.</span><span class="n">skipgrams</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_index</span><span class="p">[</span><span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">phrase</span><span class="o">.</span><span class="n">early_skipgram_index</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">early_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">phrase</span><span class="o">.</span><span class="n">late_skipgram_index</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">late_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span> <span class="o">=</span> <span class="n">PhraseModel</span><span class="p">(</span><span class="n">phrases</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phrases</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="FuzzySearcher.index_variants">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.index_variants">[docs]</a>
+    <span class="k">def</span> <span class="nf">index_variants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variants</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a list of variant phrases to search for in texts.</span>
+
+<span class="sd">        :param variants: a list of variants, either as string or as Phrase objects</span>
+<span class="sd">        :type variants: List[Union[str, Phrase]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">variant</span> <span class="o">=</span> <span class="n">Phrase</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">variant</span><span class="o">.</span><span class="n">ngram_size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">:</span>
+                <span class="n">searcher_size</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;variant has different ngram_size (</span><span class="si">{</span><span class="n">variant</span><span class="o">.</span><span class="n">ngram_size</span><span class="si">}</span><span class="s2">) than </span><span class="si">{</span><span class="n">searcher_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">variant</span><span class="o">.</span><span class="n">skip_size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">:</span>
+                <span class="n">searcher_size</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;variant has different skip_size (</span><span class="si">{</span><span class="n">variant</span><span class="o">.</span><span class="n">skip_size</span><span class="si">}</span><span class="s2">) than </span><span class="si">{</span><span class="n">searcher_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variants</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">skipgram</span> <span class="ow">in</span> <span class="n">variant</span><span class="o">.</span><span class="n">skipgrams_lower</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">variant_skipgram_index</span><span class="p">[</span><span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">variant</span><span class="o">.</span><span class="n">early_skipgram_index_lower</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">variant_early_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">variant</span><span class="o">.</span><span class="n">late_skipgram_index_lower</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">variant_late_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">skipgram</span> <span class="ow">in</span> <span class="n">variant</span><span class="o">.</span><span class="n">skipgrams</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">variant_skipgram_index</span><span class="p">[</span><span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">variant</span><span class="o">.</span><span class="n">early_skipgram_index</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">variant_early_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">variant</span><span class="o">.</span><span class="n">late_skipgram_index</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">variant_late_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FuzzySearcher.index_distractors">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.index_distractors">[docs]</a>
+    <span class="k">def</span> <span class="nf">index_distractors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distractors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a list of distractor phrases to filter out likely incorrect phrase matches.</span>
+
+<span class="sd">        :param distractors: a list of distractors, either as string or as Phrase objects</span>
+<span class="sd">        :type distractors: List[Union[str, Phrase]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">distractor</span> <span class="ow">in</span> <span class="n">distractors</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">distractor</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">distractor</span> <span class="o">=</span> <span class="n">Phrase</span><span class="p">(</span><span class="n">distractor</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">distractor</span><span class="o">.</span><span class="n">ngram_size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">:</span>
+                <span class="n">searcher_size</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;distractor has different ngram_size (</span><span class="si">{</span><span class="n">distractor</span><span class="o">.</span><span class="n">ngram_size</span><span class="si">}</span><span class="s2">) than </span><span class="si">{</span><span class="n">searcher_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">distractor</span><span class="o">.</span><span class="n">skip_size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">:</span>
+                <span class="n">searcher_size</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;distractor has different skip_size (</span><span class="si">{</span><span class="n">distractor</span><span class="o">.</span><span class="n">skip_size</span><span class="si">}</span><span class="s2">) than </span><span class="si">{</span><span class="n">searcher_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">distractors</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">distractor</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">skipgram</span> <span class="ow">in</span> <span class="n">distractor</span><span class="o">.</span><span class="n">skipgrams_lower</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">distractor_skipgram_index</span><span class="p">[</span><span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">distractor</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">distractor</span><span class="o">.</span><span class="n">early_skipgram_index_lower</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">distractor_early_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">distractor</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">distractor</span><span class="o">.</span><span class="n">late_skipgram_index_lower</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">distractor_late_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">distractor</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">skipgram</span> <span class="ow">in</span> <span class="n">distractor</span><span class="o">.</span><span class="n">skipgrams</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">distractor_skipgram_index</span><span class="p">[</span><span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">distractor</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">distractor</span><span class="o">.</span><span class="n">early_skipgram_index</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">distractor_early_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">distractor</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">skipgram_string</span> <span class="ow">in</span> <span class="n">distractor</span><span class="o">.</span><span class="n">late_skipgram_index</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">distractor_late_skipgram_index</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">distractor</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FuzzySearcher.find_skipgram_matches">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.find_skipgram_matches">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_skipgram_matches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">list</span><span class="p">]],</span>
+                              <span class="n">include_variants</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                              <span class="n">known_word_start_offset</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SkipMatches</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find all skipgram matches between text and phrases.</span>
+
+<span class="sd">        :param text: the text object to match with phrases</span>
+<span class="sd">        :type text: Dict[str, Union[str, int, float, list]]</span>
+<span class="sd">        :param include_variants: boolean flag for whether to include phrase variants for finding matches</span>
+<span class="sd">        :type include_variants: bool</span>
+<span class="sd">        :param known_word_start_offset: a dictionary of known words and their text start_offsets based on exact matches</span>
+<span class="sd">        :type known_word_start_offset: Dict[int, Dict[str, any]]</span>
+<span class="sd">        :return: a SkipMatches object contain all skipgram matches</span>
+<span class="sd">        :rtype: SkipMatches</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># print(known_word_offset)</span>
+        <span class="c1"># skipmatch_count = 0</span>
+        <span class="n">known_word</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">include_variants</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">include_variants</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_variants</span>
+        <span class="k">if</span> <span class="n">known_word_start_offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">known_word_start_offset</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># print(known_word_start_offset)</span>
+        <span class="n">skip_matches</span> <span class="o">=</span> <span class="n">SkipMatches</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+        <span class="n">text_string</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="k">else</span> <span class="n">text</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">skipgram</span> <span class="ow">in</span> <span class="n">text2skipgrams</span><span class="p">(</span><span class="n">text_string</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">):</span>
+            <span class="c1"># print(skipgram.start_offset, skipgram.string, skipgram)</span>
+            <span class="c1"># print(&quot;skipgram:&quot;, skipgram.string)</span>
+            <span class="k">if</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">start_offset</span> <span class="ow">in</span> <span class="n">known_word_start_offset</span><span class="p">:</span>
+                <span class="n">known_word</span> <span class="o">=</span> <span class="n">known_word_start_offset</span><span class="p">[</span><span class="n">skipgram</span><span class="o">.</span><span class="n">start_offset</span><span class="p">]</span>
+                <span class="c1"># print(&quot;known word start_offset reached:&quot;, known_word)</span>
+            <span class="k">if</span> <span class="n">known_word</span> <span class="ow">and</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">start_offset</span> <span class="o">==</span> <span class="n">known_word</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">]:</span>
+                <span class="c1"># print(&quot;end of known word start_offset reached:&quot;, known_word)</span>
+                <span class="n">known_word</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_index</span><span class="p">[</span><span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">max_start_offset</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">phrase</span><span class="o">.</span><span class="n">max_start_end</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length_variance</span> <span class="o">&lt;</span> \
+                        <span class="n">skipgram</span><span class="o">.</span><span class="n">start_offset</span> <span class="o">+</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">length</span><span class="p">:</span>
+                    <span class="c1"># print(skipgram.start_offset, phrase.max_start_offset, phrase.max_start_end, phrase.phrase_string)</span>
+                    <span class="c1"># print(f&quot;phrase.max_start_end {phrase.max_start_end} &lt; {skipgram.start_offset} + {skipgram.length} + {self.max_length_variance}&quot;)</span>
+                    <span class="c1"># print(f&quot;skipping phrase {phrase.phrase_string} at offset {skipgram.start_offset} because of max_start_offset&quot;)</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">max_end_offset</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">phrase</span><span class="o">.</span><span class="n">max_end_end</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length_variance</span> <span class="o">&lt;</span> \
+                        <span class="n">skipgram</span><span class="o">.</span><span class="n">end_offset</span> <span class="o">+</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">length</span><span class="p">:</span>
+                    <span class="c1"># print(skipgram.start_offset, phrase.max_end_offset, phrase.max_end_end, phrase.phrase_string)</span>
+                    <span class="c1"># print(f&quot;skipping phrase {phrase.phrase_string} at offset {skipgram.start_offset} because of max_end_offset&quot;)</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">known_word</span><span class="p">:</span>
+                    <span class="c1">#if phrase.phrase_string not in self.phrase_model.word_in_phrase[known_word[&quot;word&quot;]]:</span>
+                    <span class="c1">#    print(&quot;skipping phrase because doesn&#39;t match known word:&quot;, phrase.phrase_string)</span>
+                    <span class="c1">#    continue</span>
+                    <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">in</span> <span class="n">known_word</span><span class="p">[</span><span class="s2">&quot;match_phrases&quot;</span><span class="p">]:</span>
+                        <span class="c1"># print(&quot;skipping phrase because found as exact match:&quot;, phrase.phrase_string)</span>
+                        <span class="k">continue</span>
+                <span class="c1"># print(&quot;\tphrase has skip:&quot;, phrase.phrase_string)</span>
+                <span class="c1"># skipmatch_count += 1</span>
+                <span class="c1"># print(&quot;adding skipmatch&quot;, skipmatch_count)</span>
+                <span class="c1"># if phrase.phrase_string == &#39;Is ter Vergaderinge gelesen&#39;:</span>
+                <span class="c1">#     print(f&quot;fuzzy_search.Searcher.find_skipgram_matches - adding skipmatch - {phrase.phrase_string} - {skipgram}&quot;)</span>
+                <span class="n">skip_matches</span><span class="o">.</span><span class="n">add_skip_match</span><span class="p">(</span><span class="n">skipgram</span><span class="p">,</span> <span class="n">phrase</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">include_variants</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant_skipgram_index</span><span class="p">[</span><span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">known_word</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="o">.</span><span class="n">word_in_phrase</span><span class="p">[</span><span class="n">known_word</span><span class="p">[</span><span class="s2">&quot;word&quot;</span><span class="p">]]:</span>
+                            <span class="c1"># print(&quot;skipping phrase because doesn&#39;t match known word:&quot;, phrase.phrase_string)</span>
+                            <span class="k">continue</span>
+                        <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">in</span> <span class="n">known_word</span><span class="p">[</span><span class="s2">&quot;match_phrases&quot;</span><span class="p">]:</span>
+                            <span class="c1"># print(&quot;skipping phrase because found as exact match:&quot;, phrase.phrase_string)</span>
+                            <span class="k">continue</span>
+                    <span class="n">skip_matches</span><span class="o">.</span><span class="n">add_skip_match</span><span class="p">(</span><span class="n">skipgram</span><span class="p">,</span> <span class="n">phrase</span><span class="p">)</span>
+        <span class="c1"># print(&quot;final skipmatch count:&quot;, skipmatch_count)</span>
+        <span class="k">return</span> <span class="n">skip_matches</span></div>
+
+
+<div class="viewcode-block" id="FuzzySearcher.filter_matches_by_offset_threshold">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.filter_matches_by_offset_threshold">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">filter_matches_by_offset_threshold</span><span class="p">(</span><span class="n">matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">],</span> <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter out matches whose start offset exceeds their phrase&#39;s configured maximum start offset.</span>
+
+<span class="sd">        Matches whose phrase has no max_start_offset restriction (None or -1) are always kept.</span>
+
+<span class="sd">        :param matches: a list of phrase matches to filter</span>
+<span class="sd">        :type matches: List[PhraseMatch]</span>
+<span class="sd">        :param debug: level to show debug information</span>
+<span class="sd">        :type debug: int</span>
+<span class="sd">        :return: the matches that satisfy the max_start_offset constraint</span>
+<span class="sd">        :rtype: List[PhraseMatch]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filtered_matches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;searcher.filter_matches_by_offset_threshold - match:</span><span class="se">\n\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">,</span>
+                      <span class="k">match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">max_start_offset</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">max_start_offset</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">max_start_offset</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;no max start&#39;</span><span class="p">)</span>
+                <span class="n">filtered_matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">max_start_offset</span> <span class="o">&gt;=</span> <span class="n">match</span><span class="o">.</span><span class="n">offset</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;lower than max start&#39;</span><span class="p">)</span>
+                <span class="n">filtered_matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;skipping&#39;</span><span class="p">)</span>
+                <span class="k">continue</span>
+        <span class="k">return</span> <span class="n">filtered_matches</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

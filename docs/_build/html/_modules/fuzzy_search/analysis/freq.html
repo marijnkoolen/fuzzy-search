@@ -1,0 +1,535 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.analysis.freq &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.analysis.freq</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.analysis.freq</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Token ngram frequency counting and probability estimation, plus log-likelihood-ratio</span>
+<span class="sd">keyword/word comparison statistics.</span>
+
+<span class="sd">This module provides ``NgramFreq`` for counting word ngrams across a collection of</span>
+<span class="sd">documents and computing (optionally smoothed) ngram probabilities and conditional</span>
+<span class="sd">probabilities, along with functions for computing the log-likelihood ratio (LLR) and</span>
+<span class="sd">percentage-difference statistics that compare a word&#39;s frequency between a target and</span>
+<span class="sd">reference corpus.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.token</span> <span class="kn">import</span> <span class="n">Doc</span><span class="p">,</span> <span class="n">Token</span>
+
+<span class="n">_SMALL</span> <span class="o">=</span> <span class="mf">1e-20</span>
+
+
+<div class="viewcode-block" id="Ngram">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.Ngram">[docs]</a>
+<span class="k">class</span> <span class="nc">Ngram</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a word ngram, exposing both the full ngram and its head/tail parts.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        tokens (List[str]): The ngram&#39;s token strings.</span>
+<span class="sd">        size (int): The number of tokens in the ngram.</span>
+<span class="sd">        n (int): Alias of ``size``.</span>
+<span class="sd">        string (str): The ngram tokens joined with spaces.</span>
+<span class="sd">        head_string (str): All tokens except the last, joined with spaces (the</span>
+<span class="sd">            &quot;history&quot; used for conditional probability estimation).</span>
+<span class="sd">        tail_string (str): The last token in the ngram.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Ngram.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.Ngram.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes an Ngram from a list of token strings.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tokens (List[str]): The tokens making up the ngram.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokens</span> <span class="o">=</span> <span class="n">tokens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokens</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">string</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head_string</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tokens</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tail_string</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="doc_to_string_tokens">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.doc_to_string_tokens">[docs]</a>
+<span class="k">def</span> <span class="nf">doc_to_string_tokens</span><span class="p">(</span><span class="n">doc</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Doc</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalizes a document representation into a plain list of normalised token strings.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        doc (Union[Doc, List[Token], List[str]]): A Doc, a list of Token objects, or</span>
+<span class="sd">            a list of strings.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[str]: The normalised token strings of the document.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">Doc</span><span class="p">):</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">tokens</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Token</span><span class="p">):</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">doc</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">doc</span>
+    <span class="k">return</span> <span class="n">tokens</span></div>
+
+
+
+<div class="viewcode-block" id="make_token_ngrams">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.make_token_ngrams">[docs]</a>
+<span class="k">def</span> <span class="nf">make_token_ngrams</span><span class="p">(</span><span class="n">doc</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Doc</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates word ngrams of a given size from a document, padded with start/end symbols.</span>
+
+<span class="sd">    The document&#39;s tokens are padded with ``ngram_size - 1`` ``&lt;s&gt;`` start symbols and</span>
+<span class="sd">    ``&lt;/s&gt;`` end symbols so that ngrams overlapping the document boundaries are also</span>
+<span class="sd">    produced (e.g. for a trigram model, this yields ngrams like ``[&#39;&lt;s&gt;&#39;, &#39;&lt;s&gt;&#39;, tok1]``).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        doc (Union[Doc, List[Token], List[str]]): The document to extract ngrams from.</span>
+<span class="sd">        ngram_size (int): The number of tokens per ngram.</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        List[str]: Each successive ngram (as a list of token strings) in the document.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="n">doc_to_string_tokens</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+    <span class="c1"># Add start and end symbols</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;&lt;s&gt;&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">ngram_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">tokens</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;&lt;/s&gt;&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">ngram_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">num_tokens</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ti</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">ngram_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)):</span>
+        <span class="c1"># if ti + ngram_size &lt;= num_tokens:</span>
+        <span class="n">ngram</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[</span><span class="n">ti</span><span class="p">:</span><span class="n">ti</span> <span class="o">+</span> <span class="n">ngram_size</span><span class="p">]</span>
+        <span class="k">yield</span> <span class="n">ngram</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="check_lambdas">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.check_lambdas">[docs]</a>
+<span class="k">def</span> <span class="nf">check_lambdas</span><span class="p">(</span><span class="n">lambdas</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validates interpolation lambda weights for ngram smoothing.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        lambdas (List[float]): The interpolation weights, one per ngram order from 1 up</span>
+<span class="sd">            to ``ngram_size``.</span>
+<span class="sd">        ngram_size (int): The ngram order being smoothed.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If ``lambdas`` is missing, has the wrong length, or its values don&#39;t</span>
+<span class="sd">            sum to 1.0.</span>
+<span class="sd">        TypeError: If any value in ``lambdas`` is not a float.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">lambdas</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)</span> <span class="o">!=</span> <span class="n">ngram_size</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;smoothing a </span><span class="si">{</span><span class="n">ngram_size</span><span class="si">}</span><span class="s2">-gram with &quot;</span>
+                         <span class="sa">f</span><span class="s2">&quot;interpolation requires </span><span class="si">{</span><span class="n">ngram_size</span><span class="si">}</span><span class="s2"> lambda values&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">lambdas</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;lambdas must be floats, not </span><span class="si">{</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">lambdas</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">sum</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;lambda values must sum to 1.0, current values sum to </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="NgramFreq">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq">[docs]</a>
+<span class="k">class</span> <span class="nc">NgramFreq</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Counts word ngram frequencies (up to a maximum order) across a collection of documents</span>
+<span class="sd">    and provides (smoothed) probability and conditional probability estimation.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        ngram_freq (Dict[int, Counter]): Maps ngram order -&gt; Counter of ngram string -&gt; frequency.</span>
+<span class="sd">        max_ngram_size (int): The highest ngram order that is counted.</span>
+<span class="sd">        total_ngram_tokens (Counter): Maps ngram order -&gt; total ngram token count.</span>
+<span class="sd">        total_ngram_types (Counter): Maps ngram order -&gt; number of distinct ngram types.</span>
+<span class="sd">        num_docs (int): The number of documents counted so far.</span>
+<span class="sd">        start_tokens (Set[str]): The padded ``&lt;s&gt;`` boundary ngram strings, for each order.</span>
+<span class="sd">        end_tokens (Set[str]): The padded ``&lt;/s&gt;`` boundary ngram strings, for each order.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="NgramFreq.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_ngram_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the NgramFreq counter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            max_ngram_size (int, optional): The highest ngram order to count, e.g. 3 for</span>
+<span class="sd">                unigrams, bigrams and trigrams. Defaults to 3.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ngram_freq</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">Counter</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_ngram_size</span> <span class="o">=</span> <span class="n">max_ngram_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_ngram_tokens</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_ngram_types</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_docs</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_tokens</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;&lt;s&gt;&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_ngram_size</span><span class="o">+</span><span class="mi">1</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_tokens</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;&lt;/s&gt;&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_ngram_size</span><span class="o">+</span><span class="mi">1</span><span class="p">)}</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the frequency of an ngram string (boundary ngrams return ``num_docs``).&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_tokens</span> <span class="ow">or</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_tokens</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_docs</span>
+        <span class="n">ngram_size</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">ngram_size</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ngram_size</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ngram_freq</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">][</span><span class="n">item</span><span class="p">]</span> <span class="k">if</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ngram_freq</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="NgramFreq.count_ngrams">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.count_ngrams">[docs]</a>
+    <span class="k">def</span> <span class="nf">count_ngrams</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Doc</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Counts ngrams (of all orders up to ``max_ngram_size``) across a list of documents,</span>
+<span class="sd">        updating the running totals.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            docs (List[Doc]): The documents to count ngrams in.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_docs</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">di</span><span class="p">,</span> <span class="n">doc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">docs</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">ngram_size</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ngram_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ngram_freq</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ngram</span><span class="p">)</span> <span class="k">for</span> <span class="n">ngram</span> <span class="ow">in</span> <span class="n">make_token_ngrams</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">)])</span>
+        <span class="k">for</span> <span class="n">ngram_size</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ngram_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">total_ngram_tokens</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_freq</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">total_ngram_types</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_freq</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">])</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">vocab_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: The number of distinct unigram types (the vocabulary size).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_freq</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<div class="viewcode-block" id="NgramFreq.has_freq">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.has_freq">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_freq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the frequency of an ngram string (without special-casing boundary tokens).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            term (str): The (space-joined) ngram string to look up.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The ngram&#39;s frequency, or 0 if unseen.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ngram_size</span> <span class="o">=</span> <span class="n">term</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ngram_freq</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">][</span><span class="n">term</span><span class="p">]</span> <span class="k">if</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ngram_freq</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="NgramFreq.has_prob">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.has_prob">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">smoothing</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the (optionally Laplace-smoothed) probability of an ngram string.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            term (str): The (space-joined) ngram string.</span>
+<span class="sd">            smoothing (str, optional): If ``&#39;laplace&#39;``, apply add-one smoothing over the</span>
+<span class="sd">                vocabulary; otherwise compute the unsmoothed maximum-likelihood probability.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: The estimated probability of the ngram.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ngram_freq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_freq</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+        <span class="n">ngram_size</span> <span class="o">=</span> <span class="n">term</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">smoothing</span> <span class="o">==</span> <span class="s1">&#39;laplace&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">ngram_freq</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_tokens</span><span class="p">(</span><span class="n">ngram_size</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab_size</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ngram_freq</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_tokens</span><span class="p">(</span><span class="n">ngram_size</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NgramFreq.has_conditional_prob">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.has_conditional_prob">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_conditional_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngram_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">smoothing</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                             <span class="n">lambdas</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the conditional probability of an ngram&#39;s last token given its preceding tokens.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ngram_string (str): The (space-joined) ngram string.</span>
+<span class="sd">            smoothing (str, optional): One of None (unsmoothed), ``&#39;laplace&#39;`` (add-k</span>
+<span class="sd">                smoothing), or ``&#39;interpolation&#39;`` (linear interpolation across orders).</span>
+<span class="sd">            lambdas (List[float], optional): Interpolation weights, required when</span>
+<span class="sd">                ``smoothing == &#39;interpolation&#39;``.</span>
+<span class="sd">            k (float, optional): The add-k smoothing constant, used when</span>
+<span class="sd">                ``smoothing == &#39;laplace&#39;``. Defaults to 1.0.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: The estimated conditional probability.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If ``smoothing`` is not one of the supported values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">ngram_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">ngram_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">smoothing</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_unsmoothed_conditional_prob</span><span class="p">(</span><span class="n">ngram_string</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">smoothing</span> <span class="o">==</span> <span class="s1">&#39;laplace&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_laplace_smoothed_conditional_prob</span><span class="p">(</span><span class="n">ngram_string</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">smoothing</span> <span class="o">==</span> <span class="s1">&#39;interpolation&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_interpolated_conditional_prob</span><span class="p">(</span><span class="n">ngram_string</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid smoothing value, must be one of None, &#39;laplace&#39; or &#39;interpolation&#39;.&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_head_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the frequency of the ngram&#39;s head (all but the last token), or the</span>
+<span class="sd">        total unigram count when ``ngram_size`` is 1.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ngram_size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_ngram_tokens</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">head</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tokens</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">head</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_has_unsmoothed_conditional_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngram_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">ngram_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">ngram_string</span><span class="p">)</span>
+        <span class="n">head_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_head_count</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">head_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+            <span class="c1"># raise ValueError(f&quot;ngram &#39;{ngram_string}&#39; has head count of 0&quot;)</span>
+        <span class="k">return</span> <span class="n">ngram_count</span> <span class="o">/</span> <span class="n">head_count</span>
+
+    <span class="k">def</span> <span class="nf">_has_laplace_smoothed_conditional_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngram_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                                               <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="n">ngram_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">ngram_string</span><span class="p">)</span>
+        <span class="n">head_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_head_count</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">head_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+            <span class="c1"># raise ValueError(f&quot;ngram &#39;{ngram_string}&#39; has head count of 0&quot;)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">ngram_count</span> <span class="o">+</span> <span class="n">k</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">head_count</span> <span class="o">+</span> <span class="n">k</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab_size</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_has_interpolated_conditional_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngram_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                                           <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lambdas</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]):</span>
+        <span class="n">check_lambdas</span><span class="p">(</span><span class="n">lambdas</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">)</span>
+        <span class="n">cond_prob</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ngram_size</span><span class="p">):</span>
+                <span class="n">tail_ngram</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">:])</span>
+                <span class="n">lambda_n</span> <span class="o">=</span> <span class="n">lambdas</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+                <span class="n">tail_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_unsmoothed_conditional_prob</span><span class="p">(</span><span class="n">tail_ngram</span><span class="p">,</span> <span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">:],</span> <span class="n">ngram_size</span> <span class="o">-</span> <span class="n">n</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">n: </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="se">\t</span><span class="s2">lambda: </span><span class="si">{</span><span class="n">lambda_n</span><span class="si">}</span><span class="se">\t</span><span class="s2">tail_ngram: </span><span class="si">{</span><span class="n">tail_ngram</span><span class="si">}</span><span class="se">\t</span><span class="s2">tail_prob: </span><span class="si">{</span><span class="n">tail_prob</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">cond_prob</span> <span class="o">+=</span> <span class="n">lambda_n</span> <span class="o">*</span> <span class="n">tail_prob</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ngram_size: </span><span class="si">{</span><span class="n">ngram_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span>
+        <span class="k">if</span> <span class="n">cond_prob</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">cond_prob</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_tokens</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cond_prob == 0.0</span><span class="se">\t</span><span class="s2">self.total_tokens(1): </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">total_tokens</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="se">\t</span><span class="s2">cond_prob: </span><span class="si">{</span><span class="n">cond_prob</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cond_prob</span>
+
+<div class="viewcode-block" id="NgramFreq.total_tokens">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.total_tokens">[docs]</a>
+    <span class="k">def</span> <span class="nf">total_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the total count of ngram tokens of a given order seen so far.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_ngram_tokens</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="NgramFreq.total_types">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.total_types">[docs]</a>
+    <span class="k">def</span> <span class="nf">total_types</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the number of distinct ngram types of a given order seen so far.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_ngram_types</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="get_observed_from_counter">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.get_observed_from_counter">[docs]</a>
+<span class="k">def</span> <span class="nf">get_observed_from_counter</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_counter</span><span class="p">:</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">target_total</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                              <span class="n">reference_counter</span><span class="p">:</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">reference_total</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the contingency table of the observed values given a target token, and</span>
+<span class="sd">    target and reference analysers and counters.&quot;&quot;&quot;</span>
+    <span class="c1"># a: word in target corpus</span>
+    <span class="n">t_target</span> <span class="o">=</span> <span class="n">target_counter</span><span class="p">[</span><span class="n">token</span><span class="p">]</span> <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">target_counter</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="c1"># b: word in ref corpus</span>
+    <span class="n">t_ref</span> <span class="o">=</span> <span class="n">reference_counter</span><span class="p">[</span><span class="n">token</span><span class="p">]</span> <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">reference_counter</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="c1"># c: other words in target corpus</span>
+    <span class="n">nt_target</span> <span class="o">=</span> <span class="n">target_total</span> <span class="o">-</span> <span class="n">t_target</span>
+    <span class="c1"># d: other words in ref corpus</span>
+    <span class="n">nt_ref</span> <span class="o">=</span> <span class="n">reference_total</span> <span class="o">-</span> <span class="n">t_ref</span>
+
+    <span class="n">observed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="p">[</span><span class="n">t_target</span><span class="p">,</span> <span class="n">t_ref</span><span class="p">],</span>
+        <span class="p">[</span><span class="n">nt_target</span><span class="p">,</span> <span class="n">nt_ref</span><span class="p">]</span>
+    <span class="p">])</span>
+    <span class="k">return</span> <span class="n">observed</span></div>
+
+
+
+<div class="viewcode-block" id="compute_expected">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.compute_expected">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_expected</span><span class="p">(</span><span class="n">observed</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the contingency table of the expected values given a contingency table</span>
+<span class="sd">    of the observed values.&quot;&quot;&quot;</span>
+    <span class="n">expected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="p">[</span>
+            <span class="n">observed</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">observed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">observed</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+            <span class="n">observed</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">observed</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">observed</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="p">],</span>
+        <span class="p">[</span>
+            <span class="n">observed</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">observed</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">observed</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+            <span class="n">observed</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">observed</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">observed</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="p">]</span>
+    <span class="p">])</span>
+    <span class="k">return</span> <span class="n">expected</span></div>
+
+
+
+<div class="viewcode-block" id="compute_llr_from_observed">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.compute_llr_from_observed">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_llr_from_observed</span><span class="p">(</span><span class="n">observed</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+                              <span class="n">include_direction</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the log-likelihood ratio (G2 statistic) from an observed 2x2 contingency table.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        observed (np.array): A 2x2 contingency table, as produced by</span>
+<span class="sd">            :func:`get_observed_from_counter`.</span>
+<span class="sd">        include_direction (bool, optional): If True, also return whether the target</span>
+<span class="sd">            count is higher (&#39;more&#39;) or lower (&#39;less&#39;) than expected under independence.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Union[float, Tuple[float, str]]: The log-likelihood ratio, optionally paired</span>
+<span class="sd">        with the direction string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sum_likelihood</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">expected</span> <span class="o">=</span> <span class="n">compute_expected</span><span class="p">(</span><span class="n">observed</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="n">sum_likelihood</span> <span class="o">+=</span> <span class="n">observed</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">observed</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">_SMALL</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">expected</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">_SMALL</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">include_direction</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sum_likelihood</span><span class="p">,</span> <span class="s1">&#39;more&#39;</span> <span class="k">if</span> <span class="n">observed</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">expected</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="s1">&#39;less&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sum_likelihood</span></div>
+
+
+
+<div class="viewcode-block" id="compute_llr">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.compute_llr">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_llr</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_counter</span><span class="p">:</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">target_total</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="n">reference_counter</span><span class="p">:</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">reference_total</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="n">include_direction</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the log likelihood ratio for given a target token, and target and</span>
+<span class="sd">    reference analysers and counters.&quot;&quot;&quot;</span>
+    <span class="n">observed</span> <span class="o">=</span> <span class="n">get_observed_from_counter</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">target_counter</span><span class="p">,</span> <span class="n">target_total</span><span class="p">,</span> <span class="n">reference_counter</span><span class="p">,</span>
+                                         <span class="n">reference_total</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">compute_llr_from_observed</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">include_direction</span><span class="o">=</span><span class="n">include_direction</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_percentage_diff">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.freq.compute_percentage_diff">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_percentage_diff</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">target_counter</span><span class="p">,</span> <span class="n">target_total</span><span class="p">,</span> <span class="n">reference_counter</span><span class="p">,</span> <span class="n">reference_total</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the relative percentage difference in a token&#39;s frequency fraction between</span>
+<span class="sd">    a target and a reference corpus.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        token: The token to compare.</span>
+<span class="sd">        target_counter (Counter): Token frequencies in the target corpus.</span>
+<span class="sd">        target_total (int): Total token count in the target corpus.</span>
+<span class="sd">        reference_counter (Counter): Token frequencies in the reference corpus.</span>
+<span class="sd">        reference_total (int): Total token count in the reference corpus.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: The percentage difference of the target fraction relative to the reference</span>
+<span class="sd">        fraction, or ``float(&#39;inf&#39;)`` if the token does not occur in the reference corpus.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">target_freq</span> <span class="o">=</span> <span class="n">target_counter</span><span class="p">[</span><span class="n">token</span><span class="p">]</span> <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">target_counter</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">ref_freq</span> <span class="o">=</span> <span class="n">reference_counter</span><span class="p">[</span><span class="n">token</span><span class="p">]</span> <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">reference_counter</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">ref_freq</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+    <span class="n">target_frac</span> <span class="o">=</span> <span class="n">target_freq</span> <span class="o">/</span> <span class="n">target_total</span>
+    <span class="n">ref_frac</span> <span class="o">=</span> <span class="n">ref_freq</span> <span class="o">/</span> <span class="n">reference_total</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">target_frac</span> <span class="o">-</span> <span class="n">ref_frac</span><span class="p">)</span> <span class="o">/</span> <span class="n">ref_frac</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

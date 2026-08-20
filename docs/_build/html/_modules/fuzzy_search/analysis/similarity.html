@@ -1,0 +1,661 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.analysis.similarity &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.analysis.similarity</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.analysis.similarity</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Term similarity utilities: Levenshtein-based begin/end similarity, term skip-cooccurrence</span>
+<span class="sd">counting, and an efficient skipgram-based cosine-similarity index for finding terms similar</span>
+<span class="sd">to a query term.</span>
+
+<span class="sd">The centerpiece is ``SkipgramSimilarity``, which indexes a vocabulary of terms by their</span>
+<span class="sd">character skipgram frequency vectors, bucketed by term length, and uses sparse</span>
+<span class="sd">matrix-vector products to retrieve the most similar indexed terms to a query term.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="k">as</span> <span class="nn">sp</span>
+
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.string</span> <span class="kn">import</span> <span class="n">score_levenshtein_distance</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.string</span> <span class="kn">import</span> <span class="n">text2skipgrams</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.vocabulary</span> <span class="kn">import</span> <span class="n">Vocabulary</span>
+
+
+<div class="viewcode-block" id="vector_length">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.vector_length">[docs]</a>
+<span class="k">def</span> <span class="nf">vector_length</span><span class="p">(</span><span class="n">skipgram_freq</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the Euclidean length of a skipgram frequency vector.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        skipgram_freq: A mapping (e.g. dict or Counter) of skipgram -&gt; frequency.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: The square root of the sum of squared frequencies.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="n">skipgram_freq</span><span class="p">[</span><span class="n">skip</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">skip</span> <span class="ow">in</span> <span class="n">skipgram_freq</span><span class="p">]))</span></div>
+
+
+
+<div class="viewcode-block" id="get_skip_coocs">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.get_skip_coocs">[docs]</a>
+<span class="k">def</span> <span class="nf">get_skip_coocs</span><span class="p">(</span><span class="n">seq_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">skip_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates all (current, following) id pairs within a skip window of a sequence.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        seq_ids (List[str]): A sequence of (term) identifiers.</span>
+<span class="sd">        skip_size (int, optional): The number of extra positions beyond the immediate</span>
+<span class="sd">            neighbour to pair with each element. Defaults to 0 (only adjacent pairs).</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        Tuple[int, int]: Each (current_id, following_id) co-occurrence pair.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">ci</span><span class="p">,</span> <span class="n">curr_id</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seq_ids</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">next_id</span> <span class="ow">in</span> <span class="n">seq_ids</span><span class="p">[</span><span class="n">ci</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">ci</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">skip_size</span><span class="p">]:</span>
+            <span class="k">yield</span> <span class="n">curr_id</span><span class="p">,</span> <span class="n">next_id</span></div>
+
+
+
+<div class="viewcode-block" id="get_min_length">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.get_min_length">[docs]</a>
+<span class="k">def</span> <span class="nf">get_min_length</span><span class="p">(</span><span class="n">phrase1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">phrase2</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">begin_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the smallest of the two phrase lengths and a requested length.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">min</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">phrase1</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">phrase2</span><span class="p">),</span> <span class="n">begin_length</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="get_begin_sim">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.get_begin_sim">[docs]</a>
+<span class="k">def</span> <span class="nf">get_begin_sim</span><span class="p">(</span><span class="n">phrase1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">phrase2</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">begin_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the Levenshtein-based similarity of the first ``begin_length`` characters</span>
+<span class="sd">    of two phrases.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        phrase1 (str): The first phrase.</span>
+<span class="sd">        phrase2 (str): The second phrase.</span>
+<span class="sd">        begin_length (int): The number of leading characters to compare (clamped to the</span>
+<span class="sd">            shorter phrase&#39;s length).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: 1 minus the normalised Levenshtein distance between the two prefixes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">phrase1</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">phrase2</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">begin_length</span><span class="p">:</span>
+        <span class="n">begin_length</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">phrase1</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">phrase2</span><span class="p">))</span>
+    <span class="n">begin1</span> <span class="o">=</span> <span class="n">phrase1</span><span class="p">[:</span><span class="n">begin_length</span><span class="p">]</span>
+    <span class="n">begin2</span> <span class="o">=</span> <span class="n">phrase2</span><span class="p">[:</span><span class="n">begin_length</span><span class="p">]</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">score_levenshtein_distance</span><span class="p">(</span><span class="n">begin1</span><span class="p">,</span> <span class="n">begin2</span><span class="p">)</span> <span class="o">/</span> <span class="n">begin_length</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_end_sim">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.get_end_sim">[docs]</a>
+<span class="k">def</span> <span class="nf">get_end_sim</span><span class="p">(</span><span class="n">phrase1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">phrase2</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">end_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the Levenshtein-based similarity of the last ``end_length`` characters</span>
+<span class="sd">    of two phrases.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        phrase1 (str): The first phrase.</span>
+<span class="sd">        phrase2 (str): The second phrase.</span>
+<span class="sd">        end_length (int): The number of trailing characters to compare (clamped to the</span>
+<span class="sd">            shorter phrase&#39;s length).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: 1 minus the normalised Levenshtein distance between the two suffixes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">phrase1</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">phrase2</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">end_length</span><span class="p">:</span>
+        <span class="n">end_length</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">phrase1</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">phrase2</span><span class="p">))</span>
+    <span class="n">end1</span> <span class="o">=</span> <span class="n">phrase1</span><span class="p">[</span><span class="o">-</span><span class="n">end_length</span><span class="p">:]</span>
+    <span class="n">end2</span> <span class="o">=</span> <span class="n">phrase2</span><span class="p">[</span><span class="o">-</span><span class="n">end_length</span><span class="p">:]</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">score_levenshtein_distance</span><span class="p">(</span><span class="n">end1</span><span class="p">,</span> <span class="n">end2</span><span class="p">)</span> <span class="o">/</span> <span class="n">end_length</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="SkipCooccurrence">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipCooccurrence">[docs]</a>
+<span class="k">class</span> <span class="nc">SkipCooccurrence</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Counts the co-occurrence frequency of word skipgrams within sentences.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        cooc_freq (Dict[Tuple[int, int], int]): Maps (term_id, term_id) co-occurrence</span>
+<span class="sd">            pairs to their observed frequency.</span>
+<span class="sd">        vocabulary (Vocabulary): Maps terms to identifiers used in ``cooc_freq``.</span>
+<span class="sd">        skip_size (int): The default maximum number of skips allowed between</span>
+<span class="sd">            co-occurring terms.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SkipCooccurrence.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipCooccurrence.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocabulary</span><span class="p">:</span> <span class="n">Vocabulary</span><span class="p">,</span> <span class="n">skip_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sentences</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the SkipCooccurrence counter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vocabulary (Vocabulary): The vocabulary used to map terms to identifiers.</span>
+<span class="sd">            skip_size (int, optional): The maximum number of skips allowed between</span>
+<span class="sd">                co-occurring terms. Defaults to 1.</span>
+<span class="sd">            sentences (Iterable[List[str]], optional): If given, immediately count</span>
+<span class="sd">                co-occurrences for these sentences.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cooc_freq</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span> <span class="o">=</span> <span class="n">vocabulary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">skip_size</span>
+        <span class="k">if</span> <span class="n">sentences</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">calculate_skip_cooccurrences</span><span class="p">(</span><span class="n">sentences</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SkipCooccurrence.calculate_skip_cooccurrences">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipCooccurrence.calculate_skip_cooccurrences">[docs]</a>
+    <span class="k">def</span> <span class="nf">calculate_skip_cooccurrences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sentences</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">skip_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count the frequency of term (skip) co-occurrences for a given list of sentences.</span>
+
+<span class="sd">        :param sentences: a list of sentences, where each sentence is itself a list of term tokens</span>
+<span class="sd">        :type sentences: Iterable[List[str]</span>
+<span class="sd">        :param skip_size: the maximum number of skips to allow between co-occurring terms</span>
+<span class="sd">        :type skip_size: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">sent</span> <span class="ow">in</span> <span class="n">sentences</span><span class="p">:</span>
+            <span class="n">seq_ids</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span><span class="o">.</span><span class="n">term2id</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">sent</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cooc_freq</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">get_skip_coocs</span><span class="p">(</span><span class="n">seq_ids</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="n">skip_size</span><span class="p">))</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_cooc_ids2terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cooc_ids</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts a pair of term identifiers back into their term strings.&quot;&quot;&quot;</span>
+        <span class="n">id1</span><span class="p">,</span> <span class="n">id2</span> <span class="o">=</span> <span class="n">cooc_ids</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span><span class="o">.</span><span class="n">id2term</span><span class="p">(</span><span class="n">id1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span><span class="o">.</span><span class="n">id2term</span><span class="p">(</span><span class="n">id2</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SkipCooccurrence.get_term_coocs">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipCooccurrence.get_term_coocs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_term_coocs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Yields all co-occurring term pairs and their frequency for a given term.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            term (str): The term to look up co-occurrences for.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            Tuple[Tuple[str, str], int]: Each (term pair, frequency) where ``term``</span>
+<span class="sd">            is one of the two terms in the pair.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None: If ``term`` is not in the vocabulary.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">term_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span><span class="o">.</span><span class="n">term2id</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">term_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">cooc_ids</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cooc_freq</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">term_id</span> <span class="ow">in</span> <span class="n">cooc_ids</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cooc_ids2terms</span><span class="p">(</span><span class="n">cooc_ids</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">cooc_freq</span><span class="p">[</span><span class="n">cooc_ids</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="is_close_distance_keyword_pair">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.is_close_distance_keyword_pair">[docs]</a>
+<span class="k">def</span> <span class="nf">is_close_distance_keyword_pair</span><span class="p">(</span><span class="n">keyword1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">keyword2</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_distance_ratio</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                                   <span class="n">max_length_difference</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_distance</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks whether two keywords are close enough to be considered near-duplicates.</span>
+
+<span class="sd">    Two keywords are considered close if their length difference is within</span>
+<span class="sd">    ``max_length_difference`` and their Levenshtein distance is both below</span>
+<span class="sd">    ``max_distance`` and below ``max_distance_ratio`` relative to either keyword&#39;s length.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        keyword1 (str): The first keyword.</span>
+<span class="sd">        keyword2 (str): The second keyword.</span>
+<span class="sd">        max_distance_ratio (float): The maximum allowed distance-to-length ratio.</span>
+<span class="sd">        max_length_difference (int): The maximum allowed difference in keyword lengths.</span>
+<span class="sd">        max_distance (int): The maximum allowed absolute Levenshtein distance.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if the keywords are considered a close-distance pair.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">keyword1</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">keyword2</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">max_length_difference</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">score_levenshtein_distance</span><span class="p">(</span><span class="n">keyword1</span><span class="p">,</span> <span class="n">keyword2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">distance</span> <span class="o">&lt;</span> <span class="n">max_distance</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="n">distance</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">keyword1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_distance_ratio</span> <span class="ow">or</span> <span class="n">distance</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">keyword2</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_distance_ratio</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="KeywordList">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList">[docs]</a>
+<span class="k">class</span> <span class="nc">KeywordList</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Indexes a list of keywords by length, to efficiently enumerate candidate pairs</span>
+<span class="sd">    of keywords whose lengths are close enough to plausibly be near-duplicates.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        len_keys (Dict[int, List[str]]): Maps keyword length to the keywords of that length.</span>
+<span class="sd">        max_length_diff (int): The default maximum length difference used when generating</span>
+<span class="sd">            candidate pairs.</span>
+<span class="sd">        len_order (List[int]): The distinct keyword lengths, sorted ascending.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="KeywordList.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keywords</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">max_length_diff</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the KeywordList by indexing keywords by their length.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            keywords (List[str]): The keywords to index.</span>
+<span class="sd">            max_length_diff (int): The default maximum length difference allowed when</span>
+<span class="sd">                comparing keyword pairs.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If any keyword is not a string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">len_keys</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_length_diff</span> <span class="o">=</span> <span class="n">max_length_diff</span>
+        <span class="k">for</span> <span class="n">ki</span><span class="p">,</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">keywords</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keyword</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;keyword &#39;</span><span class="si">{</span><span class="n">keyword</span><span class="si">}</span><span class="s2">&#39; at index </span><span class="si">{</span><span class="n">ki</span><span class="si">}</span><span class="s2"> is not of &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;type str but type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">keyword</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">len_key</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">keyword</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">len_keys</span><span class="p">[</span><span class="n">len_key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keyword</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">len_order</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">len_keys</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="KeywordList.iterate_candidate_pairs">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList.iterate_candidate_pairs">[docs]</a>
+    <span class="k">def</span> <span class="nf">iterate_candidate_pairs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Yields all candidate keyword pairs whose lengths differ by at most</span>
+<span class="sd">        ``max_length_diff``, without yielding the same unordered pair twice.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            Tuple[str, str]: Each candidate (kw1, kw2) pair.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">len_key1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">len_order</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ki</span><span class="p">,</span> <span class="n">kw1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">len_keys</span><span class="p">[</span><span class="n">len_key1</span><span class="p">]):</span>
+                <span class="k">for</span> <span class="n">len_key2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_key1</span><span class="p">,</span> <span class="n">len_key1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length_diff</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="n">ki</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">len_key2</span> <span class="o">==</span> <span class="n">len_key1</span> <span class="k">else</span> <span class="mi">0</span>
+                    <span class="k">for</span> <span class="n">kw2</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">len_keys</span><span class="p">[</span><span class="n">len_key2</span><span class="p">][</span><span class="n">start</span><span class="p">:]:</span>
+                        <span class="k">yield</span> <span class="n">kw1</span><span class="p">,</span> <span class="n">kw2</span></div>
+
+
+<div class="viewcode-block" id="KeywordList.find_close_distance_keywords">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList.find_close_distance_keywords">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_close_distance_keywords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_distance_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+                                     <span class="n">max_length_diff</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">max_distance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+                                     <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;TODO: should we make the arguments into a config?&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">max_length_diff</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_length_diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length_diff</span>
+        <span class="n">close_distance_keywords</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">keyword1</span><span class="p">,</span> <span class="n">keyword2</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">iterate_candidate_pairs</span><span class="p">():</span>
+            <span class="n">string1</span> <span class="o">=</span> <span class="n">keyword1</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="n">ignorecase</span> <span class="k">else</span> <span class="n">keyword1</span>
+            <span class="n">string2</span> <span class="o">=</span> <span class="n">keyword2</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="n">ignorecase</span> <span class="k">else</span> <span class="n">keyword2</span>
+            <span class="k">if</span> <span class="n">is_close_distance_keyword_pair</span><span class="p">(</span><span class="n">string1</span><span class="p">,</span> <span class="n">string2</span><span class="p">,</span> <span class="n">max_distance_ratio</span><span class="o">=</span><span class="n">max_distance_ratio</span><span class="p">,</span>
+                                              <span class="n">max_length_difference</span><span class="o">=</span><span class="n">max_length_diff</span><span class="p">,</span>
+                                              <span class="n">max_distance</span><span class="o">=</span><span class="n">max_distance</span><span class="p">):</span>
+                <span class="n">close_distance_keywords</span><span class="p">[</span><span class="n">keyword1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keyword2</span><span class="p">)</span>
+                <span class="n">close_distance_keywords</span><span class="p">[</span><span class="n">keyword2</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keyword1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">close_distance_keywords</span></div>
+
+
+<div class="viewcode-block" id="KeywordList.find_closer_terms">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList.find_closer_terms">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_closer_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">candidate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">keyword</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">close_terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Finds which of a keyword&#39;s known close terms are even closer to a candidate</span>
+<span class="sd">        string than the keyword itself.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            candidate (str): The string to compare distances against.</span>
+<span class="sd">            keyword (str): The reference keyword.</span>
+<span class="sd">            close_terms (List[str]): Terms previously identified as close to ``keyword``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, int]: Maps each close term that is nearer to ``candidate`` than</span>
+<span class="sd">            ``keyword`` is, to its Levenshtein distance from ``candidate``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">closer_terms</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">keyword_distance</span> <span class="o">=</span> <span class="n">score_levenshtein_distance</span><span class="p">(</span><span class="n">keyword</span><span class="p">,</span> <span class="n">candidate</span><span class="p">)</span>
+        <span class="c1"># print(&quot;candidate:&quot;, candidate, &quot;\tkeyword:&quot;, keyword)</span>
+        <span class="c1"># print(&quot;keyword_distance&quot;, keyword_distance)</span>
+        <span class="k">for</span> <span class="n">close_term</span> <span class="ow">in</span> <span class="n">close_terms</span><span class="p">:</span>
+            <span class="n">close_term_distance</span> <span class="o">=</span> <span class="n">score_levenshtein_distance</span><span class="p">(</span><span class="n">close_term</span><span class="p">,</span> <span class="n">candidate</span><span class="p">)</span>
+            <span class="c1"># print(&quot;close_term:&quot;, close_term, &quot;\tdistance:&quot;, close_term_distance)</span>
+            <span class="k">if</span> <span class="n">close_term_distance</span> <span class="o">&lt;</span> <span class="n">keyword_distance</span><span class="p">:</span>
+                <span class="n">closer_terms</span><span class="p">[</span><span class="n">close_term</span><span class="p">]</span> <span class="o">=</span> <span class="n">close_term_distance</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SkipgramSimilarity">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity">[docs]</a>
+<span class="k">class</span> <span class="nc">SkipgramSimilarity</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Indexes terms by their character skipgram frequency vectors and finds similar</span>
+<span class="sd">    indexed terms for a query term via cosine similarity.</span>
+
+<span class="sd">    Terms are bucketed by length (see ``max_length_diff``) and, within each length</span>
+<span class="sd">    bucket, represented as columns of a sparse skipgram-by-term matrix. This lets a</span>
+<span class="sd">    query be compared against only the terms within the relevant length range using a</span>
+<span class="sd">    handful of sparse matrix-vector products, rather than scanning the whole vocabulary.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        ngram_length (int): The number of characters per skipgram.</span>
+<span class="sd">        skip_length (int): The maximum number of skipped characters per skipgram.</span>
+<span class="sd">        vocabulary (Vocabulary): Maps indexed terms to term ids.</span>
+<span class="sd">        skipgram_vocabulary (Vocabulary): Maps observed skipgram strings to skipgram ids.</span>
+<span class="sd">        max_length_diff (int): The maximum term-length difference considered when</span>
+<span class="sd">            searching for similar terms.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SkipgramSimilarity.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ngram_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">skip_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">max_length_diff</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A class to index terms by their character skipgrams and to find similar terms for a given</span>
+<span class="sd">        input term based on the cosine similarity of their skipgram overlap.</span>
+
+<span class="sd">        :param ngram_length: the number of characters per ngram</span>
+<span class="sd">        :type ngram_length: int</span>
+<span class="sd">        :param skip_length: the maximum number of characters to skip</span>
+<span class="sd">        :type skip_length: int</span>
+<span class="sd">        :param terms: a list of terms</span>
+<span class="sd">        :type terms: List[str]</span>
+<span class="sd">        :param max_length_diff: the maximum difference in length between a search term and a term in the</span>
+<span class="sd">            index to be considered a match. This is an efficiency parameter to reduce the number of candidate</span>
+<span class="sd">            similar terms to ones that are roughly similar in length to the search term.</span>
+<span class="sd">        :type max_length_diff: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ngram_length</span> <span class="o">=</span> <span class="n">ngram_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skip_length</span> <span class="o">=</span> <span class="n">skip_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span> <span class="o">=</span> <span class="n">Vocabulary</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_vocabulary</span> <span class="o">=</span> <span class="n">Vocabulary</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_length_diff</span> <span class="o">=</span> <span class="n">max_length_diff</span>
+        <span class="c1"># term_id -&gt; skipgram_id -&gt; freq, updated incrementally as each term is indexed.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_term_skipgram_freq</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Counter</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># term_length -&gt; list of term_ids of that length, updated incrementally as</span>
+        <span class="c1"># each term is indexed (mirrors the old skipgram_index[skipgram][term_length] grouping).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_term_ids_by_length</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">set</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="c1"># term_length -&gt; sparse (num_skipgrams x num_terms_of_that_length) matrix.</span>
+        <span class="c1"># Built lazily per length and only rebuilt when new terms of that length</span>
+        <span class="c1"># have been indexed since it was last built (see self._dirty_lengths),</span>
+        <span class="c1"># so indexing new terms never forces a rebuild of unrelated lengths.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_length_buckets</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># term_length -&gt; np.ndarray mapping each bucket matrix column back to its term_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_length_bucket_term_ids</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># term_id -&gt; vector length (sqrt of summed squared skipgram freqs), filled in</span>
+        <span class="c1"># as each length bucket is (re)built.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vector_length</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># lengths whose term_ids have changed since their bucket was last built</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dirty_lengths</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">terms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">index_terms</span><span class="p">(</span><span class="n">terms</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_reset_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears the term and skipgram vocabularies and all internal index structures.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_vocabulary</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_term_skipgram_freq</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_term_ids_by_length</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_length_buckets</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_length_bucket_term_ids</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vector_length</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dirty_lengths</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+<div class="viewcode-block" id="SkipgramSimilarity.index_terms">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity.index_terms">[docs]</a>
+    <span class="k">def</span> <span class="nf">index_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">reset_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make a frequency index of the skip grams for a given list of terms.</span>
+<span class="sd">        By default, indexing is cumulative, that is, everytime you call index_terms</span>
+<span class="sd">        with a list of terms, they are added to the index. Use &#39;reset_index=True&#39; to</span>
+<span class="sd">        reset the index before indexing the given terms.</span>
+
+<span class="sd">        :param terms: a list of term to index</span>
+<span class="sd">        :type terms: List[str]</span>
+<span class="sd">        :param reset_index: whether to reset the index before indexing or to keep the existing index</span>
+<span class="sd">        :type reset_index: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">reset_index</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reset_index</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span><span class="o">.</span><span class="n">add_terms</span><span class="p">(</span><span class="n">terms</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">terms</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_index_term_skips</span><span class="p">(</span><span class="n">term</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_term_to_skip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a Counter of skipgram string frequencies for a term.&quot;&quot;&quot;</span>
+        <span class="n">skip_gen</span> <span class="o">=</span> <span class="n">text2skipgrams</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_length</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_length</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Counter</span><span class="p">([</span><span class="n">skip</span><span class="o">.</span><span class="n">string</span> <span class="k">for</span> <span class="n">skip</span> <span class="ow">in</span> <span class="n">skip_gen</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_index_term_skips</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes and stores the skipgram frequency vector for an already-vocabulary-indexed</span>
+<span class="sd">        term, and marks its length bucket dirty so it gets rebuilt on next use.&quot;&quot;&quot;</span>
+        <span class="n">term_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span><span class="o">.</span><span class="n">term_id</span><span class="p">[</span><span class="n">term</span><span class="p">]</span>
+        <span class="n">skipgram_freq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_term_to_skip</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_vocabulary</span><span class="o">.</span><span class="n">add_terms</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">skipgram_freq</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_term_skipgram_freq</span><span class="p">[</span><span class="n">term_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">skipgram_freq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_term_ids_by_length</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">term</span><span class="p">)]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">term_id</span><span class="p">)</span>
+        <span class="c1"># mark this length as needing a bucket rebuild; lengths that weren&#39;t</span>
+        <span class="c1"># touched by this call keep their already-built bucket as is.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dirty_lengths</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">term</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_build_bucket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;(Re)build the sparse matrix and vector lengths for a single term</span>
+<span class="sd">        length bucket. Only called for lengths that are dirty (new terms of</span>
+<span class="sd">        that length were indexed since the bucket was last built) or that</span>
+<span class="sd">        have never been built, so indexing terms of one length never forces</span>
+<span class="sd">        recomputation of buckets for other lengths.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">term_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_term_ids_by_length</span><span class="p">[</span><span class="n">term_length</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="n">local_col</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">term_id</span><span class="p">):</span> <span class="n">local</span> <span class="k">for</span> <span class="n">local</span><span class="p">,</span> <span class="n">term_id</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">term_ids</span><span class="p">)}</span>
+        <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">term_id</span> <span class="ow">in</span> <span class="n">term_ids</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">skipgram</span><span class="p">,</span> <span class="n">freq</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_term_skipgram_freq</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">term_id</span><span class="p">)]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">skipgram_vocabulary</span><span class="o">.</span><span class="n">term_id</span><span class="p">[</span><span class="n">skipgram</span><span class="p">])</span>
+                <span class="n">cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">local_col</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">term_id</span><span class="p">)])</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+        <span class="n">num_skipgrams</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">skipgram_vocabulary</span><span class="p">)</span>
+        <span class="n">bucket_matrix</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">)),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">num_skipgrams</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">term_ids</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_length_buckets</span><span class="p">[</span><span class="n">term_length</span><span class="p">]</span> <span class="o">=</span> <span class="n">bucket_matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_length_bucket_term_ids</span><span class="p">[</span><span class="n">term_length</span><span class="p">]</span> <span class="o">=</span> <span class="n">term_ids</span>
+        <span class="n">bucket_vl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">bucket_matrix</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">bucket_matrix</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">A1</span>
+        <span class="k">for</span> <span class="n">term_id</span><span class="p">,</span> <span class="n">vl</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">term_ids</span><span class="p">,</span> <span class="n">bucket_vl</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vector_length</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">term_id</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dirty_lengths</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">term_length</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_bucket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the (matrix, term_ids) bucket for a given term length,</span>
+<span class="sd">        (re)building it first if it is dirty or has never been built. Returns</span>
+<span class="sd">        None if no indexed terms have that length.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">term_length</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_term_ids_by_length</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">term_length</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dirty_lengths</span> <span class="ow">or</span> <span class="n">term_length</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length_buckets</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_build_bucket</span><span class="p">(</span><span class="n">term_length</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length_buckets</span><span class="p">[</span><span class="n">term_length</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length_bucket_term_ids</span><span class="p">[</span><span class="n">term_length</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_get_term_vector_length</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">skipgram_freq</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the cached vector length for an indexed term, or computes it on the fly</span>
+<span class="sd">        for an unindexed term/query.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span><span class="o">.</span><span class="n">term_id</span><span class="p">:</span>
+            <span class="n">term_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span><span class="o">.</span><span class="n">term_id</span><span class="p">[</span><span class="n">term</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_bucket</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">term</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vector_length</span><span class="p">[</span><span class="n">term_id</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">vector_length</span><span class="p">(</span><span class="n">skipgram_freq</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_compute_dot_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the cosine similarity between the skipgram vector of `term`</span>
+<span class="sd">        and the skipgram vectors of all indexed terms within `max_length_diff`</span>
+<span class="sd">        characters of `term`&#39;s length. Each candidate term length is handled</span>
+<span class="sd">        with its own sparse matrix-vector multiplication, so terms outside</span>
+<span class="sd">        the length range are never multiplied against at all (matching the</span>
+<span class="sd">        pruning behaviour of the original per-length-bucket implementation).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">skipgram_freq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_term_to_skip</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+        <span class="n">term_vl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_term_vector_length</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">skipgram_freq</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">term_vl</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+
+        <span class="n">num_skipgrams</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">skipgram_vocabulary</span><span class="p">)</span>
+        <span class="n">query_cols</span><span class="p">,</span> <span class="n">query_data</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">skipgram</span><span class="p">,</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">skipgram_freq</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">skipgram_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_vocabulary</span><span class="o">.</span><span class="n">term2id</span><span class="p">(</span><span class="n">skipgram</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">skipgram_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">query_cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">skipgram_id</span><span class="p">)</span>
+            <span class="n">query_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">query_cols</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="n">query_vector</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">query_data</span><span class="p">,</span> <span class="p">([</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_cols</span><span class="p">),</span> <span class="n">query_cols</span><span class="p">)),</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_skipgrams</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+        <span class="p">)</span>
+
+        <span class="n">dot_product</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">term_length</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">term</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length_diff</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">term</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length_diff</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">bucket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_bucket</span><span class="p">(</span><span class="n">term_length</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">bucket</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">bucket_matrix</span><span class="p">,</span> <span class="n">bucket_term_ids</span> <span class="o">=</span> <span class="n">bucket</span>
+            <span class="c1"># a bucket built before later terms introduced new skipgrams has</span>
+            <span class="c1"># fewer rows than the current query vector; the terms in that</span>
+            <span class="c1"># bucket can&#39;t reference those newer skipgram ids (they didn&#39;t</span>
+            <span class="c1"># exist yet), so slicing the query down to the bucket&#39;s row</span>
+            <span class="c1"># count is equivalent to padding the bucket with zero rows.</span>
+            <span class="n">num_bucket_skipgrams</span> <span class="o">=</span> <span class="n">bucket_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">bucket_dot_products</span> <span class="o">=</span> <span class="p">(</span><span class="n">query_vector</span><span class="p">[:,</span> <span class="p">:</span><span class="n">num_bucket_skipgrams</span><span class="p">]</span> <span class="o">@</span> <span class="n">bucket_matrix</span><span class="p">)</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+            <span class="n">nonzero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bucket_dot_products</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">local_idx</span> <span class="ow">in</span> <span class="n">nonzero</span><span class="p">:</span>
+                <span class="n">term_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bucket_term_ids</span><span class="p">[</span><span class="n">local_idx</span><span class="p">])</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="n">bucket_dot_products</span><span class="p">[</span><span class="n">local_idx</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">term_vl</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vector_length</span><span class="p">[</span><span class="n">term_id</span><span class="p">])</span>
+                <span class="n">dot_product</span><span class="p">[</span><span class="n">term_id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dot_product</span>
+
+<div class="viewcode-block" id="SkipgramSimilarity.rank_similar">
+<a class="viewcode-back" href="../../../source/fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity.rank_similar">[docs]</a>
+    <span class="k">def</span> <span class="nf">rank_similar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">top_n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">score_cutoff</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a ranked list of similar terms from the index for a given input term,</span>
+<span class="sd">        based on their character skipgram cosine similarity.</span>
+
+<span class="sd">        :param term: a term (any string) to match against the indexed terms</span>
+<span class="sd">        :type term: str</span>
+<span class="sd">        :param top_n: the number of highest ranked terms to return</span>
+<span class="sd">        :type top_n: int (default 10)</span>
+<span class="sd">        :param score_cutoff: the minimum similarity score after which to cutoff the ranking</span>
+<span class="sd">        :type score_cutoff: float</span>
+<span class="sd">        :return: a ranked list of terms and their similarity scores</span>
+<span class="sd">        :rtype: List[Tuple[str, float]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dot_product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_dot_product</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dot_product</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">term_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromiter</span><span class="p">(</span><span class="n">dot_product</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromiter</span><span class="p">(</span><span class="n">dot_product</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="c1"># partial sort: find the top_n highest-scoring candidates, then sort just those</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">top_n</span><span class="p">,</span> <span class="n">term_ids</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">top_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argpartition</span><span class="p">(</span><span class="o">-</span><span class="n">scores</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">top_idx</span> <span class="o">=</span> <span class="n">top_idx</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">scores</span><span class="p">[</span><span class="n">top_idx</span><span class="p">])]</span>
+
+        <span class="n">top_terms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">top_idx</span><span class="p">:</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">scores</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&lt;</span> <span class="n">score_cutoff</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">top_terms</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">vocabulary</span><span class="o">.</span><span class="n">id_term</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">term_ids</span><span class="p">[</span><span class="n">idx</span><span class="p">])],</span> <span class="n">score</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">top_terms</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

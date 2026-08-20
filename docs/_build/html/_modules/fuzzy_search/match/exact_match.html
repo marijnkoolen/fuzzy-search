@@ -1,0 +1,414 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.match.exact_match &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.match.exact_match</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.match.exact_match</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Functions for finding exact (non-fuzzy) matches of phrases in text, with or without</span>
+<span class="sd">requiring word boundaries.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase</span> <span class="kn">import</span> <span class="n">Phrase</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase_model</span> <span class="kn">import</span> <span class="n">PhraseModel</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.phrase_match</span> <span class="kn">import</span> <span class="n">PhraseMatch</span>
+
+
+<div class="viewcode-block" id="index_known_word_offsets">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.exact_match.index_known_word_offsets">[docs]</a>
+<span class="k">def</span> <span class="nf">index_known_word_offsets</span><span class="p">(</span><span class="n">exact_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Index the individual words of a list of exact phrase matches by their text offset.</span>
+
+<span class="sd">    :param exact_matches: a list of exact phrase matches</span>
+<span class="sd">    :type exact_matches: List[PhraseMatch]</span>
+<span class="sd">    :return: a dictionary mapping word start offset to word info (word, start, end, matching phrases)</span>
+<span class="sd">    :rtype: Dict[int, Dict[str, any]]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exact_match_offset</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+    <span class="n">known_word_offset</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">exact_match</span> <span class="ow">in</span> <span class="n">exact_matches</span><span class="p">:</span>
+        <span class="n">match_words</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\W+&quot;</span><span class="p">,</span> <span class="n">exact_match</span><span class="o">.</span><span class="n">string</span><span class="p">)</span>
+        <span class="c1"># print(&quot;exact match:&quot;, exact_match)</span>
+        <span class="n">text_offset</span> <span class="o">=</span> <span class="n">exact_match</span><span class="o">.</span><span class="n">offset</span>
+        <span class="n">match_offset</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># print(&quot;text_offset:&quot;, text_offset, &quot;\tmatch_offset:&quot;, match_offset)</span>
+        <span class="k">for</span> <span class="n">match_word</span> <span class="ow">in</span> <span class="n">match_words</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">text_offset</span> <span class="o">+</span> <span class="n">match_offset</span> <span class="o">+</span> <span class="n">exact_match</span><span class="o">.</span><span class="n">string</span><span class="p">[</span><span class="n">match_offset</span><span class="p">:]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">match_word</span><span class="p">)</span>
+            <span class="c1"># print(&quot;match_word:&quot;, match_word, &quot;\tstart:&quot;, start)</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_word</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">known_word_offset</span><span class="p">:</span>
+                <span class="n">known_word</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;word&quot;</span><span class="p">:</span> <span class="n">match_word</span><span class="p">,</span>
+                    <span class="s2">&quot;start&quot;</span><span class="p">:</span> <span class="n">start</span><span class="p">,</span>
+                    <span class="s2">&quot;end&quot;</span><span class="p">:</span> <span class="n">end</span><span class="p">,</span>
+                    <span class="s2">&quot;match_phrases&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">exact_match</span><span class="o">.</span><span class="n">string</span><span class="p">}</span>
+                <span class="p">}</span>
+                <span class="c1"># print(known_word)</span>
+                <span class="n">known_word_offset</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_word</span>
+            <span class="n">known_word_offset</span><span class="p">[</span><span class="n">start</span><span class="p">][</span><span class="s2">&quot;match_phrases&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">exact_match</span><span class="o">.</span><span class="n">string</span><span class="p">)</span>
+            <span class="n">match_word_offset</span> <span class="o">=</span> <span class="n">match_offset</span> <span class="o">+</span> <span class="n">exact_match</span><span class="o">.</span><span class="n">string</span><span class="p">[</span><span class="n">match_offset</span><span class="p">:]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">match_word</span><span class="p">)</span>
+            <span class="c1"># print(&quot;text_offset:&quot;, text_offset, &quot;\tmatch_offset:&quot;, match_offset)</span>
+        <span class="n">exact_match_offset</span><span class="p">[</span><span class="n">exact_match</span><span class="o">.</span><span class="n">offset</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">exact_match</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">known_word_offset</span></div>
+
+
+
+<div class="viewcode-block" id="search_exact_phrases">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.exact_match.search_exact_phrases">[docs]</a>
+<span class="k">def</span> <span class="nf">search_exact_phrases</span><span class="p">(</span><span class="n">phrase_model</span><span class="p">:</span> <span class="n">PhraseModel</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                         <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">use_word_boundaries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                         <span class="n">include_variants</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Search for exact occurrences of phrases from a phrase model in a text, dispatching to</span>
+<span class="sd">    word-boundary-aware or plain substring search depending on ``use_word_boundaries``.</span>
+
+<span class="sd">    :param phrase_model: the phrase model containing phrases to search for</span>
+<span class="sd">    :type phrase_model: PhraseModel</span>
+<span class="sd">    :param text: the text object to search, with at least &#39;text&#39; and &#39;id&#39; keys</span>
+<span class="sd">    :type text: Dict[str, str]</span>
+<span class="sd">    :param ignorecase: whether to ignore case when matching</span>
+<span class="sd">    :type ignorecase: bool</span>
+<span class="sd">    :param use_word_boundaries: whether matches must be on word boundaries</span>
+<span class="sd">    :type use_word_boundaries: bool</span>
+<span class="sd">    :param include_variants: whether to also search for registered phrase variants</span>
+<span class="sd">    :type include_variants: bool</span>
+<span class="sd">    :param debug: level to show debug information</span>
+<span class="sd">    :type debug: int</span>
+<span class="sd">    :return: a generator of exact phrase matches</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">use_word_boundaries</span><span class="p">:</span>
+        <span class="c1"># print(&#39;searching with word boundaries&#39;)</span>
+        <span class="k">return</span> <span class="n">search_exact_phrases_with_word_boundaries</span><span class="p">(</span><span class="n">phrase_model</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">ignorecase</span><span class="o">=</span><span class="n">ignorecase</span><span class="p">,</span>
+                                                         <span class="n">include_variants</span><span class="o">=</span><span class="n">include_variants</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">search_exact_phrases_without_word_boundaries</span><span class="p">(</span><span class="n">phrase_model</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">ignorecase</span><span class="o">=</span><span class="n">ignorecase</span><span class="p">,</span>
+                                                            <span class="n">include_variants</span><span class="o">=</span><span class="n">include_variants</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_exact_match_score">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.exact_match.add_exact_match_score">[docs]</a>
+<span class="k">def</span> <span class="nf">add_exact_match_score</span><span class="p">(</span><span class="n">match</span><span class="p">:</span> <span class="n">PhraseMatch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PhraseMatch</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set perfect (1.0) similarity scores on a match, since it is an exact match.</span>
+
+<span class="sd">    :param match: the exact phrase match to score</span>
+<span class="sd">    :type match: PhraseMatch</span>
+<span class="sd">    :return: the same match, with scores set</span>
+<span class="sd">    :rtype: PhraseMatch</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">match</span><span class="o">.</span><span class="n">character_overlap</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">match</span><span class="o">.</span><span class="n">ngram_overlap</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">match</span><span class="o">.</span><span class="n">levenshtein_similarity</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">return</span> <span class="n">match</span></div>
+
+
+
+<div class="viewcode-block" id="search_exact_phrases_with_word_boundaries">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.exact_match.search_exact_phrases_with_word_boundaries">[docs]</a>
+<span class="k">def</span> <span class="nf">search_exact_phrases_with_word_boundaries</span><span class="p">(</span><span class="n">phrase_model</span><span class="p">:</span> <span class="n">PhraseModel</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                                              <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">include_variants</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                                              <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Search for exact phrase matches in text, requiring matches to start and end on word</span>
+<span class="sd">    boundaries. For each word in the text that is the first word of a known phrase, check whether</span>
+<span class="sd">    the full phrase string matches the text starting at that word.</span>
+
+<span class="sd">    :param phrase_model: the phrase model containing phrases to search for</span>
+<span class="sd">    :type phrase_model: PhraseModel</span>
+<span class="sd">    :param text: the text object to search, with at least &#39;text&#39; and &#39;id&#39; keys</span>
+<span class="sd">    :type text: Dict[str, str]</span>
+<span class="sd">    :param ignorecase: whether to ignore case when matching</span>
+<span class="sd">    :type ignorecase: bool</span>
+<span class="sd">    :param include_variants: whether to also search for registered phrase variants</span>
+<span class="sd">    :type include_variants: bool</span>
+<span class="sd">    :param debug: level to show debug information</span>
+<span class="sd">    :type debug: int</span>
+<span class="sd">    :return: a generator of exact phrase matches</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\w+&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;search_exact_phrases_with_word_boundaries - word:&#39;</span><span class="p">,</span> <span class="n">word</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;search_exact_phrases_with_word_boundaries - word in phrase_model:&#39;</span><span class="p">,</span> <span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">word_in_phrase</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">word_in_phrase</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">search_exact_phrases_with_word_boundaries - matching word:&quot;</span><span class="p">,</span> <span class="n">word</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">first_word_in_phrase</span><span class="p">[</span><span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)]:</span>
+            <span class="n">phrase_word_offset</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">first_word_in_phrase</span><span class="p">[</span><span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)][</span><span class="n">phrase_string</span><span class="p">]</span>
+            <span class="n">phrase_start</span> <span class="o">=</span> <span class="n">word</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="o">-</span> <span class="n">phrase_word_offset</span>
+            <span class="n">phrase_end</span> <span class="o">=</span> <span class="n">phrase_start</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">search_exact_phrases_with_word_boundaries - start, end, string:&#39;</span><span class="p">,</span> <span class="n">phrase_start</span><span class="p">,</span> <span class="n">phrase_end</span><span class="p">,</span>
+                      <span class="n">phrase_string</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">search_exact_phrases_with_word_boundaries - text start, end:&#39;</span><span class="p">,</span>
+                      <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">phrase_start</span><span class="p">:</span><span class="n">phrase_end</span><span class="p">])</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">search_exact_phrases_with_word_boundaries - same?:&#39;</span><span class="p">,</span>
+                      <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">phrase_start</span><span class="p">:</span><span class="n">phrase_end</span><span class="p">]</span> <span class="o">==</span> <span class="n">phrase_string</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">phrase_start</span><span class="p">:</span><span class="n">phrase_end</span><span class="p">]</span> <span class="o">==</span> <span class="n">phrase_string</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">phrase_start</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\w&#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">phrase_start</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]):</span>
+                    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">search_exact_phrases_with_word_boundaries - match word is not at start word boundary&#39;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">phrase_end</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\w&#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">][</span><span class="n">phrase_end</span><span class="p">]):</span>
+                    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">search_exact_phrases_with_word_boundaries - match word is not at end word boundary&#39;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">search_exact_phrases_with_word_boundaries - phrase_string, phrase_type:&#39;</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">,</span>
+                      <span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">])</span>
+                <span class="k">if</span> <span class="s2">&quot;phrase&quot;</span> <span class="ow">in</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">search_exact_phrases_with_word_boundaries - match word is phrase&#39;</span><span class="p">)</span>
+                    <span class="n">phrase</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+                    <span class="n">match</span> <span class="o">=</span> <span class="n">PhraseMatch</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">phrase</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">,</span> <span class="n">phrase_start</span><span class="p">,</span> <span class="n">text_id</span><span class="o">=</span><span class="n">text</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+                                        <span class="n">ignorecase</span><span class="o">=</span><span class="n">ignorecase</span><span class="p">)</span>
+                    <span class="k">yield</span> <span class="n">add_exact_match_score</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">search_exact_phrases_with_word_boundaries - the matching phrase:&quot;</span><span class="p">,</span> <span class="n">phrase</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s2">&quot;variant&quot;</span> <span class="ow">in</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span> <span class="ow">and</span> <span class="n">include_variants</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">search_exact_phrases_with_word_boundaries - match word is variant&#39;</span><span class="p">)</span>
+                    <span class="n">variant_phrase</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">variant_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+                    <span class="n">main_phrase_string</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">is_variant_of</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+                    <span class="n">main_phrase</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">main_phrase_string</span><span class="p">]</span>
+                    <span class="n">match</span> <span class="o">=</span> <span class="n">PhraseMatch</span><span class="p">(</span><span class="n">main_phrase</span><span class="p">,</span> <span class="n">variant_phrase</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">,</span> <span class="n">phrase_start</span><span class="p">,</span>
+                                        <span class="n">text_id</span><span class="o">=</span><span class="n">text</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">ignorecase</span><span class="o">=</span><span class="n">ignorecase</span><span class="p">)</span>
+                    <span class="k">yield</span> <span class="n">add_exact_match_score</span><span class="p">(</span><span class="n">match</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="search_exact_phrases_without_word_boundaries">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.exact_match.search_exact_phrases_without_word_boundaries">[docs]</a>
+<span class="k">def</span> <span class="nf">search_exact_phrases_without_word_boundaries</span><span class="p">(</span><span class="n">phrase_model</span><span class="p">:</span> <span class="n">PhraseModel</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+                                                 <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                                                 <span class="n">include_variants</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Search for exact phrase matches in text as plain substring matches, without requiring</span>
+<span class="sd">    matches to be on word boundaries.</span>
+
+<span class="sd">    :param phrase_model: the phrase model containing phrases to search for</span>
+<span class="sd">    :type phrase_model: PhraseModel</span>
+<span class="sd">    :param text: the text object to search, with at least &#39;text&#39; and &#39;id&#39; keys</span>
+<span class="sd">    :type text: Dict[str, str]</span>
+<span class="sd">    :param ignorecase: whether to ignore case when matching</span>
+<span class="sd">    :type ignorecase: bool</span>
+<span class="sd">    :param include_variants: whether to also search for registered phrase variants</span>
+<span class="sd">    :type include_variants: bool</span>
+<span class="sd">    :param debug: level to show debug information</span>
+<span class="sd">    :type debug: int</span>
+<span class="sd">    :return: a generator of exact phrase matches</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+        <span class="n">phrase</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;search_exact_phrases_without_word_boundaries - phrase_string:&#39;</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">exact_string</span><span class="p">,</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;search_exact_phrases_without_word_boundaries - match:&#39;</span><span class="p">,</span> <span class="n">match</span><span class="p">)</span>
+            <span class="n">phrase</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">PhraseMatch</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">phrase</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span> <span class="n">text_id</span><span class="o">=</span><span class="n">text</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+                                <span class="n">ignorecase</span><span class="o">=</span><span class="n">ignorecase</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="n">add_exact_match_score</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">include_variants</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">variant_index</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;search_exact_phrases_without_word_boundaries - phrase_string:&#39;</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">)</span>
+            <span class="n">variant_phrase</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">variant_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">exact_string</span><span class="p">,</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]):</span>
+                <span class="k">if</span> <span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;search_exact_phrases_without_word_boundaries - match:&#39;</span><span class="p">,</span> <span class="n">match</span><span class="p">)</span>
+                <span class="n">variant_phrase</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">variant_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+                <span class="n">main_phrase_string</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">is_variant_of</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+                <span class="n">main_phrase</span> <span class="o">=</span> <span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">main_phrase_string</span><span class="p">]</span>
+                <span class="n">match</span> <span class="o">=</span> <span class="n">PhraseMatch</span><span class="p">(</span><span class="n">main_phrase</span><span class="p">,</span> <span class="n">variant_phrase</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span>
+                                    <span class="n">text_id</span><span class="o">=</span><span class="n">text</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">ignorecase</span><span class="o">=</span><span class="n">ignorecase</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">add_exact_match_score</span><span class="p">(</span><span class="n">match</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="search_exact">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.exact_match.search_exact">[docs]</a>
+<span class="k">def</span> <span class="nf">search_exact</span><span class="p">(</span><span class="n">phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">use_word_boundaries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Search for all exact occurrences of a single phrase in a text.</span>
+
+<span class="sd">    :param phrase: the phrase to search for</span>
+<span class="sd">    :type phrase: Phrase</span>
+<span class="sd">    :param text: the text object to search, with at least a &#39;text&#39; key</span>
+<span class="sd">    :type text: Dict[str, str]</span>
+<span class="sd">    :param ignorecase: whether to ignore case when matching</span>
+<span class="sd">    :type ignorecase: bool</span>
+<span class="sd">    :param use_word_boundaries: whether matches must be on word boundaries</span>
+<span class="sd">    :type use_word_boundaries: bool</span>
+<span class="sd">    :return: an iterator of regex match objects</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">search_string</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">extact_word_boundary_string</span> <span class="k">if</span> <span class="n">use_word_boundaries</span> <span class="k">else</span> <span class="n">phrase</span><span class="o">.</span><span class="n">exact_string</span>
+    <span class="k">if</span> <span class="n">ignorecase</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">search_string</span><span class="p">,</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">search_string</span><span class="p">,</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="get_known_word_offsets">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.exact_match.get_known_word_offsets">[docs]</a>
+<span class="k">def</span> <span class="nf">get_known_word_offsets</span><span class="p">(</span><span class="n">match_ranges</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]],</span> <span class="n">text_doc</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Index the individual words within a list of match ranges by their text offset.</span>
+
+<span class="sd">    :param match_ranges: a list of match range dictionaries with &#39;s&#39; (start), &#39;e&#39; (end) and</span>
+<span class="sd">        &#39;phrases&#39; keys</span>
+<span class="sd">    :type match_ranges: List[Dict[str, any]]</span>
+<span class="sd">    :param text_doc: the text document the match ranges were found in</span>
+<span class="sd">    :type text_doc: Dict[str, str]</span>
+<span class="sd">    :return: a dictionary mapping word start offset to word info</span>
+<span class="sd">    :rtype: Dict[int, dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">known_word_offset</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="n">match_ranges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;s&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">match_range</span> <span class="ow">in</span> <span class="n">match_ranges</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">match_range</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;offset:&quot;</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+        <span class="n">match_text</span> <span class="o">=</span> <span class="n">text_doc</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">match_range</span><span class="p">[</span><span class="s2">&quot;s&quot;</span><span class="p">]:</span><span class="n">match_range</span><span class="p">[</span><span class="s2">&quot;e&quot;</span><span class="p">]]</span>
+        <span class="n">match_words</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\W+&quot;</span><span class="p">,</span> <span class="n">match_text</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">match_word</span> <span class="ow">in</span> <span class="n">match_words</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">text_doc</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">offset</span><span class="p">:]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">match_word</span><span class="p">)</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_word</span><span class="p">)</span>
+            <span class="n">known_word</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;match_word&quot;</span><span class="p">:</span> <span class="n">match_word</span><span class="p">,</span>
+                <span class="s2">&quot;start&quot;</span><span class="p">:</span> <span class="n">start</span><span class="p">,</span>
+                <span class="s2">&quot;end&quot;</span><span class="p">:</span> <span class="n">end</span><span class="p">,</span>
+                <span class="s2">&quot;match_phrases&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">([</span><span class="n">phrase</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">match_range</span><span class="p">[</span><span class="s2">&quot;phrases&quot;</span><span class="p">]])</span>
+            <span class="p">}</span>
+            <span class="n">match_word_offset</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">text_doc</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">offset</span><span class="p">:]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">match_word</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">match_word_offset</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_word</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">known_word</span><span class="p">)</span>
+            <span class="n">known_word_offset</span><span class="p">[</span><span class="n">known_word</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">known_word</span>
+    <span class="k">return</span> <span class="n">known_word_offset</span></div>
+
+
+
+<div class="viewcode-block" id="get_exact_match_ranges">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.exact_match.get_exact_match_ranges">[docs]</a>
+<span class="k">def</span> <span class="nf">get_exact_match_ranges</span><span class="p">(</span><span class="n">exact_matches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge a list of exact phrase matches into contiguous, possibly overlapping, character</span>
+<span class="sd">    ranges, each annotated with the set of phrases that matched within that range.</span>
+
+<span class="sd">    :param exact_matches: a list of exact phrase matches</span>
+<span class="sd">    :type exact_matches: List[PhraseMatch]</span>
+<span class="sd">    :return: a list of match range dictionaries with &#39;s&#39; (start), &#39;e&#39; (end) and &#39;phrases&#39; keys</span>
+<span class="sd">    :rtype: List[dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sorted_matches</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">exact_matches</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+    <span class="n">match_ranges</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exact_matches</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">first_match</span> <span class="o">=</span> <span class="n">exact_matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">match_range</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="n">first_match</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="s2">&quot;e&quot;</span><span class="p">:</span> <span class="n">first_match</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="s2">&quot;phrases&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">first_match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">}}</span>
+    <span class="k">for</span> <span class="n">mi</span><span class="p">,</span> <span class="n">match</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sorted_matches</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+        <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">offset</span> <span class="o">&gt;</span> <span class="n">match_range</span><span class="p">[</span><span class="s2">&quot;e&quot;</span><span class="p">]:</span>
+            <span class="n">match_ranges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match_range</span><span class="p">)</span>
+            <span class="n">match_range</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="n">match</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="s2">&quot;e&quot;</span><span class="p">:</span> <span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="s2">&quot;phrases&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">()}</span>
+        <span class="n">match_range</span><span class="p">[</span><span class="s2">&quot;e&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">match_range</span><span class="p">[</span><span class="s2">&quot;e&quot;</span><span class="p">],</span> <span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+        <span class="n">match_range</span><span class="p">[</span><span class="s2">&quot;phrases&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="o">!=</span> <span class="n">match</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">:</span>
+            <span class="n">match_range</span><span class="p">[</span><span class="s2">&quot;phrases&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+    <span class="n">match_ranges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match_range</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">match_ranges</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

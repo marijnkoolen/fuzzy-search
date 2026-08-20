@@ -1,0 +1,249 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.tokenization.vocabulary &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.tokenization.vocabulary</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.tokenization.vocabulary</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;A simple bidirectional term-to-identifier mapping used for indexing terms and skipgrams.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">.token</span> <span class="kn">import</span> <span class="n">Token</span>
+
+
+<div class="viewcode-block" id="Vocabulary">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary">[docs]</a>
+<span class="k">class</span> <span class="nc">Vocabulary</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Maps terms (strings or Tokens) to integer identifiers and back.</span>
+
+<span class="sd">    Terms are assigned identifiers in the order they are first added, starting from 0.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        term_id (Dict[str, int]): Maps each known term to its identifier.</span>
+<span class="sd">        id_term (Dict[int, str]): Maps each identifier back to its term.</span>
+<span class="sd">        term_freq (Dict[str, int]): Reserved for term frequency tracking (currently unused).</span>
+<span class="sd">        ignorecase (bool): Whether terms are lowercased before being indexed/looked up.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Vocabulary.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Token</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the Vocabulary, optionally indexing an initial list of terms.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            terms (List[Union[str, Token]], optional): Terms to add to the vocabulary</span>
+<span class="sd">                on creation.</span>
+<span class="sd">            ignorecase (bool, optional): Whether to lowercase terms before indexing</span>
+<span class="sd">                and lookup. Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">term_id</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_term</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">term_freq</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="o">=</span> <span class="n">ignorecase</span>
+        <span class="k">if</span> <span class="n">terms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_terms</span><span class="p">(</span><span class="n">terms</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a string representation showing the vocabulary size.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">(vocabulary_size=&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">term_id</span><span class="p">)</span><span class="si">}</span><span class="s1">&quot;)&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the number of distinct terms in the vocabulary.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">term_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks whether a term (str or Token) is in the vocabulary.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_term</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterates over the terms in the vocabulary.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">term_id</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">term</span>
+
+<div class="viewcode-block" id="Vocabulary.reset_index">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.reset_index">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears all terms, identifiers and frequencies from the vocabulary.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">term_id</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_term</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">term_freq</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+
+<div class="viewcode-block" id="Vocabulary.add_terms">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.add_terms">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terms</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Token</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Token</span><span class="p">]]],</span> <span class="n">reset_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a list of terms to the vocabulary. Use &#39;reset_index=True&#39; to reset</span>
+<span class="sd">        the vocabulary before adding the terms.</span>
+
+<span class="sd">        :param terms: a list of terms to add to the vocabulary</span>
+<span class="sd">        :type terms: List[str]</span>
+<span class="sd">        :param reset_index: a flag to indicate whether to empty the vocabulary before adding terms</span>
+<span class="sd">        :type reset_index: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">reset_index</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">terms</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">terms</span><span class="p">,</span> <span class="n">Token</span><span class="p">):</span>
+            <span class="n">terms</span> <span class="o">=</span> <span class="p">[</span><span class="n">terms</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">terms</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">Token</span><span class="p">):</span>
+                <span class="n">term</span> <span class="o">=</span> <span class="n">term</span><span class="o">.</span><span class="n">n</span>
+            <span class="n">term</span> <span class="o">=</span> <span class="n">term</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="k">else</span> <span class="n">term</span>
+            <span class="k">if</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">term_id</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_index_term</span><span class="p">(</span><span class="n">term</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Vocabulary.has_term">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.has_term">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Token</span><span class="p">],</span> <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks whether a term is present in the vocabulary.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            term (Union[str, Token]): The term (or Token, whose normalised string is used)</span>
+<span class="sd">                to look up.</span>
+<span class="sd">            ignorecase (bool, optional): Whether to lowercase the term before lookup.</span>
+<span class="sd">                Defaults to the vocabulary&#39;s ``ignorecase`` setting.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the term is in the vocabulary, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ignorecase</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ignorecase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">Token</span><span class="p">):</span>
+            <span class="n">term</span> <span class="o">=</span> <span class="n">term</span><span class="o">.</span><span class="n">n</span>
+        <span class="n">term</span> <span class="o">=</span> <span class="n">term</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="n">ignorecase</span> <span class="k">else</span> <span class="n">term</span>
+        <span class="k">return</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">term_id</span> <span class="k">else</span> <span class="kc">False</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_index_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assigns the next available identifier to a new term.&quot;&quot;&quot;</span>
+        <span class="n">term_id</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">term_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">term_id</span><span class="p">[</span><span class="n">term</span><span class="p">]</span> <span class="o">=</span> <span class="n">term_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_term</span><span class="p">[</span><span class="n">term_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">term</span>
+
+<div class="viewcode-block" id="Vocabulary.term2id">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.term2id">[docs]</a>
+    <span class="k">def</span> <span class="nf">term2id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the term ID for a given term.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            term (str): The term to look up.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[int]: The term&#39;s identifier, or None if the term is not indexed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">term_id</span><span class="p">[</span><span class="n">term</span><span class="p">]</span> <span class="k">if</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">term_id</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Vocabulary.id2term">
+<a class="viewcode-back" href="../../../source/fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.id2term">[docs]</a>
+    <span class="k">def</span> <span class="nf">id2term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the term for a given term ID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            term_id (int): The identifier to look up.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[str]: The corresponding term, or None if the identifier is unknown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_term</span><span class="p">[</span><span class="n">term_id</span><span class="p">]</span> <span class="k">if</span> <span class="n">term_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_term</span> <span class="k">else</span> <span class="kc">None</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,257 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.search.context_searcher &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.search.context_searcher</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.search.context_searcher</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Context-aware fuzzy phrase searcher.</span>
+
+<span class="sd">Defines :class:`FuzzyContextSearcher`, which extends</span>
+<span class="sd">:class:`~fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher` to attach a</span>
+<span class="sd">window of surrounding text to each match, and to search within that context</span>
+<span class="sd">window for additional phrase matches.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">fuzzy_search.match.phrase_match</span> <span class="kn">import</span> <span class="n">PhraseMatch</span><span class="p">,</span> <span class="n">PhraseMatchInContext</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.search.phrase_searcher</span> <span class="kn">import</span> <span class="n">FuzzyPhraseSearcher</span>
+
+
+<div class="viewcode-block" id="FuzzyContextSearcher">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.context_searcher.FuzzyContextSearcher">[docs]</a>
+<span class="k">class</span> <span class="nc">FuzzyContextSearcher</span><span class="p">(</span><span class="n">FuzzyPhraseSearcher</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fuzzy phrase searcher that attaches surrounding text context to each match.</span>
+
+<span class="sd">    Extends FuzzyPhraseSearcher&#39;s matching with a configurable prefix/suffix</span>
+<span class="sd">    context window around each match, and supports re-searching that context</span>
+<span class="sd">    window for further matches.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    context_size : int</span>
+<span class="sd">        default size (in characters) of the prefix and suffix context window</span>
+<span class="sd">        added around each match.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context_size</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">configure_context</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FuzzyContextSearcher.configure_context">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.context_searcher.FuzzyContextSearcher.configure_context">[docs]</a>
+    <span class="k">def</span> <span class="nf">configure_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure the context searcher.</span>
+
+<span class="sd">        :param config: a dictionary with configuration parameters to override the defaults</span>
+<span class="sd">        :type config: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;context_size&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">context_size</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;context_size&quot;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FuzzyContextSearcher.add_match_context">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.context_searcher.FuzzyContextSearcher.add_match_context">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_match_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">match</span><span class="p">:</span> <span class="n">PhraseMatch</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="n">context_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                          <span class="n">prefix_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                          <span class="n">suffix_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PhraseMatchInContext</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add context to a given match and its corresponding text document.</span>
+
+<span class="sd">        :param match: a phrase match object</span>
+<span class="sd">        :type match: PhraseMatch</span>
+<span class="sd">        :param text: the text that the match was taken from</span>
+<span class="sd">        :type text: Union[str, dict]</span>
+<span class="sd">        :param context_size: the size of the pre- and suffix window</span>
+<span class="sd">        :type context_size: int</span>
+<span class="sd">        :param prefix_size: size of the prefix context</span>
+<span class="sd">        :type prefix_size: Union[None, int]</span>
+<span class="sd">        :param suffix_size: size of the suffix context</span>
+<span class="sd">        :type suffix_size: Union[None, int]</span>
+<span class="sd">        :return: the phrase match object with context</span>
+<span class="sd">        :rtype: PhraseMatchInContext</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">context_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">context_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_size</span>
+        <span class="n">prefix_size</span> <span class="o">=</span> <span class="n">prefix_size</span> <span class="k">if</span> <span class="n">prefix_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">context_size</span>
+        <span class="n">suffix_size</span> <span class="o">=</span> <span class="n">suffix_size</span> <span class="k">if</span> <span class="n">suffix_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">context_size</span>
+        <span class="k">return</span> <span class="n">PhraseMatchInContext</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">prefix_size</span><span class="o">=</span><span class="n">prefix_size</span><span class="p">,</span> <span class="n">suffix_size</span><span class="o">=</span><span class="n">suffix_size</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FuzzyContextSearcher.find_matches">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.context_searcher.FuzzyContextSearcher.find_matches">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_matches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span>
+                     <span class="n">use_word_boundaries</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">allow_overlapping_matches</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                     <span class="n">include_variants</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">filter_distractors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">prefix_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">suffix_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">skip_exact_matching</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatchInContext</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find fuzzy matches for registered phrases and add context around match string. This extends</span>
+<span class="sd">        the find_matches function of the FuzzyPhraseSearcher by adding local context to each match.</span>
+
+<span class="sd">        :param text: the text (string or dictionary with &#39;text&#39; property) to find fuzzy matching phrases in.</span>
+<span class="sd">        :type text: Union[str, Dict[str, str]]</span>
+<span class="sd">        :param use_word_boundaries: use word boundaries in determining match boundaries</span>
+<span class="sd">        :type use_word_boundaries: bool</span>
+<span class="sd">        :param allow_overlapping_matches: boolean flag for whether to allow matches to overlap in their text ranges</span>
+<span class="sd">        :type allow_overlapping_matches: bool</span>
+<span class="sd">        :param include_variants: boolean flag for whether to include phrase variants for finding matches</span>
+<span class="sd">        :type include_variants: bool</span>
+<span class="sd">        :param filter_distractors: boolean flag for whether to remove phrase matches that better match distractors</span>
+<span class="sd">        :type filter_distractors: bool</span>
+<span class="sd">        :param prefix_size: the size of the prefix context window</span>
+<span class="sd">        :type prefix_size: Union[None, int]</span>
+<span class="sd">        :param suffix_size: the size of the suffix context window</span>
+<span class="sd">        :type suffix_size: Union[None, int]</span>
+<span class="sd">        :param skip_exact_matching: boolean flag whether to skip the exact matching step</span>
+<span class="sd">        :type skip_exact_matching: Union[None, bool]</span>
+<span class="sd">        :return: a list of phrases matches with text surrounding the match string</span>
+<span class="sd">        :rtype: PhraseMatchInContext</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">find_matches</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">use_word_boundaries</span><span class="o">=</span><span class="n">use_word_boundaries</span><span class="p">,</span>
+                                       <span class="n">allow_overlapping_matches</span><span class="o">=</span><span class="n">allow_overlapping_matches</span><span class="p">,</span>
+                                       <span class="n">include_variants</span><span class="o">=</span><span class="n">include_variants</span><span class="p">,</span> <span class="n">filter_distractors</span><span class="o">=</span><span class="n">filter_distractors</span><span class="p">,</span>
+                                       <span class="n">skip_exact_matching</span><span class="o">=</span><span class="n">skip_exact_matching</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">add_match_context</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">prefix_size</span><span class="o">=</span><span class="n">prefix_size</span><span class="p">,</span>
+                                       <span class="n">suffix_size</span><span class="o">=</span><span class="n">suffix_size</span><span class="p">)</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FuzzyContextSearcher.find_matches_in_context">
+<a class="viewcode-back" href="../../../source/fuzzy_search.search.html#fuzzy_search.search.context_searcher.FuzzyContextSearcher.find_matches_in_context">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_matches_in_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">match_in_context</span><span class="p">:</span> <span class="n">PhraseMatchInContext</span><span class="p">,</span>
+                                <span class="n">use_word_boundaries</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                <span class="n">include_variants</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                <span class="n">filter_distractors</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">PhraseMatch</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use a MatchInContext object to find other phrases in the context of that match.</span>
+
+<span class="sd">        :param match_in_context: a match phrase with context from the text that the match was taken from</span>
+<span class="sd">        :type match_in_context: PhraseMatchInContext</span>
+<span class="sd">        :param use_word_boundaries: boolean whether to adjust match strings to word boundaries</span>
+<span class="sd">        :type use_word_boundaries: bool</span>
+<span class="sd">        :param include_variants: boolean whether to include variants of phrases in matching</span>
+<span class="sd">        :type include_variants: bool</span>
+<span class="sd">        :param filter_distractors: boolean whether to remove matches that are closer to distractors</span>
+<span class="sd">        :type filter_distractors: bool</span>
+<span class="sd">        :return: a list of match objects</span>
+<span class="sd">        :rtype: List[PhraseMatch]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># override searcher configuration if a boolean is passed</span>
+        <span class="n">use_word_boundaries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_word_boundaries</span> <span class="k">if</span> <span class="n">use_word_boundaries</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">use_word_boundaries</span>
+        <span class="n">include_variants</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_variants</span> <span class="k">if</span> <span class="n">include_variants</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">include_variants</span>
+        <span class="n">filter_distractors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_distractors</span> <span class="k">if</span> <span class="n">filter_distractors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">filter_distractors</span>
+        <span class="c1"># search the context of the original match</span>
+        <span class="n">context_matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_matches</span><span class="p">(</span><span class="n">match_in_context</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="n">use_word_boundaries</span><span class="o">=</span><span class="n">use_word_boundaries</span><span class="p">,</span>
+                                            <span class="n">include_variants</span><span class="o">=</span><span class="n">include_variants</span><span class="p">,</span>
+                                            <span class="n">filter_distractors</span><span class="o">=</span><span class="n">filter_distractors</span><span class="p">)</span>
+        <span class="c1"># recalculate the match offset with respect to the original text</span>
+        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">context_matches</span><span class="p">:</span>
+            <span class="k">match</span><span class="o">.</span><span class="n">offset</span> <span class="o">+=</span> <span class="n">match_in_context</span><span class="o">.</span><span class="n">context_start</span>
+            <span class="k">match</span><span class="o">.</span><span class="n">end</span> <span class="o">+=</span> <span class="n">match_in_context</span><span class="o">.</span><span class="n">context_start</span>
+        <span class="k">return</span> <span class="n">context_matches</span></div>
+</div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">sample_text</span> <span class="o">=</span> <span class="s2">&quot;A&#39;nthony van der Truyn en Adriaen Bosman, Makelaers tot Rotterdam, prefenteren,&quot;</span> <span class="o">+</span> \
+                  <span class="s2">&quot;uyt de Hint te verkopen etfn curieufc Party opreckw ?al somfl&#39;e Schalyen of Leyen.&quot;</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

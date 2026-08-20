@@ -1,27 +1,26 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>fuzzy_search package &mdash; fuzzy-search 0.3.0 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+  <title>fuzzy_search package &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="fuzzy_search.match package" href="fuzzy_search.match.html" />
-    <link rel="prev" title="Welcome to fuzzy-search’s documentation!" href="../index.html" /> 
+    <link rel="next" title="fuzzy_search.analysis package" href="fuzzy_search.analysis.html" />
+    <link rel="prev" title="Quick Start" href="quickstart.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -29,11 +28,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> fuzzy-search
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            fuzzy-search
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -41,64 +44,15 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">fuzzy_search package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html">fuzzy_search.analysis package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html">fuzzy_search.match package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html">fuzzy_search.pattern package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.phrase.html">fuzzy_search.phrase package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html">fuzzy_search.search package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html">fuzzy_search.tokenization package</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-fuzzy_search.fuzzy_searcher">fuzzy_search.fuzzy_searcher module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.disable_strip_suffix"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.disable_strip_suffix()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.enable_strip_suffix"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.enable_strip_suffix()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_candidates"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.filter_candidates()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_char_match_candidates"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.filter_char_match_candidates()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_levenshtein_candidates"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.filter_levenshtein_candidates()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_ngram_candidates"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.filter_ngram_candidates()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.find_candidates"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.find_candidates()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.find_start_candidates"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.find_start_candidates()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.find_term_matches"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.find_term_matches()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.make_ngrams"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.make_ngrams()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.rank_candidates"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.rank_candidates()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_char_overlap"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.score_char_overlap()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_char_overlap_ratio"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.score_char_overlap_ratio()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_levenshtein_distance"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.score_levenshtein_distance()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_levenshtein_distance_ratio"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.score_levenshtein_distance_ratio()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_ngram_overlap"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.score_ngram_overlap()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_ngram_overlap_ratio"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.score_ngram_overlap_ratio()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.strip_suffix"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.strip_suffix()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#fuzzy_search.fuzzy_searcher.create_term_match"><code class="docutils literal notranslate"><span class="pre">create_term_match()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#module-fuzzy_search.similarity">fuzzy_search.similarity module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#fuzzy_search.similarity.KeywordList"><code class="docutils literal notranslate"><span class="pre">KeywordList</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.similarity.KeywordList.find_close_distance_keywords"><code class="docutils literal notranslate"><span class="pre">KeywordList.find_close_distance_keywords()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.similarity.KeywordList.find_closer_terms"><code class="docutils literal notranslate"><span class="pre">KeywordList.find_closer_terms()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.similarity.KeywordList.iterate_candidate_pairs"><code class="docutils literal notranslate"><span class="pre">KeywordList.iterate_candidate_pairs()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#fuzzy_search.similarity.SkipCooccurrence"><code class="docutils literal notranslate"><span class="pre">SkipCooccurrence</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.similarity.SkipCooccurrence.calculate_skip_cooccurrences"><code class="docutils literal notranslate"><span class="pre">SkipCooccurrence.calculate_skip_cooccurrences()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.similarity.SkipCooccurrence.get_term_coocs"><code class="docutils literal notranslate"><span class="pre">SkipCooccurrence.get_term_coocs()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#fuzzy_search.similarity.SkipgramSimilarity"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.similarity.SkipgramSimilarity.index_terms"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity.index_terms()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fuzzy_search.similarity.SkipgramSimilarity.rank_similar"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity.rank_similar()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#fuzzy_search.similarity.get_begin_sim"><code class="docutils literal notranslate"><span class="pre">get_begin_sim()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#fuzzy_search.similarity.get_end_sim"><code class="docutils literal notranslate"><span class="pre">get_end_sim()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#fuzzy_search.similarity.get_min_length"><code class="docutils literal notranslate"><span class="pre">get_min_length()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#fuzzy_search.similarity.get_skip_coocs"><code class="docutils literal notranslate"><span class="pre">get_skip_coocs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#fuzzy_search.similarity.is_close_distance_keyword_pair"><code class="docutils literal notranslate"><span class="pre">is_close_distance_keyword_pair()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#fuzzy_search.similarity.vector_length"><code class="docutils literal notranslate"><span class="pre">vector_length()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-fuzzy_search">Module contents</a><ul>
@@ -122,7 +76,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a></li>
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">fuzzy_search package</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/source/fuzzy_search.rst.txt" rel="nofollow"> View page source</a>
@@ -134,16 +88,177 @@
            <div itemprop="articleBody">
              
   <section id="fuzzy-search-package">
-<h1>fuzzy_search package<a class="headerlink" href="#fuzzy-search-package" title="Permalink to this heading"></a></h1>
+<h1>fuzzy_search package<a class="headerlink" href="#fuzzy-search-package" title="Link to this heading"></a></h1>
 <section id="subpackages">
-<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this heading"></a></h2>
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="fuzzy_search.analysis.html">fuzzy_search.analysis package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.analysis.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.analysis.html#module-fuzzy_search.analysis.freq">fuzzy_search.analysis.freq module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.Ngram"><code class="docutils literal notranslate"><span class="pre">Ngram</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.Ngram.tokens"><code class="docutils literal notranslate"><span class="pre">Ngram.tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.Ngram.size"><code class="docutils literal notranslate"><span class="pre">Ngram.size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.Ngram.n"><code class="docutils literal notranslate"><span class="pre">Ngram.n</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.Ngram.string"><code class="docutils literal notranslate"><span class="pre">Ngram.string</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.Ngram.head_string"><code class="docutils literal notranslate"><span class="pre">Ngram.head_string</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.Ngram.tail_string"><code class="docutils literal notranslate"><span class="pre">Ngram.tail_string</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.Ngram.__init__"><code class="docutils literal notranslate"><span class="pre">Ngram.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq"><code class="docutils literal notranslate"><span class="pre">NgramFreq</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.ngram_freq"><code class="docutils literal notranslate"><span class="pre">NgramFreq.ngram_freq</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.max_ngram_size"><code class="docutils literal notranslate"><span class="pre">NgramFreq.max_ngram_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.total_ngram_tokens"><code class="docutils literal notranslate"><span class="pre">NgramFreq.total_ngram_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.total_ngram_types"><code class="docutils literal notranslate"><span class="pre">NgramFreq.total_ngram_types</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.num_docs"><code class="docutils literal notranslate"><span class="pre">NgramFreq.num_docs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.start_tokens"><code class="docutils literal notranslate"><span class="pre">NgramFreq.start_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.end_tokens"><code class="docutils literal notranslate"><span class="pre">NgramFreq.end_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.__init__"><code class="docutils literal notranslate"><span class="pre">NgramFreq.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.count_ngrams"><code class="docutils literal notranslate"><span class="pre">NgramFreq.count_ngrams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.has_conditional_prob"><code class="docutils literal notranslate"><span class="pre">NgramFreq.has_conditional_prob()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.has_freq"><code class="docutils literal notranslate"><span class="pre">NgramFreq.has_freq()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.has_prob"><code class="docutils literal notranslate"><span class="pre">NgramFreq.has_prob()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.total_tokens"><code class="docutils literal notranslate"><span class="pre">NgramFreq.total_tokens()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.total_types"><code class="docutils literal notranslate"><span class="pre">NgramFreq.total_types()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.NgramFreq.vocab_size"><code class="docutils literal notranslate"><span class="pre">NgramFreq.vocab_size</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.check_lambdas"><code class="docutils literal notranslate"><span class="pre">check_lambdas()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.compute_expected"><code class="docutils literal notranslate"><span class="pre">compute_expected()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.compute_llr"><code class="docutils literal notranslate"><span class="pre">compute_llr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.compute_llr_from_observed"><code class="docutils literal notranslate"><span class="pre">compute_llr_from_observed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.compute_percentage_diff"><code class="docutils literal notranslate"><span class="pre">compute_percentage_diff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.doc_to_string_tokens"><code class="docutils literal notranslate"><span class="pre">doc_to_string_tokens()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.get_observed_from_counter"><code class="docutils literal notranslate"><span class="pre">get_observed_from_counter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.freq.make_token_ngrams"><code class="docutils literal notranslate"><span class="pre">make_token_ngrams()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.analysis.html#module-fuzzy_search.analysis.similarity">fuzzy_search.analysis.similarity module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList"><code class="docutils literal notranslate"><span class="pre">KeywordList</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList.len_keys"><code class="docutils literal notranslate"><span class="pre">KeywordList.len_keys</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList.max_length_diff"><code class="docutils literal notranslate"><span class="pre">KeywordList.max_length_diff</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList.len_order"><code class="docutils literal notranslate"><span class="pre">KeywordList.len_order</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList.__init__"><code class="docutils literal notranslate"><span class="pre">KeywordList.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList.find_close_distance_keywords"><code class="docutils literal notranslate"><span class="pre">KeywordList.find_close_distance_keywords()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList.find_closer_terms"><code class="docutils literal notranslate"><span class="pre">KeywordList.find_closer_terms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.KeywordList.iterate_candidate_pairs"><code class="docutils literal notranslate"><span class="pre">KeywordList.iterate_candidate_pairs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipCooccurrence"><code class="docutils literal notranslate"><span class="pre">SkipCooccurrence</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipCooccurrence.cooc_freq"><code class="docutils literal notranslate"><span class="pre">SkipCooccurrence.cooc_freq</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipCooccurrence.vocabulary"><code class="docutils literal notranslate"><span class="pre">SkipCooccurrence.vocabulary</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipCooccurrence.skip_size"><code class="docutils literal notranslate"><span class="pre">SkipCooccurrence.skip_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipCooccurrence.__init__"><code class="docutils literal notranslate"><span class="pre">SkipCooccurrence.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipCooccurrence.calculate_skip_cooccurrences"><code class="docutils literal notranslate"><span class="pre">SkipCooccurrence.calculate_skip_cooccurrences()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipCooccurrence.get_term_coocs"><code class="docutils literal notranslate"><span class="pre">SkipCooccurrence.get_term_coocs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity.ngram_length"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity.ngram_length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity.skip_length"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity.skip_length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity.vocabulary"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity.vocabulary</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity.skipgram_vocabulary"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity.skipgram_vocabulary</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity.max_length_diff"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity.max_length_diff</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity.__init__"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity.index_terms"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity.index_terms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.SkipgramSimilarity.rank_similar"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity.rank_similar()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.get_begin_sim"><code class="docutils literal notranslate"><span class="pre">get_begin_sim()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.get_end_sim"><code class="docutils literal notranslate"><span class="pre">get_end_sim()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.get_min_length"><code class="docutils literal notranslate"><span class="pre">get_min_length()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.get_skip_coocs"><code class="docutils literal notranslate"><span class="pre">get_skip_coocs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.is_close_distance_keyword_pair"><code class="docutils literal notranslate"><span class="pre">is_close_distance_keyword_pair()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.similarity.vector_length"><code class="docutils literal notranslate"><span class="pre">vector_length()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.analysis.html#module-fuzzy_search.analysis.spelling_compare">fuzzy_search.analysis.spelling_compare module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Change"><code class="docutils literal notranslate"><span class="pre">Change</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Change.decrease_word"><code class="docutils literal notranslate"><span class="pre">Change.decrease_word</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Change.decrease_type"><code class="docutils literal notranslate"><span class="pre">Change.decrease_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Change.increase_word"><code class="docutils literal notranslate"><span class="pre">Change.increase_word</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Change.increase_type"><code class="docutils literal notranslate"><span class="pre">Change.increase_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Change.sim_score"><code class="docutils literal notranslate"><span class="pre">Change.sim_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Change.__init__"><code class="docutils literal notranslate"><span class="pre">Change.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Diff"><code class="docutils literal notranslate"><span class="pre">Diff</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Diff.direction"><code class="docutils literal notranslate"><span class="pre">Diff.direction</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Diff.frac1"><code class="docutils literal notranslate"><span class="pre">Diff.frac1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Diff.frac2"><code class="docutils literal notranslate"><span class="pre">Diff.frac2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Diff.freq1"><code class="docutils literal notranslate"><span class="pre">Diff.freq1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Diff.freq2"><code class="docutils literal notranslate"><span class="pre">Diff.freq2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Diff.llr"><code class="docutils literal notranslate"><span class="pre">Diff.llr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Diff.perc_diff1"><code class="docutils literal notranslate"><span class="pre">Diff.perc_diff1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Diff.perc_diff2"><code class="docutils literal notranslate"><span class="pre">Diff.perc_diff2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.Diff.word"><code class="docutils literal notranslate"><span class="pre">Diff.word</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare"><code class="docutils literal notranslate"><span class="pre">SpellingCompare</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare.word_freq1"><code class="docutils literal notranslate"><span class="pre">SpellingCompare.word_freq1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare.word_freq2"><code class="docutils literal notranslate"><span class="pre">SpellingCompare.word_freq2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare.embeddings"><code class="docutils literal notranslate"><span class="pre">SpellingCompare.embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare.total1"><code class="docutils literal notranslate"><span class="pre">SpellingCompare.total1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare.total2"><code class="docutils literal notranslate"><span class="pre">SpellingCompare.total2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare.word_frac1"><code class="docutils literal notranslate"><span class="pre">SpellingCompare.word_frac1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare.word_frac2"><code class="docutils literal notranslate"><span class="pre">SpellingCompare.word_frac2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare.__init__"><code class="docutils literal notranslate"><span class="pre">SpellingCompare.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare.compute_percentage_diff"><code class="docutils literal notranslate"><span class="pre">SpellingCompare.compute_percentage_diff()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare.get_frequency_change_words"><code class="docutils literal notranslate"><span class="pre">SpellingCompare.get_frequency_change_words()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.SpellingCompare.get_high_frequency_words"><code class="docutils literal notranslate"><span class="pre">SpellingCompare.get_high_frequency_words()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.spelling_compare.sort_drop_jump"><code class="docutils literal notranslate"><span class="pre">sort_drop_jump()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.analysis.html#module-fuzzy_search.analysis.subtoken">fuzzy_search.analysis.subtoken module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.BPEToken"><code class="docutils literal notranslate"><span class="pre">BPEToken</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.BPEToken.token"><code class="docutils literal notranslate"><span class="pre">BPEToken.token</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.BPEToken.symbols"><code class="docutils literal notranslate"><span class="pre">BPEToken.symbols</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.BPEToken.__init__"><code class="docutils literal notranslate"><span class="pre">BPEToken.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.BPEToken.symbol_pairs"><code class="docutils literal notranslate"><span class="pre">BPEToken.symbol_pairs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.freq_buckets"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.freq_buckets</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.symbol_pair_freq"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.symbol_pair_freq</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.max_freq"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.max_freq</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.all_with_max_frequency"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.all_with_max_frequency()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.frequency_of"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.frequency_of()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.most_frequent"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.most_frequent()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.most_frequent_shortest"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.most_frequent_shortest()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.FrequencyTracker.update"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.compare_token_symbol_pairs"><code class="docutils literal notranslate"><span class="pre">compare_token_symbol_pairs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.find_new_symbol_pairs"><code class="docutils literal notranslate"><span class="pre">find_new_symbol_pairs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.generate_corpus_symbol_pairs"><code class="docutils literal notranslate"><span class="pre">generate_corpus_symbol_pairs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.generate_symbol_pairs"><code class="docutils literal notranslate"><span class="pre">generate_symbol_pairs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.generate_vocab"><code class="docutils literal notranslate"><span class="pre">generate_vocab()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.index_symbol_pair"><code class="docutils literal notranslate"><span class="pre">index_symbol_pair()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.make_byte_pair_encoding"><code class="docutils literal notranslate"><span class="pre">make_byte_pair_encoding()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.make_symbol_pair_freq"><code class="docutils literal notranslate"><span class="pre">make_symbol_pair_freq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.merge_symbols_in_token"><code class="docutils literal notranslate"><span class="pre">merge_symbols_in_token()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.merge_symbols_in_tokens"><code class="docutils literal notranslate"><span class="pre">merge_symbols_in_tokens()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.prune_symbol_pair_freq"><code class="docutils literal notranslate"><span class="pre">prune_symbol_pair_freq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.analysis.html#fuzzy_search.analysis.subtoken.string_tokens_to_corpus"><code class="docutils literal notranslate"><span class="pre">string_tokens_to_corpus()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.analysis.html#module-fuzzy_search.analysis">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="fuzzy_search.match.html">fuzzy_search.match package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.match.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.match.html#module-fuzzy_search.match.candidate_match">fuzzy_search.match.candidate_match module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate"><code class="docutils literal notranslate"><span class="pre">Candidate</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.candidate_match.CandidatePartial"><code class="docutils literal notranslate"><span class="pre">CandidatePartial</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate"><code class="docutils literal notranslate"><span class="pre">Candidate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.__init__"><code class="docutils literal notranslate"><span class="pre">Candidate.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.candidate_match.CandidatePartial"><code class="docutils literal notranslate"><span class="pre">CandidatePartial</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.candidate_match.CandidatePartial.__init__"><code class="docutils literal notranslate"><span class="pre">CandidatePartial.__init__()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.candidate_match.add_skip_match"><code class="docutils literal notranslate"><span class="pre">add_skip_match()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.candidate_match.candidate_from_partial"><code class="docutils literal notranslate"><span class="pre">candidate_from_partial()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.candidate_match.get_match_start_offset"><code class="docutils literal notranslate"><span class="pre">get_match_start_offset()</span></code></a></li>
@@ -168,6 +283,17 @@
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.exact_match.search_exact_phrases_without_word_boundaries"><code class="docutils literal notranslate"><span class="pre">search_exact_phrases_without_word_boundaries()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.match.html#module-fuzzy_search.match.match_offsets">fuzzy_search.match.match_offsets module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.match_offsets.adjust_match_end_offset"><code class="docutils literal notranslate"><span class="pre">adjust_match_end_offset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.match_offsets.adjust_match_offsets"><code class="docutils literal notranslate"><span class="pre">adjust_match_offsets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.match_offsets.adjust_match_start_offset"><code class="docutils literal notranslate"><span class="pre">adjust_match_start_offset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.match_offsets.calculate_end_shift"><code class="docutils literal notranslate"><span class="pre">calculate_end_shift()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.match_offsets.candidates_to_matches"><code class="docutils literal notranslate"><span class="pre">candidates_to_matches()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.match_offsets.filter_matches_by_overlap"><code class="docutils literal notranslate"><span class="pre">filter_matches_by_overlap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.match_offsets.map_string"><code class="docutils literal notranslate"><span class="pre">map_string()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.match_offsets.validate_match_props"><code class="docutils literal notranslate"><span class="pre">validate_match_props()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.match.html#module-fuzzy_search.match.phrase_match">fuzzy_search.match.phrase_match module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType"><code class="docutils literal notranslate"><span class="pre">MatchType</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType.FULL"><code class="docutils literal notranslate"><span class="pre">MatchType.FULL</span></code></a></li>
@@ -176,23 +302,22 @@
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType.PARTIAL_OF_TEXT_TOKEN"><code class="docutils literal notranslate"><span class="pre">MatchType.PARTIAL_OF_TEXT_TOKEN</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch.add_tokens"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.add_tokens()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch.pop"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.pop()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PartialPhraseMatch.push"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.push()</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch"><code class="docutils literal notranslate"><span class="pre">PhraseMatch</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.__init__"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.add_scores"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.add_scores()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.as_web_anno"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.as_web_anno()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.character_overlap"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.character_overlap</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.from_json"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.from_json()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.has_label"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.has_label()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.json"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.json()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.label_list"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.label_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.levenshtein_similarity"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.levenshtein_similarity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.ngram_overlap"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.ngram_overlap</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.overlaps"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.overlaps()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.score_character_overlap"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.score_character_overlap()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.score_levenshtein_similarity"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.score_levenshtein_similarity()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.score_ngram_overlap"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.score_ngram_overlap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.skipgram_overlap"><code class="docutils literal notranslate"><span class="pre">PhraseMatch.skipgram_overlap</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatchInContext"><code class="docutils literal notranslate"><span class="pre">PhraseMatchInContext</span></code></a><ul>
@@ -200,21 +325,13 @@
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatchInContext.json"><code class="docutils literal notranslate"><span class="pre">PhraseMatchInContext.json()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.TokenMatch"><code class="docutils literal notranslate"><span class="pre">TokenMatch</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.adjust_match_end_offset"><code class="docutils literal notranslate"><span class="pre">adjust_match_end_offset()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.adjust_match_offsets"><code class="docutils literal notranslate"><span class="pre">adjust_match_offsets()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.adjust_match_start_offset"><code class="docutils literal notranslate"><span class="pre">adjust_match_start_offset()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.calculate_end_shift"><code class="docutils literal notranslate"><span class="pre">calculate_end_shift()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.candidates_to_matches"><code class="docutils literal notranslate"><span class="pre">candidates_to_matches()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.copy_partial_match"><code class="docutils literal notranslate"><span class="pre">copy_partial_match()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.filter_matches_by_overlap"><code class="docutils literal notranslate"><span class="pre">filter_matches_by_overlap()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.map_string"><code class="docutils literal notranslate"><span class="pre">map_string()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.phrase_match_from_json"><code class="docutils literal notranslate"><span class="pre">phrase_match_from_json()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.phrase_match.validate_match_props"><code class="docutils literal notranslate"><span class="pre">validate_match_props()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.match.html#module-fuzzy_search.match.skip_match">fuzzy_search.match.skip_match module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.skip_match.SkipMatches"><code class="docutils literal notranslate"><span class="pre">SkipMatches</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.skip_match.SkipMatches.__init__"><code class="docutils literal notranslate"><span class="pre">SkipMatches.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.skip_match.SkipMatches.add_skip_match"><code class="docutils literal notranslate"><span class="pre">SkipMatches.add_skip_match()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.match.html#fuzzy_search.match.skip_match.SkipMatches.remove_phrase"><code class="docutils literal notranslate"><span class="pre">SkipMatches.remove_phrase()</span></code></a></li>
 </ul>
@@ -247,6 +364,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.pattern.html#module-fuzzy_search.pattern.fuzzy_template">fuzzy_search.pattern.fuzzy_template module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.__init__"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplate.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_element"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplate.get_element()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_elements_by_cardinality"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplate.get_elements_by_cardinality()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_label_phrases"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplate.get_label_phrases()</span></code></a></li>
@@ -260,9 +378,18 @@
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.register_template"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplate.register_template()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateElement</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateGroupElement</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateLabelElement</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateElement</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement.__init__"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateElement.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateGroupElement</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement.__init__"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateGroupElement.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateLabelElement</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement.__init__"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateLabelElement.__init__()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.generate_group_from_json"><code class="docutils literal notranslate"><span class="pre">generate_group_from_json()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.generate_label_from_json"><code class="docutils literal notranslate"><span class="pre">generate_label_from_json()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.validate_element_properties"><code class="docutils literal notranslate"><span class="pre">validate_element_properties()</span></code></a></li>
@@ -275,6 +402,7 @@
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.phrase.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.phrase.html#module-fuzzy_search.phrase.phrase">fuzzy_search.phrase.phrase module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase"><code class="docutils literal notranslate"><span class="pre">Phrase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase.__init__"><code class="docutils literal notranslate"><span class="pre">Phrase.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase.add_max_end_offset"><code class="docutils literal notranslate"><span class="pre">Phrase.add_max_end_offset()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase.add_max_start_offset"><code class="docutils literal notranslate"><span class="pre">Phrase.add_max_start_offset()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase.Phrase.add_metadata"><code class="docutils literal notranslate"><span class="pre">Phrase.add_metadata()</span></code></a></li>
@@ -293,6 +421,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.phrase.html#module-fuzzy_search.phrase.phrase_model">fuzzy_search.phrase.phrase_model module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel"><code class="docutils literal notranslate"><span class="pre">PhraseModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.__init__"><code class="docutils literal notranslate"><span class="pre">PhraseModel.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_custom"><code class="docutils literal notranslate"><span class="pre">PhraseModel.add_custom()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_distractor"><code class="docutils literal notranslate"><span class="pre">PhraseModel.add_distractor()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_distractors"><code class="docutils literal notranslate"><span class="pre">PhraseModel.add_distractors()</span></code></a></li>
@@ -350,6 +479,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.search.html#module-fuzzy_search.search.phrase_searcher">fuzzy_search.search.phrase_searcher module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher"><code class="docutils literal notranslate"><span class="pre">FuzzyPhraseSearcher</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.__init__"><code class="docutils literal notranslate"><span class="pre">FuzzyPhraseSearcher.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.filter_matches_by_distractors"><code class="docutils literal notranslate"><span class="pre">FuzzyPhraseSearcher.filter_matches_by_distractors()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.filter_matches_by_threshold"><code class="docutils literal notranslate"><span class="pre">FuzzyPhraseSearcher.filter_matches_by_threshold()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher.filter_phrase_candidates"><code class="docutils literal notranslate"><span class="pre">FuzzyPhraseSearcher.filter_phrase_candidates()</span></code></a></li>
@@ -365,6 +495,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.search.html#module-fuzzy_search.search.searcher">fuzzy_search.search.searcher module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.__init__"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.configure"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.configure()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.filter_matches_by_offset_threshold"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.filter_matches_by_offset_threshold()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.searcher.FuzzySearcher.find_skipgram_matches"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher.find_skipgram_matches()</span></code></a></li>
@@ -378,13 +509,17 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.search.html#module-fuzzy_search.search.template_searcher">fuzzy_search.search.template_searcher module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateSearcher</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.__init__"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateSearcher.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.filter_phrase_matches"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateSearcher.filter_phrase_matches()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.find_template_matches"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateSearcher.find_template_matches()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.search_text"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateSearcher.search_text()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.FuzzyTemplateSearcher.set_template"><code class="docutils literal notranslate"><span class="pre">FuzzyTemplateSearcher.set_template()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.TemplateMatch"><code class="docutils literal notranslate"><span class="pre">TemplateMatch</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.TemplateMatch"><code class="docutils literal notranslate"><span class="pre">TemplateMatch</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.TemplateMatch.__init__"><code class="docutils literal notranslate"><span class="pre">TemplateMatch.__init__()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.find_next_element_end_index"><code class="docutils literal notranslate"><span class="pre">find_next_element_end_index()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.find_next_element_start_index"><code class="docutils literal notranslate"><span class="pre">find_next_element_start_index()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.template_searcher.find_next_group_match_sequence"><code class="docutils literal notranslate"><span class="pre">find_next_group_match_sequence()</span></code></a></li>
@@ -399,6 +534,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.search.html#module-fuzzy_search.search.token_searcher">fuzzy_search.search.token_searcher module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.FuzzyTokenSearcher"><code class="docutils literal notranslate"><span class="pre">FuzzyTokenSearcher</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.FuzzyTokenSearcher.__init__"><code class="docutils literal notranslate"><span class="pre">FuzzyTokenSearcher.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.FuzzyTokenSearcher.add_vocabulary"><code class="docutils literal notranslate"><span class="pre">FuzzyTokenSearcher.add_vocabulary()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.FuzzyTokenSearcher.add_vocabulary_skipgram_matches"><code class="docutils literal notranslate"><span class="pre">FuzzyTokenSearcher.add_vocabulary_skipgram_matches()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.FuzzyTokenSearcher.configure"><code class="docutils literal notranslate"><span class="pre">FuzzyTokenSearcher.configure()</span></code></a></li>
@@ -418,6 +554,18 @@
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.FuzzyTokenSearcher.terms_to_tuple"><code class="docutils literal notranslate"><span class="pre">FuzzyTokenSearcher.terms_to_tuple()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch.__init__"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch.add_tokens"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.add_tokens()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch.pop"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.pop()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.PartialPhraseMatch.push"><code class="docutils literal notranslate"><span class="pre">PartialPhraseMatch.push()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.TokenMatch"><code class="docutils literal notranslate"><span class="pre">TokenMatch</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.TokenMatch.__init__"><code class="docutils literal notranslate"><span class="pre">TokenMatch.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.copy_partial_match"><code class="docutils literal notranslate"><span class="pre">copy_partial_match()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.get_partial_phrases"><code class="docutils literal notranslate"><span class="pre">get_partial_phrases()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.get_text_string"><code class="docutils literal notranslate"><span class="pre">get_text_string()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.token_searcher.get_text_tokens"><code class="docutils literal notranslate"><span class="pre">get_text_tokens()</span></code></a></li>
@@ -440,7 +588,14 @@
 <li class="toctree-l1"><a class="reference internal" href="fuzzy_search.tokenization.html">fuzzy_search.tokenization package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.tokenization.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.tokenization.html#module-fuzzy_search.tokenization.string">fuzzy_search.tokenization.string module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram"><code class="docutils literal notranslate"><span class="pre">SkipGram</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram"><code class="docutils literal notranslate"><span class="pre">SkipGram</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram.string"><code class="docutils literal notranslate"><span class="pre">SkipGram.string</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram.start_offset"><code class="docutils literal notranslate"><span class="pre">SkipGram.start_offset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram.end_offset"><code class="docutils literal notranslate"><span class="pre">SkipGram.end_offset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram.length"><code class="docutils literal notranslate"><span class="pre">SkipGram.length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.SkipGram.__init__"><code class="docutils literal notranslate"><span class="pre">SkipGram.__init__()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.get_non_word_prefix"><code class="docutils literal notranslate"><span class="pre">get_non_word_prefix()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.get_non_word_suffix"><code class="docutils literal notranslate"><span class="pre">get_non_word_suffix()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.insert_skips"><code class="docutils literal notranslate"><span class="pre">insert_skips()</span></code></a></li>
@@ -457,40 +612,32 @@
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.string.token2skipgrams"><code class="docutils literal notranslate"><span class="pre">token2skipgrams()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.tokenization.html#module-fuzzy_search.tokenization.subtoken">fuzzy_search.tokenization.subtoken module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.BPEToken"><code class="docutils literal notranslate"><span class="pre">BPEToken</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.BPEToken.symbol_pairs"><code class="docutils literal notranslate"><span class="pre">BPEToken.symbol_pairs</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.FrequencyTracker"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.FrequencyTracker.all_with_max_frequency"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.all_with_max_frequency()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.FrequencyTracker.frequency_of"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.frequency_of()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.FrequencyTracker.most_frequent"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.most_frequent()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.FrequencyTracker.most_frequent_shortest"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.most_frequent_shortest()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.FrequencyTracker.update"><code class="docutils literal notranslate"><span class="pre">FrequencyTracker.update()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.compare_token_symbol_pairs"><code class="docutils literal notranslate"><span class="pre">compare_token_symbol_pairs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.find_new_symbol_pairs"><code class="docutils literal notranslate"><span class="pre">find_new_symbol_pairs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.generate_corpus_symbol_pairs"><code class="docutils literal notranslate"><span class="pre">generate_corpus_symbol_pairs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.generate_symbol_pairs"><code class="docutils literal notranslate"><span class="pre">generate_symbol_pairs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.generate_vocab"><code class="docutils literal notranslate"><span class="pre">generate_vocab()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.index_symbol_pair"><code class="docutils literal notranslate"><span class="pre">index_symbol_pair()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.make_byte_pair_encoding"><code class="docutils literal notranslate"><span class="pre">make_byte_pair_encoding()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.make_symbol_pair_freq"><code class="docutils literal notranslate"><span class="pre">make_symbol_pair_freq()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.merge_symbols_in_token"><code class="docutils literal notranslate"><span class="pre">merge_symbols_in_token()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.merge_symbols_in_tokens"><code class="docutils literal notranslate"><span class="pre">merge_symbols_in_tokens()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.prune_symbol_pair_freq"><code class="docutils literal notranslate"><span class="pre">prune_symbol_pair_freq()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.subtoken.string_tokens_to_corpus"><code class="docutils literal notranslate"><span class="pre">string_tokens_to_corpus()</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.tokenization.html#module-fuzzy_search.tokenization.token">fuzzy_search.tokenization.token module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Annotation"><code class="docutils literal notranslate"><span class="pre">Annotation</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Annotation"><code class="docutils literal notranslate"><span class="pre">Annotation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Annotation.tag_type"><code class="docutils literal notranslate"><span class="pre">Annotation.tag_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Annotation.text"><code class="docutils literal notranslate"><span class="pre">Annotation.text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Annotation.offset"><code class="docutils literal notranslate"><span class="pre">Annotation.offset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Annotation.end"><code class="docutils literal notranslate"><span class="pre">Annotation.end</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Annotation.doc_id"><code class="docutils literal notranslate"><span class="pre">Annotation.doc_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Annotation.__init__"><code class="docutils literal notranslate"><span class="pre">Annotation.__init__()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.CustomTokenizer"><code class="docutils literal notranslate"><span class="pre">CustomTokenizer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.CustomTokenizer.tokenizer_func"><code class="docutils literal notranslate"><span class="pre">CustomTokenizer.tokenizer_func</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.CustomTokenizer.__init__"><code class="docutils literal notranslate"><span class="pre">CustomTokenizer.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.CustomTokenizer.tokenize"><code class="docutils literal notranslate"><span class="pre">CustomTokenizer.tokenize()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc"><code class="docutils literal notranslate"><span class="pre">Doc</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.text"><code class="docutils literal notranslate"><span class="pre">Doc.text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.id"><code class="docutils literal notranslate"><span class="pre">Doc.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.tokens"><code class="docutils literal notranslate"><span class="pre">Doc.tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.token_orig_set"><code class="docutils literal notranslate"><span class="pre">Doc.token_orig_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.token_norm_set"><code class="docutils literal notranslate"><span class="pre">Doc.token_norm_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.label_token_index"><code class="docutils literal notranslate"><span class="pre">Doc.label_token_index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.metadata"><code class="docutils literal notranslate"><span class="pre">Doc.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.annotations"><code class="docutils literal notranslate"><span class="pre">Doc.annotations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.__init__"><code class="docutils literal notranslate"><span class="pre">Doc.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.add_annotations"><code class="docutils literal notranslate"><span class="pre">Doc.add_annotations()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.get_token"><code class="docutils literal notranslate"><span class="pre">Doc.get_token()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.has_token"><code class="docutils literal notranslate"><span class="pre">Doc.has_token()</span></code></a></li>
@@ -498,9 +645,30 @@
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc.original"><code class="docutils literal notranslate"><span class="pre">Doc.original</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.RegExTokenizer"><code class="docutils literal notranslate"><span class="pre">RegExTokenizer</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tag"><code class="docutils literal notranslate"><span class="pre">Tag</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.RegExTokenizer"><code class="docutils literal notranslate"><span class="pre">RegExTokenizer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.RegExTokenizer.split_pattern"><code class="docutils literal notranslate"><span class="pre">RegExTokenizer.split_pattern</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.RegExTokenizer.__init__"><code class="docutils literal notranslate"><span class="pre">RegExTokenizer.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tag"><code class="docutils literal notranslate"><span class="pre">Tag</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tag.type"><code class="docutils literal notranslate"><span class="pre">Tag.type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tag.text"><code class="docutils literal notranslate"><span class="pre">Tag.text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tag.offset"><code class="docutils literal notranslate"><span class="pre">Tag.offset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tag.tag_string"><code class="docutils literal notranslate"><span class="pre">Tag.tag_string</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tag.end"><code class="docutils literal notranslate"><span class="pre">Tag.end</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tag.doc_id"><code class="docutils literal notranslate"><span class="pre">Tag.doc_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tag.__init__"><code class="docutils literal notranslate"><span class="pre">Tag.__init__()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token"><code class="docutils literal notranslate"><span class="pre">Token</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.string"><code class="docutils literal notranslate"><span class="pre">Token.string</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.index"><code class="docutils literal notranslate"><span class="pre">Token.index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.char_index"><code class="docutils literal notranslate"><span class="pre">Token.char_index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.doc_id"><code class="docutils literal notranslate"><span class="pre">Token.doc_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.metadata"><code class="docutils literal notranslate"><span class="pre">Token.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.normalised_string"><code class="docutils literal notranslate"><span class="pre">Token.normalised_string</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.label"><code class="docutils literal notranslate"><span class="pre">Token.label</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.__init__"><code class="docutils literal notranslate"><span class="pre">Token.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.has_label"><code class="docutils literal notranslate"><span class="pre">Token.has_label()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.i"><code class="docutils literal notranslate"><span class="pre">Token.i</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token.l"><code class="docutils literal notranslate"><span class="pre">Token.l</span></code></a></li>
@@ -511,6 +679,11 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer"><code class="docutils literal notranslate"><span class="pre">Tokenizer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.ignorecase"><code class="docutils literal notranslate"><span class="pre">Tokenizer.ignorecase</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.include_boundary_tokens"><code class="docutils literal notranslate"><span class="pre">Tokenizer.include_boundary_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.remove_punctuation"><code class="docutils literal notranslate"><span class="pre">Tokenizer.remove_punctuation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.__init__"><code class="docutils literal notranslate"><span class="pre">Tokenizer.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.nltk_wp_tokenizer"><code class="docutils literal notranslate"><span class="pre">Tokenizer.nltk_wp_tokenizer</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.tokenize"><code class="docutils literal notranslate"><span class="pre">Tokenizer.tokenize()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Tokenizer.tokenize_doc"><code class="docutils literal notranslate"><span class="pre">Tokenizer.tokenize_doc()</span></code></a></li>
 </ul>
@@ -521,6 +694,11 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="fuzzy_search.tokenization.html#module-fuzzy_search.tokenization.vocabulary">fuzzy_search.tokenization.vocabulary module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary"><code class="docutils literal notranslate"><span class="pre">Vocabulary</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.term_id"><code class="docutils literal notranslate"><span class="pre">Vocabulary.term_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.id_term"><code class="docutils literal notranslate"><span class="pre">Vocabulary.id_term</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.term_freq"><code class="docutils literal notranslate"><span class="pre">Vocabulary.term_freq</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.ignorecase"><code class="docutils literal notranslate"><span class="pre">Vocabulary.ignorecase</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.__init__"><code class="docutils literal notranslate"><span class="pre">Vocabulary.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.add_terms"><code class="docutils literal notranslate"><span class="pre">Vocabulary.add_terms()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.has_term"><code class="docutils literal notranslate"><span class="pre">Vocabulary.has_term()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary.id2term"><code class="docutils literal notranslate"><span class="pre">Vocabulary.id2term()</span></code></a></li>
@@ -536,248 +714,32 @@
 </ul>
 </div>
 </section>
-<section id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
-</section>
-<section id="module-fuzzy_search.fuzzy_searcher">
-<span id="fuzzy-search-fuzzy-searcher-module"></span><h2>fuzzy_search.fuzzy_searcher module<a class="headerlink" href="#module-fuzzy_search.fuzzy_searcher" title="Permalink to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.fuzzy_searcher.</span></span><span class="sig-name descname"><span class="pre">FuzzySearcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">char_match_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ngram_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levenshtein_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.disable_strip_suffix">
-<span class="sig-name descname"><span class="pre">disable_strip_suffix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.disable_strip_suffix" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.enable_strip_suffix">
-<span class="sig-name descname"><span class="pre">enable_strip_suffix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.enable_strip_suffix" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_candidates">
-<span class="sig-name descname"><span class="pre">filter_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">candidates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ngram_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_candidates" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_char_match_candidates">
-<span class="sig-name descname"><span class="pre">filter_char_match_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">candidates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_term</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_char_match_candidates" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_levenshtein_candidates">
-<span class="sig-name descname"><span class="pre">filter_levenshtein_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">candidates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_term</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_levenshtein_candidates" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_ngram_candidates">
-<span class="sig-name descname"><span class="pre">filter_ngram_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">candidates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_term</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ngram_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.filter_ngram_candidates" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.find_candidates">
-<span class="sig-name descname"><span class="pre">find_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ngram_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_word_boundaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.find_candidates" title="Permalink to this definition"></a></dt>
-<dd><p>Find candidate matches that start with the same initial character as the search term
-and filter them based on default thresholds for character overlap, ngram overlap and
-levenshtein distance.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.find_start_candidates">
-<span class="sig-name descname"><span class="pre">find_start_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">term</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_word_boundaries</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.find_start_candidates" title="Permalink to this definition"></a></dt>
-<dd><p>Find candidate matches that start with the same initial character as the search term.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.find_term_matches">
-<span class="sig-name descname"><span class="pre">find_term_matches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">term</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_word_boundaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.find_term_matches" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.make_ngrams">
-<span class="sig-name descname"><span class="pre">make_ngrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.make_ngrams" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.rank_candidates">
-<span class="sig-name descname"><span class="pre">rank_candidates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">candidates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ngram_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.rank_candidates" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.score_char_overlap">
-<span class="sig-name descname"><span class="pre">score_char_overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">term2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_char_overlap" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.score_char_overlap_ratio">
-<span class="sig-name descname"><span class="pre">score_char_overlap_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">term2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_char_overlap_ratio" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.score_levenshtein_distance">
-<span class="sig-name descname"><span class="pre">score_levenshtein_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_levenshtein_distance" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.score_levenshtein_distance_ratio">
-<span class="sig-name descname"><span class="pre">score_levenshtein_distance_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">term2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_levenshtein_distance_ratio" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.score_ngram_overlap">
-<span class="sig-name descname"><span class="pre">score_ngram_overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">term2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ngram_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_ngram_overlap" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.score_ngram_overlap_ratio">
-<span class="sig-name descname"><span class="pre">score_ngram_overlap_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">term2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ngram_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.score_ngram_overlap_ratio" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.FuzzySearcher.strip_suffix">
-<span class="sig-name descname"><span class="pre">strip_suffix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">match</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.FuzzySearcher.strip_suffix" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="fuzzy_search.fuzzy_searcher.create_term_match">
-<span class="sig-prename descclassname"><span class="pre">fuzzy_search.fuzzy_searcher.</span></span><span class="sig-name descname"><span class="pre">create_term_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">re_match</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">term</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.fuzzy_searcher.create_term_match" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-</section>
-<section id="module-fuzzy_search.similarity">
-<span id="fuzzy-search-similarity-module"></span><h2>fuzzy_search.similarity module<a class="headerlink" href="#module-fuzzy_search.similarity" title="Permalink to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.KeywordList">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.similarity.</span></span><span class="sig-name descname"><span class="pre">KeywordList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keywords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.similarity.KeywordList" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.KeywordList.find_close_distance_keywords">
-<span class="sig-name descname"><span class="pre">find_close_distance_keywords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_distance_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.similarity.KeywordList.find_close_distance_keywords" title="Permalink to this definition"></a></dt>
-<dd><p>TODO: should we make the arguments into a config?</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.KeywordList.find_closer_terms">
-<span class="sig-name descname"><span class="pre">find_closer_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">candidate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.similarity.KeywordList.find_closer_terms" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.KeywordList.iterate_candidate_pairs">
-<span class="sig-name descname"><span class="pre">iterate_candidate_pairs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.similarity.KeywordList.iterate_candidate_pairs" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.SkipCooccurrence">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.similarity.</span></span><span class="sig-name descname"><span class="pre">SkipCooccurrence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vocabulary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary" title="fuzzy_search.tokenization.vocabulary.Vocabulary"><span class="pre">Vocabulary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sentences</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.similarity.SkipCooccurrence" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.SkipCooccurrence.calculate_skip_cooccurrences">
-<span class="sig-name descname"><span class="pre">calculate_skip_cooccurrences</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sentences</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.similarity.SkipCooccurrence.calculate_skip_cooccurrences" title="Permalink to this definition"></a></dt>
-<dd><p>Count the frequency of term (skip) co-occurrences for a given list of sentences.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>sentences</strong> (<em>Iterable</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em>) – a list of sentences, where each sentence is itself a list of term tokens</p></li>
-<li><p><strong>skip_size</strong> (<em>int</em>) – the maximum number of skips to allow between co-occurring terms</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.SkipCooccurrence.get_term_coocs">
-<span class="sig-name descname"><span class="pre">get_term_coocs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.similarity.SkipCooccurrence.get_term_coocs" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.SkipgramSimilarity">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fuzzy_search.similarity.</span></span><span class="sig-name descname"><span class="pre">SkipgramSimilarity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ngram_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.similarity.SkipgramSimilarity" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.SkipgramSimilarity.index_terms">
-<span class="sig-name descname"><span class="pre">index_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.similarity.SkipgramSimilarity.index_terms" title="Permalink to this definition"></a></dt>
-<dd><p>Make a frequency index of the skip grams for a given list of terms.
-By default, indexing is cumulative, that is, everytime you call index_terms
-with a list of terms, they are added to the index. Use ‘reset_index=True’ to
-reset the index before indexing the given terms.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>terms</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list of term to index</p></li>
-<li><p><strong>reset_index</strong> (<em>bool</em>) – whether to reset the index before indexing or to keep the existing index</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.SkipgramSimilarity.rank_similar">
-<span class="sig-name descname"><span class="pre">rank_similar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_cutoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.similarity.SkipgramSimilarity.rank_similar" title="Permalink to this definition"></a></dt>
-<dd><p>Return a ranked list of similar terms from the index for a given input term,
-based on their character skipgram cosine similarity.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>term</strong> (<em>str</em>) – a term (any string) to match against the indexed terms</p></li>
-<li><p><strong>top_n</strong> (<em>int</em><em> (</em><em>default 10</em><em>)</em>) – the number of highest ranked terms to return</p></li>
-<li><p><strong>score_cutoff</strong> (<em>float</em>) – the minimum similarity score after which to cutoff the ranking</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>a ranked list of terms and their similarity scores</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[Tuple[str, float]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.get_begin_sim">
-<span class="sig-prename descclassname"><span class="pre">fuzzy_search.similarity.</span></span><span class="sig-name descname"><span class="pre">get_begin_sim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">begin_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#fuzzy_search.similarity.get_begin_sim" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.get_end_sim">
-<span class="sig-prename descclassname"><span class="pre">fuzzy_search.similarity.</span></span><span class="sig-name descname"><span class="pre">get_end_sim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#fuzzy_search.similarity.get_end_sim" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.get_min_length">
-<span class="sig-prename descclassname"><span class="pre">fuzzy_search.similarity.</span></span><span class="sig-name descname"><span class="pre">get_min_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">begin_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#fuzzy_search.similarity.get_min_length" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.get_skip_coocs">
-<span class="sig-prename descclassname"><span class="pre">fuzzy_search.similarity.</span></span><span class="sig-name descname"><span class="pre">get_skip_coocs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#fuzzy_search.similarity.get_skip_coocs" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.is_close_distance_keyword_pair">
-<span class="sig-prename descclassname"><span class="pre">fuzzy_search.similarity.</span></span><span class="sig-name descname"><span class="pre">is_close_distance_keyword_pair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keyword1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_distance_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_difference</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#fuzzy_search.similarity.is_close_distance_keyword_pair" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="fuzzy_search.similarity.vector_length">
-<span class="sig-prename descclassname"><span class="pre">fuzzy_search.similarity.</span></span><span class="sig-name descname"><span class="pre">vector_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skipgram_freq</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.similarity.vector_length" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-</section>
 <section id="module-fuzzy_search">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-fuzzy_search" title="Permalink to this heading"></a></h2>
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-fuzzy_search" title="Link to this heading"></a></h2>
+<p>fuzzy_search: a library for fuzzy phrase search in noisy and historical text.</p>
+<p>Re-exports the most commonly used public classes (<code class="docutils literal notranslate"><span class="pre">FuzzyPhraseSearcher</span></code>,
+<code class="docutils literal notranslate"><span class="pre">FuzzyTokenSearcher</span></code>, <code class="docutils literal notranslate"><span class="pre">PhraseMatch</span></code>, <code class="docutils literal notranslate"><span class="pre">PhraseModel</span></code>, <code class="docutils literal notranslate"><span class="pre">default_config</span></code>) and
+provides the <code class="docutils literal notranslate"><span class="pre">make_searcher</span></code> convenience function for building a phrase searcher
+from a list of phrases and a config.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="fuzzy_search.make_searcher">
-<span class="sig-prename descclassname"><span class="pre">fuzzy_search.</span></span><span class="sig-name descname"><span class="pre">make_searcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrases</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.make_searcher" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.</span></span><span class="sig-name descname"><span class="pre">make_searcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrases</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search.html#make_searcher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.make_searcher" title="Link to this definition"></a></dt>
+<dd><p>Builds a FuzzyPhraseSearcher for a given list of phrases and configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phrases</strong> (<em>any</em>) – The phrases to search for, as accepted by <code class="docutils literal notranslate"><span class="pre">PhraseModel</span></code>.</p></li>
+<li><p><strong>config</strong> – A configuration object/dict for the phrase model and searcher.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A searcher configured with the built phrase model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="fuzzy_search.search.html#fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher" title="fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher">FuzzyPhraseSearcher</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 </section>
@@ -786,8 +748,8 @@ based on their character skipgram cosine similarity.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../index.html" class="btn btn-neutral float-left" title="Welcome to fuzzy-search’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="fuzzy_search.match.html" class="btn btn-neutral float-right" title="fuzzy_search.match package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quick Start" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fuzzy_search.analysis.html" class="btn btn-neutral float-right" title="fuzzy_search.analysis package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

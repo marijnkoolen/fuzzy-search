@@ -1,0 +1,569 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.pattern.fuzzy_template &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.pattern.fuzzy_template</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.pattern.fuzzy_template</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;FuzzyTemplate and its element classes, which combine labeled phrases from a PhraseModel into</span>
+<span class="sd">ordered or unordered, single or grouped, optionally required elements that together describe a</span>
+<span class="sd">structured fuzzy-matchable template (e.g. a name followed by a date).&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase_model</span> <span class="kn">import</span> <span class="n">PhraseModel</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase</span> <span class="kn">import</span> <span class="n">Phrase</span>
+
+
+<div class="viewcode-block" id="validate_element_properties">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.validate_element_properties">[docs]</a>
+<span class="k">def</span> <span class="nf">validate_element_properties</span><span class="p">(</span><span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">cardinality</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;multi&quot;</span><span class="p">,</span>
+                                <span class="n">next_label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                <span class="n">next_distance_max</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                <span class="n">variable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the properties of a FuzzyTemplate element.</span>
+
+<span class="sd">    :param label: the label of the element, which can be a single string or a list of strings</span>
+<span class="sd">    :type label: Union[str, List[str]]</span>
+<span class="sd">    :param required: whether or not the element must match for the template to match</span>
+<span class="sd">    :type required: bool</span>
+<span class="sd">    :param cardinality: whether the element can occur only once (default) or multiple times in a template match.</span>
+<span class="sd">    :type cardinality: str</span>
+<span class="sd">    :param next_label: what the label of the next element should be. Use a list of labels for multiple options.</span>
+<span class="sd">    :type next_label: Union[str, List[str]]</span>
+<span class="sd">    :param next_distance_max: the maximum distance allowed between this element and the next element in the template</span>
+<span class="sd">    :type next_distance_max: int</span>
+<span class="sd">    :param variable: flag to indicate the element has no phrases but has variable text (default is False)</span>
+<span class="sd">    :type variable: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;label must be string&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">required</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">required</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;required&#39; property must be a boolean value&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cardinality</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cardinality</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">cardinality</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="s2">&quot;multi&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;cardinality must be a string with either &#39;single&#39; or &#39;multi&#39; as value&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">next_label</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">next_label</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">next_label</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;next_label list items must be strings&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">next_label</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;next_label must be string or list of strings&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">next_distance_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">next_distance_max</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">next_distance_max</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;next_distance_max must be an positive integer&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;variable&#39; flag must be a boolean&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FuzzyTemplateElement">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement">[docs]</a>
+<span class="k">class</span> <span class="nc">FuzzyTemplateElement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for elements of a fuzzy template: either a single labeled element or a group</span>
+<span class="sd">    of elements.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FuzzyTemplateElement.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateElement.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">element_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a FuzzyTemplateElement.</span>
+
+<span class="sd">        :param label: the label of the element, which can be a single string or a list of strings</span>
+<span class="sd">        :type label: Union[None, str, List[str]]</span>
+<span class="sd">        :param element_type: the type of element, either &#39;label&#39; or &#39;group&#39;</span>
+<span class="sd">        :type element_type: str</span>
+<span class="sd">        :param required: whether or not the element must match for the template to match</span>
+<span class="sd">        :type required: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">element_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">required</span> <span class="o">=</span> <span class="n">required</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FuzzyTemplateLabelElement">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement">[docs]</a>
+<span class="k">class</span> <span class="nc">FuzzyTemplateLabelElement</span><span class="p">(</span><span class="n">FuzzyTemplateElement</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A single labeled element of a fuzzy template, corresponding to phrases in a phrase model</span>
+<span class="sd">    that share this label.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FuzzyTemplateLabelElement.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateLabelElement.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">cardinality</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;single&quot;</span><span class="p">,</span>
+                 <span class="n">next_label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">next_distance_max</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">variable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A FuzzyTemplate element with properties to define its role in the template it is part of.</span>
+<span class="sd">        The &#39;label&#39; property is the only required property. All elements must have either a single string or</span>
+<span class="sd">        list of strings as label.</span>
+
+<span class="sd">        :param label: the label of the element, which can be a single string or a list of strings</span>
+<span class="sd">        :type label: Union[str, List[str]]</span>
+<span class="sd">        :param required: whether or not the element must match for the template to match</span>
+<span class="sd">        :type required: bool</span>
+<span class="sd">        :param cardinality: whether the element can occur only once or multiple times in a template match. The default</span>
+<span class="sd">            value is &#39;multi&#39;</span>
+<span class="sd">        :type cardinality: str</span>
+<span class="sd">        :param next_label: what the label of the next template element should be. This can be a list of labels to</span>
+<span class="sd">            allow different types of element to come next</span>
+<span class="sd">        :type next_label: Union[str, List[str]]</span>
+<span class="sd">        :param next_distance_max: the maximum distance allowed between this element and the next element in the template</span>
+<span class="sd">        :type next_distance_max: int</span>
+<span class="sd">        :param variable: flag to indicate the element has no phrases but has variable text (default is False)</span>
+<span class="sd">        :type variable: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">validate_element_properties</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">required</span><span class="p">,</span> <span class="n">cardinality</span><span class="p">,</span> <span class="n">next_label</span><span class="p">,</span> <span class="n">next_distance_max</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="n">required</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">cardinality</span> <span class="k">if</span> <span class="n">cardinality</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;single&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">next_label</span> <span class="o">=</span> <span class="n">next_label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">next_distance_max</span> <span class="o">=</span> <span class="n">next_distance_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variable</span> <span class="o">=</span> <span class="n">variable</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a debug representation showing the label, required flag and cardinality.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;FuzzyTemplateElement(label=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39;, required=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">required</span><span class="si">}</span><span class="s2">, cardinality=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="si">}</span><span class="s2">&#39;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="FuzzyTemplateGroupElement">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement">[docs]</a>
+<span class="k">class</span> <span class="nc">FuzzyTemplateGroupElement</span><span class="p">(</span><span class="n">FuzzyTemplateElement</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A group of fuzzy template elements (labels and/or nested groups), which can be ordered</span>
+<span class="sd">    or unordered, and becomes required if any of its sub-elements is required.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FuzzyTemplateGroupElement.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplateGroupElement.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FuzzyTemplateElement</span><span class="p">],</span>
+                 <span class="n">label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ordered</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a FuzzyTemplateGroupElement from a list of sub-elements.</span>
+
+<span class="sd">        :param elements: the sub-elements (label or group elements) that make up this group</span>
+<span class="sd">        :type elements: List[FuzzyTemplateElement]</span>
+<span class="sd">        :param label: an optional label for the group itself</span>
+<span class="sd">        :type label: Union[str, None]</span>
+<span class="sd">        :param ordered: whether the sub-elements must occur in order for the group to match</span>
+<span class="sd">        :type ordered: bool</span>
+<span class="sd">        :param required: whether the group must match for the template to match</span>
+<span class="sd">        :type required: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="s2">&quot;group&quot;</span><span class="p">,</span> <span class="n">required</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ordered</span> <span class="o">=</span> <span class="n">ordered</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elements</span> <span class="o">=</span> <span class="n">elements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_element_labels</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_variable_element</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">FuzzyTemplateGroupElement</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">group_element_labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_element_labels</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">group_element_labels</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">has_variable_element</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">has_variable_element</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">group_element_labels</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">FuzzyTemplateLabelElement</span><span class="p">)</span> <span class="ow">and</span> <span class="n">element</span><span class="o">.</span><span class="n">variable</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">has_variable_element</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+                <span class="c1"># override the received required value if one of its sub-elements is required</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">required</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a debug representation showing the label, required flag and ordered flag.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;FuzzyTemplateGroup(label=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39;, required=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">required</span><span class="si">}</span><span class="s2">, ordered=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ordered</span><span class="si">}</span><span class="s2">&#39;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="generate_label_from_json">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.generate_label_from_json">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_label_from_json</span><span class="p">(</span><span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_info</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FuzzyTemplateLabelElement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a FuzzyTemplateLabelElement from a label and an element json dictionary.</span>
+
+<span class="sd">    :param label: the label string for the label element</span>
+<span class="sd">    :type label: str</span>
+<span class="sd">    :param element_info: a dictionary containing the properties of the template label element</span>
+<span class="sd">    :type element_info: dict</span>
+<span class="sd">    :return: a fuzzy template label element</span>
+<span class="sd">    :rtype: FuzzyTemplateLabelElement</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="n">element_info</span><span class="p">[</span><span class="s2">&quot;required&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;required&quot;</span> <span class="ow">in</span> <span class="n">element_info</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="n">cardinality</span> <span class="o">=</span> <span class="n">element_info</span><span class="p">[</span><span class="s2">&quot;cardinality&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;cardinality&quot;</span> <span class="ow">in</span> <span class="n">element_info</span> <span class="k">else</span> <span class="s2">&quot;single&quot;</span>
+    <span class="n">next_label</span> <span class="o">=</span> <span class="n">element_info</span><span class="p">[</span><span class="s2">&quot;next_label&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;next_label&quot;</span> <span class="ow">in</span> <span class="n">element_info</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">next_distance_max</span> <span class="o">=</span> <span class="n">element_info</span><span class="p">[</span><span class="s2">&quot;next_distance_max&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;next_distance_max&quot;</span> <span class="ow">in</span> <span class="n">element_info</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">variable</span> <span class="o">=</span> <span class="n">element_info</span><span class="p">[</span><span class="s2">&quot;variable&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;variable&quot;</span> <span class="ow">in</span> <span class="n">element_info</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">FuzzyTemplateLabelElement</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">required</span><span class="p">,</span> <span class="n">cardinality</span><span class="p">,</span> <span class="n">next_label</span><span class="p">,</span> <span class="n">next_distance_max</span><span class="p">,</span> <span class="n">variable</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="generate_group_from_json">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.generate_group_from_json">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_group_from_json</span><span class="p">(</span><span class="n">element_info</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+                             <span class="n">group_elements</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FuzzyTemplateElement</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FuzzyTemplateGroupElement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a FuzzyTemplateGroupElement from a element json dictionary and a list of group elements.</span>
+
+<span class="sd">    :param element_info: a dictionary containing the properties of the template group element</span>
+<span class="sd">    :type element_info: dict</span>
+<span class="sd">    :param group_elements: a list of fuzzy template elements that are part of the group element</span>
+<span class="sd">    :type group_elements: List[FuzzyTemplateElement]</span>
+<span class="sd">    :return: a fuzzy template group element</span>
+<span class="sd">    :rtype: FuzzyTemplateGroupElement</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="n">element_info</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;label&quot;</span> <span class="ow">in</span> <span class="n">element_info</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">ordered</span> <span class="o">=</span> <span class="n">element_info</span><span class="p">[</span><span class="s2">&quot;ordered&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;ordered&quot;</span> <span class="ow">in</span> <span class="n">element_info</span> <span class="k">else</span> <span class="kc">True</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="n">element_info</span><span class="p">[</span><span class="s2">&quot;required&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;required&quot;</span> <span class="ow">in</span> <span class="n">element_info</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">FuzzyTemplateGroupElement</span><span class="p">(</span><span class="n">group_elements</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="n">ordered</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="n">required</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FuzzyTemplate">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate">[docs]</a>
+<span class="k">class</span> <span class="nc">FuzzyTemplate</span><span class="p">:</span>
+
+<div class="viewcode-block" id="FuzzyTemplate.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_model</span><span class="p">:</span> <span class="n">PhraseModel</span><span class="p">,</span>
+                 <span class="n">template_json</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]]],</span>
+                 <span class="n">ignore_unknown</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">ordered</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A fuzzy search template to register phrases from a phrase model as elements of the template.</span>
+<span class="sd">        The template can be used in combination with a fuzzy template searcher to find a given set</span>
+<span class="sd">        of phrases (the template) within a certain range of text. The order, cardinality of elements</span>
+<span class="sd">        and the distance between them can be specified. Elements can be grouped into ordered or unordered</span>
+<span class="sd">        blocks of elements. Element groups can be hierarchical.</span>
+
+<span class="sd">        :param phrase_model: a PhraseModel object with phrases that correspond to the element label</span>
+<span class="sd">            in the template.</span>
+<span class="sd">        :type phrase_model: PhraseModel</span>
+<span class="sd">        :param template_json: a dictionary of template groups or elements to be registered as part of the template</span>
+<span class="sd">        :type template_json: Union[List[str], List[dict], Dict[str, Union[str, dict]]]</span>
+<span class="sd">        :param ignore_unknown: whether to ignore elements with labels that are not in the phrase model</span>
+<span class="sd">        :type ignore_unknown: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span> <span class="o">=</span> <span class="n">phrase_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ordered</span> <span class="o">=</span> <span class="n">ordered</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">FuzzyTemplateLabelElement</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">FuzzyTemplateGroupElement</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">required</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">FuzzyTemplateLabelElement</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_element_index</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FuzzyTemplateLabelElement</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_element_index</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FuzzyTemplateGroupElement</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_element</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignore_unknown</span> <span class="o">=</span> <span class="n">ignore_unknown</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_json</span> <span class="o">=</span> <span class="n">template_json</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;label&#39;</span> <span class="ow">in</span> <span class="n">template_json</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">template_name</span> <span class="o">=</span> <span class="n">template_json</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_template</span><span class="p">(</span><span class="n">template_json</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a debug representation showing the registered labels and required labels.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;FuzzyTemplate(labels=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="si">}</span><span class="s2">, required=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_required_labels</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+<div class="viewcode-block" id="FuzzyTemplate.get_label_phrases">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_label_phrases">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_label_phrases</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Phrase</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of phrases that have a given label.</span>
+
+<span class="sd">        :param label: a phrase label for phrases in the registered phrase_model</span>
+<span class="sd">        :type label: str</span>
+<span class="sd">        :return: a list of phrases from the registered phrase model that have a given phrase</span>
+<span class="sd">        :rtype: List[Phrase]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="o">.</span><span class="n">is_label_of</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span> <span class="k">for</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="o">.</span><span class="n">is_label_of</span><span class="p">[</span><span class="n">label</span><span class="p">]]</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplate.has_label">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.has_label">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the template has label elements with a given label or list of label (any or all).</span>
+
+<span class="sd">        :param label: a fuzzy element label</span>
+<span class="sd">        :type label: Union[str, List[str]]</span>
+<span class="sd">        :return: whether the label corresponds to any registered element(s)</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">label_item</span> <span class="ow">in</span> <span class="n">label</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">label_item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_element_index</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">label</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_element_index</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplate.has_group">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.has_group">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the template has group elements with a given group name.</span>
+
+<span class="sd">        :param group: a fuzzy element group</span>
+<span class="sd">        :type group: str</span>
+<span class="sd">        :return: whether the group corresponds to any registered element(s)</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_element_index</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplate.get_element">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_element">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">FuzzyTemplateLabelElement</span><span class="p">,</span> <span class="n">FuzzyTemplateGroupElement</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the element corresponding to a given label.</span>
+
+<span class="sd">        :param element_label: a fuzzy element label</span>
+<span class="sd">        :type element_label: str</span>
+<span class="sd">        :return: the element corresponding to the label or None if label is unknown</span>
+<span class="sd">        :rtype: Union[FuzzyTemplateElement]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_label</span><span class="p">(</span><span class="n">element_label</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_element_index</span><span class="p">[</span><span class="n">element_label</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_group</span><span class="p">(</span><span class="n">element_label</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_element_index</span><span class="p">[</span><span class="n">element_label</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplate.register_template">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.register_template">[docs]</a>
+    <span class="k">def</span> <span class="nf">register_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template_json</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a list of elements as a fuzzy template. Each element contains a label</span>
+<span class="sd">        that corresponds to at least one phrase in the registered phrase model.</span>
+
+<span class="sd">        :param template_json: a dictionary of template groups or elements to be registered as part of the template</span>
+<span class="sd">        :type template_json: Union[List[str], List[dict], Dict[str, Union[str, dict]]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">template_json</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="c1"># if the template is a list, turn it into a dictionary first</span>
+            <span class="n">elements</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">ele</span> <span class="ow">in</span> <span class="n">template_json</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ele</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">ele</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">ele</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;label&quot;</span><span class="p">}</span>
+                <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ele</span><span class="p">)</span>
+            <span class="n">template_json</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;group&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;elements&quot;</span><span class="p">:</span> <span class="n">elements</span>
+            <span class="p">}</span>
+        <span class="k">if</span> <span class="s2">&quot;type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">template_json</span><span class="p">:</span>
+            <span class="n">template_json</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;group&quot;</span> <span class="k">if</span> <span class="s2">&quot;elements&quot;</span> <span class="ow">in</span> <span class="n">template_json</span> <span class="k">else</span> <span class="s2">&quot;label&quot;</span>
+        <span class="k">if</span> <span class="n">template_json</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span>
+            <span class="c1"># make sure the top level is always a group</span>
+            <span class="n">template_json</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;group&quot;</span><span class="p">,</span> <span class="s2">&quot;elements&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">template_json</span><span class="p">]}</span>
+        <span class="k">elif</span> <span class="n">template_json</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;group&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;element type must be &#39;label&#39; or &#39;group&#39;.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_group_element</span><span class="p">(</span><span class="n">template_json</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplate.get_required_elements">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_required_elements">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_required_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">FuzzyTemplateLabelElement</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return all required elements in the template.</span>
+
+<span class="sd">        :return: the list of labels of required elements</span>
+<span class="sd">        :rtype: List[FuzzyTemplateElement]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">element</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">required</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplate.get_required_labels">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_required_labels">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_required_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the labels of all required elements in the template.</span>
+
+<span class="sd">        :return: the list of labels of required elements</span>
+<span class="sd">        :rtype: List[str]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">label</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">required</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplate.get_elements_by_cardinality">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_elements_by_cardinality">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_elements_by_cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cardinality</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;single&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">FuzzyTemplateLabelElement</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return all template elements with a given cardinality.</span>
+
+<span class="sd">        :param cardinality: a cardinality type (&#39;single&#39; or &#39;multi&#39;)</span>
+<span class="sd">        :type cardinality: str</span>
+<span class="sd">        :return: the list of labels of elements with a given cardinality</span>
+<span class="sd">        :rtype: List[str]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">element</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span> <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">==</span> <span class="n">cardinality</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplate.get_labels_by_cardinality">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.get_labels_by_cardinality">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_labels_by_cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cardinality</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;single&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the labels of all template elements with a given cardinality.</span>
+
+<span class="sd">        :param cardinality: a cardinality type (&#39;single&#39; or &#39;multi&#39;)</span>
+<span class="sd">        :type cardinality: str</span>
+<span class="sd">        :return: the list of labels of elements with a given cardinality</span>
+<span class="sd">        :rtype: List[str]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">label</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span> <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">==</span> <span class="n">cardinality</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplate.parse_label_element">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.parse_label_element">[docs]</a>
+    <span class="k">def</span> <span class="nf">parse_label_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_info</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">FuzzyTemplateLabelElement</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse a label element dictionary/JSON object into a fuzzy template label element.</span>
+
+<span class="sd">        :param label_info: a dictionary containing the properties of the template label element</span>
+<span class="sd">        :type label_info: dict</span>
+<span class="sd">        :return: a fuzzy template label element, or None if the label is not used in the phrase model</span>
+<span class="sd">        :rtype: FuzzyTemplateLabelElement</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label_info</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">label_info</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">label_info</span><span class="p">}</span>
+        <span class="k">if</span> <span class="s2">&quot;label&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">label_info</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;element json without label:&quot;</span><span class="p">,</span> <span class="n">label_info</span><span class="p">)</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">label_info</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_model</span><span class="o">.</span><span class="n">is_label</span><span class="p">(</span><span class="n">label</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s2">&quot;variable&quot;</span> <span class="ow">in</span> <span class="n">label_info</span> <span class="ow">and</span> <span class="n">label_info</span><span class="p">[</span><span class="s2">&quot;variable&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_unknown</span><span class="p">:</span>
+                <span class="c1"># print(&quot;skipping unknown phrase label&quot;, label)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;label &#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39; does not correspond to any phrase in registered phrase model&quot;</span><span class="p">)</span>
+        <span class="n">element</span> <span class="o">=</span> <span class="n">generate_label_from_json</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">label_info</span><span class="p">)</span>
+        <span class="c1"># register the label element as part of the template</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_element_index</span><span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">element</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+            <span class="c1"># keep track of all label elements that are required</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">required</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">element</span></div>
+
+
+<div class="viewcode-block" id="FuzzyTemplate.parse_group_element">
+<a class="viewcode-back" href="../../../source/fuzzy_search.pattern.html#fuzzy_search.pattern.fuzzy_template.FuzzyTemplate.parse_group_element">[docs]</a>
+    <span class="k">def</span> <span class="nf">parse_group_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_info</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FuzzyTemplateGroupElement</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse a group element dictionary/JSON object into a fuzzy template group element.</span>
+
+<span class="sd">        :param group_info: a dictionary containing the properties of the template group element</span>
+<span class="sd">        :type group_info: dict</span>
+<span class="sd">        :return: a fuzzy template group element</span>
+<span class="sd">        :rtype: FuzzyTemplateGroupElement</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">group_elements</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">element_info</span> <span class="ow">in</span> <span class="n">group_info</span><span class="p">[</span><span class="s2">&quot;elements&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element_info</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="c1"># if element is a string, it must be a label element</span>
+                <span class="n">element_info</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">element_info</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;label&quot;</span><span class="p">}</span>
+            <span class="k">elif</span> <span class="s2">&quot;type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">element_info</span><span class="p">:</span>
+                <span class="n">element_info</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;group&quot;</span> <span class="k">if</span> <span class="s2">&quot;elements&quot;</span> <span class="ow">in</span> <span class="n">element_info</span> <span class="k">else</span> <span class="s2">&quot;label&quot;</span>
+            <span class="k">if</span> <span class="n">element_info</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;group&quot;</span><span class="p">:</span>
+                <span class="n">element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_group_element</span><span class="p">(</span><span class="n">element_info</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_label_element</span><span class="p">(</span><span class="n">element_info</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">element</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="n">group_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="n">generate_group_from_json</span><span class="p">(</span><span class="n">group_info</span><span class="p">,</span> <span class="n">group_elements</span><span class="p">)</span>
+        <span class="c1"># register the group element as part of the template</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">label</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">group_element_index</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">group</span>
+        <span class="k">return</span> <span class="n">group</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
