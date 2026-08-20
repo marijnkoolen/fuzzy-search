@@ -1,3 +1,7 @@
+"""The PhraseModel class, which holds a collection of phrases together with their spelling
+variants, distractors, labels, and custom metadata, and provides the indexes used to search
+for them in text."""
+
 import copy
 import json
 import re
@@ -13,6 +17,19 @@ def as_phrase_object(phrase: Union[str, dict, Phrase],
                      ngram_size: int = 2,
                      skip_size: int = 2,
                      tokenizer: Tokenizer = None) -> Phrase:
+    """Coerce a phrase given as a string, dictionary, or Phrase object into a Phrase object.
+
+    :param phrase: a phrase string, phrase dictionary, or Phrase object
+    :type phrase: Union[str, dict, Phrase]
+    :param ngram_size: the ngram size to use when constructing a new Phrase
+    :type ngram_size: int
+    :param skip_size: the skip size to use when constructing a new Phrase
+    :type skip_size: int
+    :param tokenizer: an optional tokenizer to use when constructing a new Phrase
+    :type tokenizer: Tokenizer
+    :return: a Phrase object
+    :rtype: Phrase
+    """
     if isinstance(phrase, Phrase):
         return phrase
     if isinstance(phrase, dict):
@@ -27,6 +44,14 @@ def as_phrase_object(phrase: Union[str, dict, Phrase],
 
 
 def is_phrase_dict(phrase_dict: Dict[str, Union[str, List[str]]]) -> bool:
+    """Check whether a dictionary is a valid phrase dictionary, i.e. it has a 'phrase' string
+    value, and any 'variants', 'distractors' and 'labels' values are valid strings/lists of strings.
+
+    :param phrase_dict: a dictionary to validate as a phrase dictionary
+    :type phrase_dict: Dict[str, Union[str, List[str]]]
+    :return: whether the dictionary is a valid phrase dictionary
+    :rtype: bool
+    """
     if not isinstance(phrase_dict, dict):
         return False
     if "phrase" not in phrase_dict:
@@ -53,6 +78,10 @@ def is_phrase_dict(phrase_dict: Dict[str, Union[str, List[str]]]) -> bool:
 
 
 class PhraseModel:
+    """A collection of phrases for fuzzy searching, along with their registered spelling
+    variants, distractors, labels and custom metadata. Maintains the indexes (by word, token,
+    length, label, etc.) used by the search routines to find matching phrases efficiently.
+    """
 
     def __init__(self, phrases: Union[None, List[Union[str, Dict[str, Union[str, list]], Phrase]]] = None,
                  variants: Union[None, List[Union[Dict[str, List[str]], Phrase]]] = None,
@@ -62,6 +91,26 @@ class PhraseModel:
                  custom: Union[None, List[Dict[str, Union[str, int, float, list]]]] = None,
                  config: dict = None,
                  tokenizer: Tokenizer = None):
+        """Create a PhraseModel, optionally pre-populated with phrases, variants, distractors,
+        labels, an entire model, and/or custom metadata.
+
+        :param phrases: a list of phrases (strings, phrase dictionaries, or Phrase objects)
+        :type phrases: Union[None, List[Union[str, Dict[str, Union[str, list]], Phrase]]]
+        :param variants: a list of phrase dictionaries with a 'variants' property
+        :type variants: Union[None, List[Union[Dict[str, List[str]], Phrase]]]
+        :param phrase_labels: a list of phrase/label dictionaries
+        :type phrase_labels: Union[None, List[Dict[str, str]]]
+        :param distractors: a list of phrase dictionaries with a 'distractors' property
+        :type distractors: Union[None, List[Union[Dict[str, List[str]], Phrase]]]
+        :param model: a list of phrase dictionaries combining phrases, variants, distractors, labels and custom data
+        :type model: Union[None, List[Dict[str, Union[str, list]]]]
+        :param custom: a list of phrase dictionaries with custom metadata properties
+        :type custom: Union[None, List[Dict[str, Union[str, int, float, list]]]]
+        :param config: a configuration dictionary, supporting 'ngram_size' and 'skip_size' keys
+        :type config: dict
+        :param tokenizer: an optional tokenizer used to tokenize phrases
+        :type tokenizer: Tokenizer
+        """
         if config is None:
             config = {}
         self.ngram_size = config["ngram_size"] if "ngram_size" in config else 2
@@ -106,10 +155,11 @@ class PhraseModel:
         self.set_phrase_token_max_end_offsets()
 
     def __repr__(self):
-        """A phrase model to support fuzzy searching in OCR/HTR output."""
+        """Return a debug representation showing the model's JSON representation."""
         return f"PhraseModel({json.dumps(self.json, indent=2)})"
 
     def __str__(self):
+        """Return the same representation as __repr__."""
         return self.__repr__()
 
     def add_model(self, model: List[Union[str, Dict[str, Union[str, list]]]]) -> None:
@@ -438,6 +488,13 @@ class PhraseModel:
                 for phrase in phrases]
 
     def variant_of(self, variant: Union[str, Phrase]) -> Union[None, Phrase]:
+        """Return the main phrase that a given variant is registered as a variant of.
+
+        :param variant: a variant phrase string or phrase object
+        :type variant: Union[str, Phrase]
+        :return: the main phrase the variant belongs to, or None if it is not a registered variant
+        :rtype: Union[None, Phrase]
+        """
         variant_string = variant.phrase_string if isinstance(variant, Phrase) else variant
         if variant_string in self.is_variant_of:
             phrase_string = self.is_variant_of[variant_string]
@@ -704,6 +761,13 @@ class PhraseModel:
                 self.token_in_phrase[token.n].add(phrase.phrase_string)
 
     def has_token(self, token: Union[str, Token]):
+        """Check if a given token occurs in any registered phrase.
+
+        :param token: a token object whose normalized form is checked against the token index
+        :type token: Union[str, Token]
+        :return: whether the token occurs in any registered phrase
+        :rtype: bool
+        """
         return token.n in self.token_in_phrase
 
     def set_phrase_token_max_start_offsets(self):

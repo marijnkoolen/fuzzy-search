@@ -1,3 +1,15 @@
+"""Token-level fuzzy searcher.
+
+Defines :class:`FuzzyTokenSearcher`, which tokenizes both phrases and target
+text and uses character skipgrams at the token level (rather than over the
+whole phrase string) to find candidate token matches. These token matches are
+then chained into partial and full phrase matches. This is generally faster
+than whole-phrase skipgram matching (as done by
+:class:`~fuzzy_search.search.searcher.FuzzySearcher`), at the cost of being
+slightly less exhaustive. The module also defines the helper functions used
+to build a vocabulary of distractor/match term pairs and to turn token
+matches into phrase matches.
+"""
 from __future__ import annotations
 
 import time
@@ -10,9 +22,6 @@ from Levenshtein import ratio as score_ratio
 from fuzzy_search.phrase.phrase import Phrase
 from fuzzy_search.match.phrase_match import PhraseMatch
 from fuzzy_search.match.phrase_match import MatchType
-from fuzzy_search.match.phrase_match import TokenMatch
-from fuzzy_search.match.phrase_match import PartialPhraseMatch
-from fuzzy_search.match.phrase_match import copy_partial_match
 from fuzzy_search.match.skip_match import SkipMatches
 from fuzzy_search.phrase.phrase_model import PhraseModel
 from fuzzy_search.search.searcher import FuzzySearcher
@@ -23,7 +32,195 @@ from fuzzy_search.tokenization.token import Tokenizer
 from fuzzy_search.tokenization.vocabulary import Vocabulary
 
 
+class TokenMatch:
+    """A match between one or more text tokens and one or more phrase tokens, with the type
+    of match (full or partial) between them."""
+
+    def __init__(self, text_tokens: Union[Token, List[Token]],
+                 phrase_tokens: Union[str, List[str]],
+                 match_type: MatchType):
+        """Create a TokenMatch.
+
+        :param text_tokens: one or more text tokens involved in the match
+        :type text_tokens: Union[Token, List[Token]]
+        :param phrase_tokens: one or more phrase tokens involved in the match
+        :type phrase_tokens: Union[str, List[str]]
+        :param match_type: the type of match between the text and phrase tokens
+        :type match_type: MatchType
+        """
+        if isinstance(text_tokens, Token):
+            text_tokens = (text_tokens, )
+        elif isinstance(text_tokens, list):
+            text_tokens = tuple(text_tokens)
+        if isinstance(phrase_tokens, str):
+            phrase_tokens = (phrase_tokens, )
+        elif isinstance(phrase_tokens, list):
+            phrase_tokens = tuple(phrase_tokens)
+        self.text_tokens = text_tokens
+        self.phrase_tokens = phrase_tokens
+        self.match_type = match_type
+        self.first = text_tokens[0] if isinstance(text_tokens, Iterable) else text_tokens
+        self.last = text_tokens[-1] if isinstance(text_tokens, Iterable) else text_tokens
+        self.text_start = self.first.char_index
+        self.text_end = self.last.char_index + len(self.last)
+        self.text_length = self.text_end - self.text_start
+
+    def __repr__(self):
+        """Return a debug representation showing the match type, text tokens and phrase tokens."""
+        return f"{self.__class__.__name__}(match_type={self.match_type}, " \
+               f"text_tokens={self.text_tokens}, phrase_tokens={self.phrase_tokens})"
+
+
+class PartialPhraseMatch:
+    """A growing token-based match between a phrase and a sequence of text tokens, built up
+    incrementally from individual TokenMatch objects while tracking missing and redundant
+    phrase tokens and enforcing maximum character/token gaps between matched tokens."""
+
+    def __init__(self, phrase: Phrase, token_matches: List[TokenMatch] = None, max_char_gap: int = 20,
+                 max_token_gap: int = 1):
+        """Create a PartialPhraseMatch for a given phrase.
+
+        :param phrase: the phrase being matched
+        :type phrase: Phrase
+        :param token_matches: an optional initial list of token matches to add
+        :type token_matches: List[TokenMatch]
+        :param max_char_gap: the maximum allowed character gap between consecutive matched tokens
+        :type max_char_gap: int
+        :param max_token_gap: the maximum allowed token index gap between consecutive matched tokens
+        :type max_token_gap: int
+        """
+        # create a new list instead of pointing to original list
+        self.token_matches = []
+        self.phrase = phrase
+        self.text_tokens = []
+        self.phrase_tokens = []
+        self.text_phrase_map = defaultdict(list)
+        self.missing_tokens = [token.n for token in phrase.tokens]
+        self.redundant_tokens = []
+        self.max_char_gap = max_char_gap
+        self.max_token_gap = max_token_gap
+        self.text_start = -1
+        self.text_end = -1
+        self.text_length = 0
+        self.match_string = None
+        self.first_text_token = None
+        self.last_text_token = None
+        self.first_phrase_token = None
+        self.last_phrase_token = None
+        self.levenshtein_score = None
+        if token_matches is not None:
+            self.add_tokens(token_matches)
+
+    def __repr__(self):
+        """Return a debug representation showing the phrase, token matches, and missing tokens."""
+        return f"{self.__class__.__name__}(\n\tphrase={self.phrase}, \n\ttoken_matches={self.token_matches}, " \
+               f"\n\ttext_tokens={self.text_tokens}, \n\tphrase_tokens={self.phrase_tokens}, " \
+               f"\n\tmissing_tokens={self.missing_tokens}\n)"
+
+    def _update(self):
+        text_tokens = []
+        prev_match = None
+        for match in self.token_matches:
+            if prev_match is None:
+                text_tokens.extend(match.text_tokens)
+            elif match.text_start == prev_match.text_start:
+                continue
+            elif match.text_start >= prev_match.text_end:
+                text_tokens.extend(match.text_tokens)
+            else:
+                print('TO DO: figure out how to filter text tokens in partially overlapping token matches')
+            prev_match = match
+        self.text_tokens = tuple(text_tokens)
+        self.phrase_tokens = tuple([token for match in self.token_matches for token in match.phrase_tokens])
+        self.first_text_token = self.text_tokens[0]
+        self.last_text_token = self.text_tokens[-1]
+        self.text_start = self.first_text_token.char_index
+        self.text_end = self.last_text_token.char_index + len(self.last_text_token)
+        self.text_length = self.text_end - self.text_start
+
+    def pop(self):
+        """Remove the first (earliest) token match from this partial match and update its
+        derived state (text/phrase tokens, offsets, length)."""
+        self.token_matches.pop(0)
+        self._update()
+
+    def _check_gap(self, token_match: TokenMatch):
+        token_gap = token_match.text_tokens[0].index - self.text_tokens[-1].index
+        char_gap = token_match.text_tokens[0].char_index - self.text_end
+        if token_gap > self.max_token_gap or char_gap > self.max_char_gap:
+            self.__init__(phrase=self.phrase)
+
+    def push(self, token_match: TokenMatch):
+        """Add a new token match to the end of this partial match, resetting the match if the
+        gap to the new token match exceeds the configured maximum character/token gap, and
+        updating which phrase tokens are missing or redundant.
+
+        :param token_match: the token match to add
+        :type token_match: TokenMatch
+        """
+        self.token_matches.append(token_match)
+        if len(self.text_tokens) > 0:
+            self._check_gap(token_match)
+        for text_token in token_match.text_tokens:
+            self.text_tokens.append(text_token)
+            self.text_phrase_map[text_token].extend(list(token_match.phrase_tokens))
+        for phrase_token in token_match.phrase_tokens:
+            self.phrase_tokens.append(phrase_token)
+            if phrase_token in self.missing_tokens:
+                self.missing_tokens.remove(phrase_token)
+            else:
+                self.redundant_tokens.append(phrase_token)
+
+    def add_tokens(self, token_matches: Union[List[TokenMatch], TokenMatch]):
+        """Add one or more token matches to this partial match and update its derived state.
+
+        :param token_matches: a single token match or a list of token matches to add
+        :type token_matches: Union[List[TokenMatch], TokenMatch]
+        """
+        if isinstance(token_matches, TokenMatch):
+            token_matches = [token_matches]
+        for token_match in token_matches:
+            for phrase_token in token_match.phrase_tokens:
+                if phrase_token in self.missing_tokens:
+                    self.missing_tokens.remove(phrase_token)
+        self.token_matches.extend(token_matches)
+        self._update()
+
+
+def copy_partial_match(partial_match: PartialPhraseMatch):
+    """Create a deep-ish copy of a PartialPhraseMatch, copying its tracked token and offset state.
+
+    :param partial_match: the partial match to copy
+    :type partial_match: PartialPhraseMatch
+    :return: a new, independent PartialPhraseMatch with the same state
+    :rtype: PartialPhraseMatch
+    """
+    new_pm = PartialPhraseMatch(phrase=partial_match.phrase, token_matches=None,
+                                max_char_gap=partial_match.max_char_gap,
+                                max_token_gap=partial_match.max_token_gap)
+    new_pm.token_matches = [tm for tm in partial_match.token_matches]
+    new_pm.missing_tokens = [token for token in partial_match.missing_tokens]
+    new_pm.text_tokens = [token for token in partial_match.text_tokens]
+    new_pm.phrase_tokens = [token for token in partial_match.phrase_tokens]
+    new_pm.redundant_tokens = [token for token in partial_match.redundant_tokens]
+    new_pm.first_text_token = partial_match.first_text_token
+    new_pm.last_text_token = partial_match.last_text_token
+    new_pm.text_start = partial_match.text_start
+    new_pm.text_end = partial_match.text_end
+    new_pm.text_length = partial_match.text_length
+    return new_pm
+
+
 def map_text_tokens_to_phrase_tokens(partial_match: PartialPhraseMatch) -> Union[Dict[str, List[str]], None]:
+    """Build a mapping from text token strings to the phrase token strings they matched, for a
+    partial phrase match.
+
+    :param partial_match: a partial phrase match with its token matches
+    :type partial_match: PartialPhraseMatch
+    :return: a dictionary mapping text token strings to lists of matched phrase token strings,
+        or None if the partial match does not cover all of the phrase's tokens
+    :rtype: Union[Dict[str, List[str]], None]
+    """
     text_phrase_map = defaultdict(list)
     phrase_token_set = set()
     phrase_tokens = [token.n for token in partial_match.phrase.tokens]
@@ -40,6 +237,15 @@ def map_text_tokens_to_phrase_tokens(partial_match: PartialPhraseMatch) -> Union
 
 
 def get_tokenized_doc(text: Union[str, Dict[str, any], Doc], tokenizer: Tokenizer) -> Doc:
+    """Return text as a tokenized :class:`Doc`, tokenizing it with the given tokenizer if needed.
+
+    :param text: a text string, a dictionary with 'text' and 'id' properties, or a Doc
+    :type text: Union[str, Dict[str, any], Doc]
+    :param tokenizer: the tokenizer to use if text is not already a Doc
+    :type tokenizer: Tokenizer
+    :return: the tokenized document
+    :rtype: Doc
+    """
     if isinstance(text, Doc):
         return text
     elif isinstance(text, dict):
@@ -51,6 +257,16 @@ def get_tokenized_doc(text: Union[str, Dict[str, any], Doc], tokenizer: Tokenize
 
 
 def get_text_tokens(text: Union[str, Dict[str, any], Doc], tokenizer: Tokenizer = None):
+    """Return the list of tokens for the given text, tokenizing it if necessary.
+
+    :param text: a text string, a dictionary with 'text' and 'id' properties, a Doc, or a list
+        of Token objects (returned unchanged)
+    :type text: Union[str, Dict[str, any], Doc]
+    :param tokenizer: the tokenizer to use if text is not already tokenized
+    :type tokenizer: Tokenizer
+    :return: a list of tokens
+    :rtype: List[Token]
+    """
     if isinstance(text, Doc):
         return text.tokens
     elif isinstance(text, list) and all(isinstance(ele, Token) for ele in text):
@@ -65,6 +281,13 @@ def get_text_tokens(text: Union[str, Dict[str, any], Doc], tokenizer: Tokenizer 
 
 
 def get_text_string(text: Union[str, Dict[str, any], Doc]) -> str:
+    """Return the plain text string for the given text, regardless of its representation.
+
+    :param text: a text string, a dictionary with a 'text' property, a Doc, or a list of tokens
+    :type text: Union[str, Dict[str, any], Doc]
+    :return: the underlying text string
+    :rtype: str
+    """
     if isinstance(text, Doc):
         return text.text
     elif isinstance(text, list) and all(isinstance(ele, Token) for ele in text):
@@ -79,14 +302,24 @@ def get_text_string(text: Union[str, Dict[str, any], Doc]) -> str:
 
 
 def has_max_start_offset(phrase: Phrase):
+    """Return whether the phrase has a configured maximum start offset restriction."""
     return phrase.max_start_offset is not None and phrase.max_start_offset != -1
 
 
 def has_max_end_offset(phrase: Phrase):
+    """Return whether the phrase has a configured maximum end offset restriction."""
     return phrase.max_end_offset is not None and phrase.max_end_offset != -1
 
 
 class FuzzyTokenSearcher(FuzzySearcher):
+    """Fuzzy searcher that matches phrases against text at the token level.
+
+    Tokenizes phrases and text and indexes phrase tokens by character skipgram,
+    so that candidate token matches can be found per text token. Token matches
+    are then chained into partial and full phrase matches, taking into account
+    a vocabulary of known terms and known match/distractor term pairs to speed
+    up and disambiguate matching.
+    """
 
     def __init__(self, phrase_list: List[any] = None,
                  phrase_model: Union[Dict[str, any], List[Dict[str, any]], PhraseModel] = None,
@@ -98,19 +331,19 @@ class FuzzyTokenSearcher(FuzzySearcher):
         configuration dictionary that overrides the default configuration values. The default config dictionary
         is available via `fuzzy_search.default_config`.
 
-        To set e.g. the character ngram_size to 3 and the skip_size to 1 use the following dictionary:
+        To set e.g. the character ngram_size to 3 and the skip_size to 1 use the following dictionary::
 
-        config = {
-            'ngram_size': 3,
-            'skip_size': 1
-        }
+            config = {
+                'ngram_size': 3,
+                'skip_size': 1
+            }
 
         :param phrase_list: a list of phrases (a list of strings or more complex dictionaries with phrases and variants)
         :type phrase_list: list
         :param phrase_model: a phrase model
         :type phrase_model: PhraseModel
         :param config: a configuration dictionary to override default configuration properties.
-        Only the properties in the config dictionaries of updated.
+            Only the properties present in the config dictionary are updated.
         :type config: dict
         :param tokenizer: a tokenizer instance
         :type tokenizer: Tokenizer
@@ -155,6 +388,7 @@ class FuzzyTokenSearcher(FuzzySearcher):
 
     @staticmethod
     def terms_to_string(terms: Union[str, List[str], tuple]):
+        """Convert a string, list of strings, or tuple of terms into a single space-joined string."""
         if isinstance(terms, str):
             pass
         elif isinstance(terms, Iterable):
@@ -165,6 +399,7 @@ class FuzzyTokenSearcher(FuzzySearcher):
 
     @staticmethod
     def terms_to_tuple(terms: Union[str, List[str], tuple]):
+        """Convert a string, list of strings, or tuple of terms into a tuple of terms."""
         if isinstance(terms, str):
             terms = tuple([terms])
         elif isinstance(terms, list):
@@ -172,6 +407,8 @@ class FuzzyTokenSearcher(FuzzySearcher):
         return tuple(terms)
 
     def terms_to_id_tuple(self, terms: Union[str, tuple]):
+        """Convert terms to a tuple of their vocabulary term ids, or None if any term is not
+        in the vocabulary."""
         # print(terms, type(terms))
         terms = self.terms_to_tuple(terms)
         if any([self.vocabulary.has_term(tt) is False for tt in terms]):
@@ -179,6 +416,13 @@ class FuzzyTokenSearcher(FuzzySearcher):
         return tuple([self.vocabulary.term_id[tt] for tt in terms])
 
     def index_text_phrase_term_pairs(self, text_phrase_term_pairs, pair_type: str):
+        """Index a collection of (text_terms, phrase_terms) pairs as either 'match' or 'distractor'
+        pairs.
+
+        :param text_phrase_term_pairs: an iterable of (text_terms, phrase_terms) tuples
+        :param pair_type: either 'match' or 'distractor'
+        :type pair_type: str
+        """
         for text_terms, phrase_terms in text_phrase_term_pairs:
             try:
                 self.index_text_phrase_term_pair(text_terms=text_terms, phrase_terms=phrase_terms, pair_type=pair_type)
@@ -189,6 +433,18 @@ class FuzzyTokenSearcher(FuzzySearcher):
     def index_text_phrase_term_pair(self, text_terms: Union[str, tuple],
                                     phrase_terms: Union[str, tuple],
                                     pair_type: str):
+        """Index a single (text_terms, phrase_terms) pair as either a 'match' or 'distractor' pair.
+
+        For distractor pairs, also registers the text term's skipgram matches against this
+        phrase term as :attr:`MatchType.NONE` so it will be excluded from later matching.
+
+        :param text_terms: the text term(s) of the pair
+        :type text_terms: Union[str, tuple]
+        :param phrase_terms: the phrase term(s) of the pair
+        :type phrase_terms: Union[str, tuple]
+        :param pair_type: either 'match' or 'distractor'
+        :type pair_type: str
+        """
         text_term_ids = self.terms_to_id_tuple(text_terms)
         phrase_term_ids = self.terms_to_id_tuple(phrase_terms)
         if text_term_ids is None or phrase_term_ids is None:
@@ -203,9 +459,18 @@ class FuzzyTokenSearcher(FuzzySearcher):
 
     def index_distractor_pair(self, text_terms: Union[str, tuple],
                               phrase_terms: Union[str, tuple]):
+        """Register text_terms as a distractor pair for phrase_terms (i.e. similar enough to be
+        a skipgram candidate, but not an actual match)."""
         self.index_text_phrase_term_pair(text_terms, phrase_terms, 'distractor')
 
     def find_vocabulary_text_phrase_term_pairs(self):
+        """Find, for every term in the vocabulary, the phrase tokens it has skipgram overlap
+        with, and classify each (term, phrase_token) pair as a match or a distractor pair based
+        on :func:`is_distractor`.
+
+        :return: a tuple (match_pairs, distractor_pairs), each a set of ((term,), (phrase_token,)) tuples
+        :rtype: tuple
+        """
         if self.vocabulary is None:
             return None
         distractor_pairs = set()
@@ -231,6 +496,8 @@ class FuzzyTokenSearcher(FuzzySearcher):
 
     def has_text_phrase_term_pair(self, text_terms: Union[str, tuple], phrase_terms: Union[str, tuple],
                                   pair_type: str):
+        """Check whether (text_terms, phrase_terms) is registered as a pair of the given type
+        ('match' or 'distractor')."""
         text_term_ids = self.terms_to_id_tuple(text_terms)
         phrase_term_ids = self.terms_to_id_tuple(phrase_terms)
         if text_term_ids is None or phrase_term_ids is None:
@@ -240,12 +507,19 @@ class FuzzyTokenSearcher(FuzzySearcher):
         return (text_term_ids, phrase_term_ids) in self.text_phrase_term_pairs[pair_type]
 
     def has_match_pair(self, text_terms: Union[str, tuple], phrase_terms: Union[str, tuple]):
+        """Check whether (text_terms, phrase_terms) is registered as a known match pair."""
         return self.has_text_phrase_term_pair(text_terms, phrase_terms, pair_type='match')
 
     def has_distractor_pair(self, text_terms: Union[str, tuple], phrase_terms: Union[str, tuple]):
+        """Check whether (text_terms, phrase_terms) is registered as a known distractor pair."""
         return self.has_text_phrase_term_pair(text_terms, phrase_terms, pair_type='distractor')
 
     def add_vocabulary(self, vocab: Union[List[str], Vocabulary]):
+        """Add terms to the searcher's vocabulary.
+
+        :param vocab: a list of term strings, or a Vocabulary instance to merge in
+        :type vocab: Union[List[str], Vocabulary]
+        """
         if isinstance(vocab, Vocabulary):
             if len(self.vocabulary) == 0:
                 self.vocabulary = vocab
@@ -260,11 +534,22 @@ class FuzzyTokenSearcher(FuzzySearcher):
             raise TypeError("Vocabulary 'vocab' must be a list of strings or a Vocabulary instance.")
 
     def configure(self, config: Dict[str, any]):
+        """Update any existing instance attributes of this searcher from a config dictionary.
+
+        :param config: a dictionary of configuration property names and values
+        :type config: Dict[str, any]
+        """
         for prop in config:
             if hasattr(self, prop):
                 self.__setattr__(prop, config[prop])
 
     def index_phrase_token_skipgrams(self, debug: int = 0):
+        """Index the character skipgrams of every token that occurs in the registered phrase
+        model, so that text tokens can later be looked up by skipgram.
+
+        :param debug: level to show debug information
+        :type debug: int
+        """
         debug = self._get_debug_level(debug)
         for token_string in self.phrase_model.token_in_phrase:
             if debug > 2:
@@ -276,6 +561,9 @@ class FuzzyTokenSearcher(FuzzySearcher):
                 self.token_skipgram_index[skipgram.string].add(token_string)
 
     def add_vocabulary_skipgram_matches(self):
+        """Precompute and cache, for every term in the vocabulary, its skipgram matches against
+        phrase tokens, removing any matches that are registered distractor pairs or that have
+        match type :attr:`MatchType.NONE`."""
         for term in self.vocabulary.term_id:
             term_token = Token(string=term, index=0, char_index=0, char_end_index=len(term))
             # self.config['skipgram_threshold'] += 0.2
@@ -585,6 +873,19 @@ def is_distractor(text_token: str, phrase_token: str, dist_threshold: int = 2, d
 
 
 def token_is_out_of_phrase_range(token: Token, phrase: Phrase, token_searcher: FuzzyTokenSearcher):
+    """Check whether a text token's character position falls outside the phrase's configured
+    max_start_offset / max_end_offset range, accounting for the token's expected offset within
+    the phrase.
+
+    :param token: a text token
+    :type token: Token
+    :param phrase: the phrase to check the token's position against
+    :type phrase: Phrase
+    :param token_searcher: the token searcher holding the phrase model
+    :type token_searcher: FuzzyTokenSearcher
+    :return: True if the token falls outside the phrase's allowed offset range
+    :rtype: bool
+    """
     assert token.n in token_searcher.phrase_model.min_token_offset_in_phrase
     assert phrase.phrase_string in token_searcher.phrase_model.min_token_offset_in_phrase[token.n]
     if has_max_start_offset(phrase):
@@ -600,6 +901,27 @@ def token_is_out_of_phrase_range(token: Token, phrase: Phrase, token_searcher: F
 
 def get_partial_phrases(token_matches: List[TokenMatch], token_searcher: FuzzyTokenSearcher,
                         max_char_gap: int = 20, debug: int = 0):
+    """Chain a sequence of token matches into candidate (partial) phrase matches.
+
+    Walks through the token matches in order, extending open partial matches for a phrase when a
+    token match continues them, starting new partial matches when appropriate, and moving
+    partial matches to the candidate list once they are too far (more than max_char_gap
+    characters) from the next token match or once all tokens have been processed. Candidates
+    that are incomplete (when a complete candidate exists for the same phrase) or whose length
+    deviates too much from the phrase length are discarded.
+
+    :param token_matches: a list of token matches between text tokens and phrase tokens, in text order
+    :type token_matches: List[TokenMatch]
+    :param token_searcher: the token searcher holding phrase model and configuration
+    :type token_searcher: FuzzyTokenSearcher
+    :param max_char_gap: maximum character gap allowed between two token matches that belong to
+        the same phrase match
+    :type max_char_gap: int
+    :param debug: level to show debug information
+    :type debug: int
+    :return: candidate partial phrase matches grouped by phrase
+    :rtype: Dict[Phrase, List[PartialPhraseMatch]]
+    """
     partial_phrase: Dict[Phrase, PartialPhraseMatch] = {}
     open_partials: Dict[Phrase, List[PartialPhraseMatch]] = defaultdict(list)
     candidate_phrase: Dict[Phrase, List[PartialPhraseMatch]] = defaultdict(list)
@@ -737,6 +1059,20 @@ def get_partial_phrases(token_matches: List[TokenMatch], token_searcher: FuzzyTo
 
 def token_within_phrase_offset(token_searcher: FuzzyTokenSearcher, text_token: Token,
                                phrase_token: str, debug: int = 0):
+    """Check whether a text token's character position is within the configured maximum
+    start/end offset for the given phrase token.
+
+    :param token_searcher: the token searcher holding the phrase model
+    :type token_searcher: FuzzyTokenSearcher
+    :param text_token: the text token to check
+    :type text_token: Token
+    :param phrase_token: the phrase token string being matched against
+    :type phrase_token: str
+    :param debug: level to show debug information
+    :type debug: int
+    :return: True if the text token is within the allowed offset range
+    :rtype: bool
+    """
     if phrase_token in token_searcher.phrase_model.phrase_token_max_start_offset:
         max_token_offset = token_searcher.phrase_model.phrase_token_max_start_offset[phrase_token]
         if debug > 4:
@@ -757,6 +1093,18 @@ def token_within_phrase_offset(token_searcher: FuzzyTokenSearcher, text_token: T
 
 
 def get_vocabulary_skipgram_matches(text_token: Token, token_searcher: FuzzyTokenSearcher, debug: int = 0):
+    """Look up the precomputed skipgram matches for a vocabulary text token and shift their
+    offsets to the token's actual position in the text.
+
+    :param text_token: a text token that is part of the searcher's vocabulary
+    :type text_token: Token
+    :param token_searcher: the token searcher holding cached vocabulary skipgram matches
+    :type token_searcher: FuzzyTokenSearcher
+    :param debug: level to show debug information
+    :type debug: int
+    :return: a SkipMatches object with offsets relative to the text
+    :rtype: SkipMatches
+    """
     vsm = token_searcher.vocabulary_skipgram_matches[text_token.n]
     tsm = SkipMatches(token_searcher.ngram_size, token_searcher.skip_size)
     for phrase_token in vsm.match_start_offsets:
@@ -777,6 +1125,19 @@ def get_vocabulary_skipgram_matches(text_token: Token, token_searcher: FuzzyToke
 def get_token_skipgram_matches(text_token: Token,
                                token_searcher: FuzzyTokenSearcher,
                                debug: int = 0):
+    """Find all phrase tokens that share character skipgrams with the given text token (skipping
+    any pairs registered as distractors or outside the phrase token's allowed offset range), and
+    classify each match's type.
+
+    :param text_token: the text token to match against indexed phrase tokens
+    :type text_token: Token
+    :param token_searcher: the token searcher holding the phrase token skipgram index
+    :type token_searcher: FuzzyTokenSearcher
+    :param debug: level to show debug information
+    :type debug: int
+    :return: a SkipMatches object with the matching phrase tokens and their match types
+    :rtype: SkipMatches
+    """
     text_token_skips = [skipgram for skipgram in token2skipgrams(text_token.n, token_searcher.ngram_size,
                                                                  token_searcher.skip_size,
                                                                  pad_token=token_searcher.config['pad_token'])]
@@ -804,6 +1165,19 @@ def get_token_skipgram_matches(text_token: Token,
 
 def get_token_skip_match_types(token_searcher: FuzzyTokenSearcher, text_token: Token,
                                token_skip_matches: SkipMatches, text_token_skips, debug: int = 0):
+    """Classify the match type of every phrase token found in token_skip_matches and store the
+    result in token_skip_matches.match_type.
+
+    :param token_searcher: the token searcher holding configuration thresholds
+    :type token_searcher: FuzzyTokenSearcher
+    :param text_token: the text token that was matched
+    :type text_token: Token
+    :param token_skip_matches: the skip matches to classify, updated in place
+    :type token_skip_matches: SkipMatches
+    :param text_token_skips: the list of skipgrams generated for the text token
+    :param debug: level to show debug information
+    :type debug: int
+    """
     for phrase_token_match in token_skip_matches.match_start_offsets:
         match_type = get_token_skip_match_type(text_token.normalised_string, len(text_token_skips),
                                                token_skip_matches, phrase_token_match, token_searcher,
@@ -814,6 +1188,31 @@ def get_token_skip_match_types(token_searcher: FuzzyTokenSearcher, text_token: T
 def get_token_skip_match_type(text_token_string: str, text_token_num_skips: int,
                               skip_matches: SkipMatches, phrase_token_match: str,
                               token_searcher: FuzzyTokenSearcher, debug: int = 0) -> MatchType:
+    """Determine the match type between a text token and a candidate phrase token, based on the
+    proportion of skipgrams they share and the difference in their lengths.
+
+    Returns MatchType.NONE if the skipgram overlap is below the configured threshold for both
+    tokens, or if the length difference (accounting for overlap) exceeds the configured maximum
+    token length variance. Otherwise, returns MatchType.FULL if the tokens are about the same
+    length, MatchType.PARTIAL_OF_PHRASE_TOKEN if the text token is shorter than the phrase token
+    (i.e. the text token may be one of several tokens making up the phrase token), or
+    MatchType.PARTIAL_OF_TEXT_TOKEN if the text token is longer.
+
+    :param text_token_string: the normalised string of the text token
+    :type text_token_string: str
+    :param text_token_num_skips: the number of skipgrams generated for the text token
+    :type text_token_num_skips: int
+    :param skip_matches: the skip matches data for the candidate phrase token
+    :type skip_matches: SkipMatches
+    :param phrase_token_match: the candidate phrase token string
+    :type phrase_token_match: str
+    :param token_searcher: the token searcher holding configuration thresholds
+    :type token_searcher: FuzzyTokenSearcher
+    :param debug: level to show debug information
+    :type debug: int
+    :return: the determined match type
+    :rtype: MatchType
+    """
     first = skip_matches.match_skipgrams[phrase_token_match][0]
     last = skip_matches.match_skipgrams[phrase_token_match][-1]
     overlap_start = first.start_offset

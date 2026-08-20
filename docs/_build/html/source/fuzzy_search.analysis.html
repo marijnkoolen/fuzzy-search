@@ -1,0 +1,1757 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.analysis package &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="fuzzy_search.match package" href="fuzzy_search.match.html" />
+    <link rel="prev" title="fuzzy_search package" href="fuzzy_search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="fuzzy_search.html">fuzzy_search package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="fuzzy_search.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">fuzzy_search.analysis package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.analysis.freq">fuzzy_search.analysis.freq module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.analysis.similarity">fuzzy_search.analysis.similarity module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.analysis.spelling_compare">fuzzy_search.analysis.spelling_compare module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.analysis.subtoken">fuzzy_search.analysis.subtoken module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-fuzzy_search.analysis">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.match.html">fuzzy_search.match package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.pattern.html">fuzzy_search.pattern package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.phrase.html">fuzzy_search.phrase package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.search.html">fuzzy_search.search package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fuzzy_search.tokenization.html">fuzzy_search.tokenization package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fuzzy_search.html#module-fuzzy_search">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="fuzzy_search.html">fuzzy_search package</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.analysis package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/source/fuzzy_search.analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fuzzy-search-analysis-package">
+<h1>fuzzy_search.analysis package<a class="headerlink" href="#fuzzy-search-analysis-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-fuzzy_search.analysis.freq">
+<span id="fuzzy-search-analysis-freq-module"></span><h2>fuzzy_search.analysis.freq module<a class="headerlink" href="#module-fuzzy_search.analysis.freq" title="Link to this heading"></a></h2>
+<p>Token ngram frequency counting and probability estimation, plus log-likelihood-ratio
+keyword/word comparison statistics.</p>
+<p>This module provides <code class="docutils literal notranslate"><span class="pre">NgramFreq</span></code> for counting word ngrams across a collection of
+documents and computing (optionally smoothed) ngram probabilities and conditional
+probabilities, along with functions for computing the log-likelihood ratio (LLR) and
+percentage-difference statistics that compare a word’s frequency between a target and
+reference corpus.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.Ngram">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.freq.</span></span><span class="sig-name descname"><span class="pre">Ngram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#Ngram"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.Ngram" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a word ngram, exposing both the full ngram and its head/tail parts.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.Ngram.tokens">
+<span class="sig-name descname"><span class="pre">tokens</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.Ngram.tokens" title="Link to this definition"></a></dt>
+<dd><p>The ngram’s token strings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.Ngram.size">
+<span class="sig-name descname"><span class="pre">size</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.Ngram.size" title="Link to this definition"></a></dt>
+<dd><p>The number of tokens in the ngram.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.Ngram.n">
+<span class="sig-name descname"><span class="pre">n</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.Ngram.n" title="Link to this definition"></a></dt>
+<dd><p>Alias of <code class="docutils literal notranslate"><span class="pre">size</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.Ngram.string">
+<span class="sig-name descname"><span class="pre">string</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.Ngram.string" title="Link to this definition"></a></dt>
+<dd><p>The ngram tokens joined with spaces.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.Ngram.head_string">
+<span class="sig-name descname"><span class="pre">head_string</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.Ngram.head_string" title="Link to this definition"></a></dt>
+<dd><p>All tokens except the last, joined with spaces (the
+“history” used for conditional probability estimation).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.Ngram.tail_string">
+<span class="sig-name descname"><span class="pre">tail_string</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.Ngram.tail_string" title="Link to this definition"></a></dt>
+<dd><p>The last token in the ngram.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.Ngram.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#Ngram.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.Ngram.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes an Ngram from a list of token strings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tokens</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The tokens making up the ngram.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.freq.</span></span><span class="sig-name descname"><span class="pre">NgramFreq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_ngram_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#NgramFreq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Counts word ngram frequencies (up to a maximum order) across a collection of documents
+and provides (smoothed) probability and conditional probability estimation.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.ngram_freq">
+<span class="sig-name descname"><span class="pre">ngram_freq</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.ngram_freq" title="Link to this definition"></a></dt>
+<dd><p>Maps ngram order -&gt; Counter of ngram string -&gt; frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[int, Counter]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.max_ngram_size">
+<span class="sig-name descname"><span class="pre">max_ngram_size</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.max_ngram_size" title="Link to this definition"></a></dt>
+<dd><p>The highest ngram order that is counted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.total_ngram_tokens">
+<span class="sig-name descname"><span class="pre">total_ngram_tokens</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.total_ngram_tokens" title="Link to this definition"></a></dt>
+<dd><p>Maps ngram order -&gt; total ngram token count.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Counter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.total_ngram_types">
+<span class="sig-name descname"><span class="pre">total_ngram_types</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.total_ngram_types" title="Link to this definition"></a></dt>
+<dd><p>Maps ngram order -&gt; number of distinct ngram types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Counter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.num_docs">
+<span class="sig-name descname"><span class="pre">num_docs</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.num_docs" title="Link to this definition"></a></dt>
+<dd><p>The number of documents counted so far.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.start_tokens">
+<span class="sig-name descname"><span class="pre">start_tokens</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.start_tokens" title="Link to this definition"></a></dt>
+<dd><p>The padded <code class="docutils literal notranslate"><span class="pre">&lt;s&gt;</span></code> boundary ngram strings, for each order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Set[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.end_tokens">
+<span class="sig-name descname"><span class="pre">end_tokens</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.end_tokens" title="Link to this definition"></a></dt>
+<dd><p>The padded <code class="docutils literal notranslate"><span class="pre">&lt;/s&gt;</span></code> boundary ngram strings, for each order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Set[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_ngram_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#NgramFreq.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the NgramFreq counter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>max_ngram_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The highest ngram order to count, e.g. 3 for
+unigrams, bigrams and trigrams. Defaults to 3.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.count_ngrams">
+<span class="sig-name descname"><span class="pre">count_ngrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">docs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc" title="fuzzy_search.tokenization.token.Doc"><span class="pre">Doc</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#NgramFreq.count_ngrams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.count_ngrams" title="Link to this definition"></a></dt>
+<dd><p>Counts ngrams (of all orders up to <code class="docutils literal notranslate"><span class="pre">max_ngram_size</span></code>) across a list of documents,
+updating the running totals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>docs</strong> (<em>List</em><em>[</em><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc" title="fuzzy_search.tokenization.token.Doc"><em>Doc</em></a><em>]</em>) – The documents to count ngrams in.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.has_conditional_prob">
+<span class="sig-name descname"><span class="pre">has_conditional_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ngram_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambdas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#NgramFreq.has_conditional_prob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.has_conditional_prob" title="Link to this definition"></a></dt>
+<dd><p>Computes the conditional probability of an ngram’s last token given its preceding tokens.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ngram_string</strong> (<em>str</em>) – The (space-joined) ngram string.</p></li>
+<li><p><strong>smoothing</strong> (<em>str</em><em>, </em><em>optional</em>) – One of None (unsmoothed), <code class="docutils literal notranslate"><span class="pre">'laplace'</span></code> (add-k
+smoothing), or <code class="docutils literal notranslate"><span class="pre">'interpolation'</span></code> (linear interpolation across orders).</p></li>
+<li><p><strong>lambdas</strong> (<em>List</em><em>[</em><em>float</em><em>]</em><em>, </em><em>optional</em>) – Interpolation weights, required when
+<code class="docutils literal notranslate"><span class="pre">smoothing</span> <span class="pre">==</span> <span class="pre">'interpolation'</span></code>.</p></li>
+<li><p><strong>k</strong> (<em>float</em><em>, </em><em>optional</em>) – The add-k smoothing constant, used when
+<code class="docutils literal notranslate"><span class="pre">smoothing</span> <span class="pre">==</span> <span class="pre">'laplace'</span></code>. Defaults to 1.0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The estimated conditional probability.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">smoothing</span></code> is not one of the supported values.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.has_freq">
+<span class="sig-name descname"><span class="pre">has_freq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#NgramFreq.has_freq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.has_freq" title="Link to this definition"></a></dt>
+<dd><p>Returns the frequency of an ngram string (without special-casing boundary tokens).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>term</strong> (<em>str</em>) – The (space-joined) ngram string to look up.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The ngram’s frequency, or 0 if unseen.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.has_prob">
+<span class="sig-name descname"><span class="pre">has_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#NgramFreq.has_prob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.has_prob" title="Link to this definition"></a></dt>
+<dd><p>Computes the (optionally Laplace-smoothed) probability of an ngram string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>term</strong> (<em>str</em>) – The (space-joined) ngram string.</p></li>
+<li><p><strong>smoothing</strong> (<em>str</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">'laplace'</span></code>, apply add-one smoothing over the
+vocabulary; otherwise compute the unsmoothed maximum-likelihood probability.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The estimated probability of the ngram.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.total_tokens">
+<span class="sig-name descname"><span class="pre">total_tokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ngram_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#NgramFreq.total_tokens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.total_tokens" title="Link to this definition"></a></dt>
+<dd><p>Returns the total count of ngram tokens of a given order seen so far.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.total_types">
+<span class="sig-name descname"><span class="pre">total_types</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ngram_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#NgramFreq.total_types"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.total_types" title="Link to this definition"></a></dt>
+<dd><p>Returns the number of distinct ngram types of a given order seen so far.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.NgramFreq.vocab_size">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">vocab_size</span></span><a class="headerlink" href="#fuzzy_search.analysis.freq.NgramFreq.vocab_size" title="Link to this definition"></a></dt>
+<dd><p>The number of distinct unigram types (the vocabulary size).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.check_lambdas">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.freq.</span></span><span class="sig-name descname"><span class="pre">check_lambdas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lambdas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ngram_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#check_lambdas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.check_lambdas" title="Link to this definition"></a></dt>
+<dd><p>Validates interpolation lambda weights for ngram smoothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lambdas</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – The interpolation weights, one per ngram order from 1 up
+to <code class="docutils literal notranslate"><span class="pre">ngram_size</span></code>.</p></li>
+<li><p><strong>ngram_size</strong> (<em>int</em>) – The ngram order being smoothed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">lambdas</span></code> is missing, has the wrong length, or its values don’t
+    sum to 1.0.</p></li>
+<li><p><strong>TypeError</strong> – If any value in <code class="docutils literal notranslate"><span class="pre">lambdas</span></code> is not a float.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.compute_expected">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.freq.</span></span><span class="sig-name descname"><span class="pre">compute_expected</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">array</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">array</span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#compute_expected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.compute_expected" title="Link to this definition"></a></dt>
+<dd><p>Computes the contingency table of the expected values given a contingency table
+of the observed values.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.compute_llr">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.freq.</span></span><span class="sig-name descname"><span class="pre">compute_llr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_counter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_total</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_counter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_total</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#compute_llr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.compute_llr" title="Link to this definition"></a></dt>
+<dd><p>Computes the log likelihood ratio for given a target token, and target and
+reference analysers and counters.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.compute_llr_from_observed">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.freq.</span></span><span class="sig-name descname"><span class="pre">compute_llr_from_observed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#compute_llr_from_observed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.compute_llr_from_observed" title="Link to this definition"></a></dt>
+<dd><p>Computes the log-likelihood ratio (G2 statistic) from an observed 2x2 contingency table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observed</strong> (<em>np.array</em>) – A 2x2 contingency table, as produced by
+<a class="reference internal" href="#fuzzy_search.analysis.freq.get_observed_from_counter" title="fuzzy_search.analysis.freq.get_observed_from_counter"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_observed_from_counter()</span></code></a>.</p></li>
+<li><p><strong>include_direction</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, also return whether the target
+count is higher (‘more’) or lower (‘less’) than expected under independence.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The log-likelihood ratio, optionally paired
+with the direction string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[float, Tuple[float, str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.compute_percentage_diff">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.freq.</span></span><span class="sig-name descname"><span class="pre">compute_percentage_diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_total</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_total</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#compute_percentage_diff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.compute_percentage_diff" title="Link to this definition"></a></dt>
+<dd><p>Computes the relative percentage difference in a token’s frequency fraction between
+a target and a reference corpus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>token</strong> – The token to compare.</p></li>
+<li><p><strong>target_counter</strong> (<em>Counter</em>) – Token frequencies in the target corpus.</p></li>
+<li><p><strong>target_total</strong> (<em>int</em>) – Total token count in the target corpus.</p></li>
+<li><p><strong>reference_counter</strong> (<em>Counter</em>) – Token frequencies in the reference corpus.</p></li>
+<li><p><strong>reference_total</strong> (<em>int</em>) – Total token count in the reference corpus.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The percentage difference of the target fraction relative to the reference
+fraction, or <code class="docutils literal notranslate"><span class="pre">float('inf')</span></code> if the token does not occur in the reference corpus.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.doc_to_string_tokens">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.freq.</span></span><span class="sig-name descname"><span class="pre">doc_to_string_tokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc" title="fuzzy_search.tokenization.token.Doc"><span class="pre">Doc</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#doc_to_string_tokens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.doc_to_string_tokens" title="Link to this definition"></a></dt>
+<dd><p>Normalizes a document representation into a plain list of normalised token strings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>doc</strong> (<em>Union</em><em>[</em><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc" title="fuzzy_search.tokenization.token.Doc"><em>Doc</em></a><em>, </em><em>List</em><em>[</em><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><em>Token</em></a><em>]</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A Doc, a list of Token objects, or
+a list of strings.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The normalised token strings of the document.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.get_observed_from_counter">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.freq.</span></span><span class="sig-name descname"><span class="pre">get_observed_from_counter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_counter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_total</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_counter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_total</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#get_observed_from_counter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.get_observed_from_counter" title="Link to this definition"></a></dt>
+<dd><p>Computes the contingency table of the observed values given a target token, and
+target and reference analysers and counters.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.freq.make_token_ngrams">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.freq.</span></span><span class="sig-name descname"><span class="pre">make_token_ngrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc" title="fuzzy_search.tokenization.token.Doc"><span class="pre">Doc</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><span class="pre">Token</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ngram_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/freq.html#make_token_ngrams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.freq.make_token_ngrams" title="Link to this definition"></a></dt>
+<dd><p>Generates word ngrams of a given size from a document, padded with start/end symbols.</p>
+<p>The document’s tokens are padded with <code class="docutils literal notranslate"><span class="pre">ngram_size</span> <span class="pre">-</span> <span class="pre">1</span></code> <code class="docutils literal notranslate"><span class="pre">&lt;s&gt;</span></code> start symbols and
+<code class="docutils literal notranslate"><span class="pre">&lt;/s&gt;</span></code> end symbols so that ngrams overlapping the document boundaries are also
+produced (e.g. for a trigram model, this yields ngrams like <code class="docutils literal notranslate"><span class="pre">['&lt;s&gt;',</span> <span class="pre">'&lt;s&gt;',</span> <span class="pre">tok1]</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>doc</strong> (<em>Union</em><em>[</em><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Doc" title="fuzzy_search.tokenization.token.Doc"><em>Doc</em></a><em>, </em><em>List</em><em>[</em><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.token.Token" title="fuzzy_search.tokenization.token.Token"><em>Token</em></a><em>]</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The document to extract ngrams from.</p></li>
+<li><p><strong>ngram_size</strong> (<em>int</em>) – The number of tokens per ngram.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Yields<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>List[str]</em> – Each successive ngram (as a list of token strings) in the document.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-fuzzy_search.analysis.similarity">
+<span id="fuzzy-search-analysis-similarity-module"></span><h2>fuzzy_search.analysis.similarity module<a class="headerlink" href="#module-fuzzy_search.analysis.similarity" title="Link to this heading"></a></h2>
+<p>Term similarity utilities: Levenshtein-based begin/end similarity, term skip-cooccurrence
+counting, and an efficient skipgram-based cosine-similarity index for finding terms similar
+to a query term.</p>
+<p>The centerpiece is <code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity</span></code>, which indexes a vocabulary of terms by their
+character skipgram frequency vectors, bucketed by term length, and uses sparse
+matrix-vector products to retrieve the most similar indexed terms to a query term.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.KeywordList">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.similarity.</span></span><span class="sig-name descname"><span class="pre">KeywordList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keywords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#KeywordList"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.KeywordList" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Indexes a list of keywords by length, to efficiently enumerate candidate pairs
+of keywords whose lengths are close enough to plausibly be near-duplicates.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.KeywordList.len_keys">
+<span class="sig-name descname"><span class="pre">len_keys</span></span><a class="headerlink" href="#fuzzy_search.analysis.similarity.KeywordList.len_keys" title="Link to this definition"></a></dt>
+<dd><p>Maps keyword length to the keywords of that length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[int, List[str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.KeywordList.max_length_diff">
+<span class="sig-name descname"><span class="pre">max_length_diff</span></span><a class="headerlink" href="#fuzzy_search.analysis.similarity.KeywordList.max_length_diff" title="Link to this definition"></a></dt>
+<dd><p>The default maximum length difference used when generating
+candidate pairs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.KeywordList.len_order">
+<span class="sig-name descname"><span class="pre">len_order</span></span><a class="headerlink" href="#fuzzy_search.analysis.similarity.KeywordList.len_order" title="Link to this definition"></a></dt>
+<dd><p>The distinct keyword lengths, sorted ascending.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.KeywordList.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keywords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#KeywordList.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.KeywordList.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the KeywordList by indexing keywords by their length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keywords</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The keywords to index.</p></li>
+<li><p><strong>max_length_diff</strong> (<em>int</em>) – The default maximum length difference allowed when
+comparing keyword pairs.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If any keyword is not a string.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.KeywordList.find_close_distance_keywords">
+<span class="sig-name descname"><span class="pre">find_close_distance_keywords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_distance_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignorecase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#KeywordList.find_close_distance_keywords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.KeywordList.find_close_distance_keywords" title="Link to this definition"></a></dt>
+<dd><p>TODO: should we make the arguments into a config?</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.KeywordList.find_closer_terms">
+<span class="sig-name descname"><span class="pre">find_closer_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">candidate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close_terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#KeywordList.find_closer_terms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.KeywordList.find_closer_terms" title="Link to this definition"></a></dt>
+<dd><p>Finds which of a keyword’s known close terms are even closer to a candidate
+string than the keyword itself.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>candidate</strong> (<em>str</em>) – The string to compare distances against.</p></li>
+<li><p><strong>keyword</strong> (<em>str</em>) – The reference keyword.</p></li>
+<li><p><strong>close_terms</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Terms previously identified as close to <code class="docutils literal notranslate"><span class="pre">keyword</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Maps each close term that is nearer to <code class="docutils literal notranslate"><span class="pre">candidate</span></code> than
+<code class="docutils literal notranslate"><span class="pre">keyword</span></code> is, to its Levenshtein distance from <code class="docutils literal notranslate"><span class="pre">candidate</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.KeywordList.iterate_candidate_pairs">
+<span class="sig-name descname"><span class="pre">iterate_candidate_pairs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#KeywordList.iterate_candidate_pairs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.KeywordList.iterate_candidate_pairs" title="Link to this definition"></a></dt>
+<dd><p>Yields all candidate keyword pairs whose lengths differ by at most
+<code class="docutils literal notranslate"><span class="pre">max_length_diff</span></code>, without yielding the same unordered pair twice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Yields<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Tuple[str, str]</em> – Each candidate (kw1, kw2) pair.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipCooccurrence">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.similarity.</span></span><span class="sig-name descname"><span class="pre">SkipCooccurrence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vocabulary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary" title="fuzzy_search.tokenization.vocabulary.Vocabulary"><span class="pre">Vocabulary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sentences</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#SkipCooccurrence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipCooccurrence" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Counts the co-occurrence frequency of word skipgrams within sentences.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipCooccurrence.cooc_freq">
+<span class="sig-name descname"><span class="pre">cooc_freq</span></span><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipCooccurrence.cooc_freq" title="Link to this definition"></a></dt>
+<dd><p>Maps (term_id, term_id) co-occurrence
+pairs to their observed frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[Tuple[int, int], int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipCooccurrence.vocabulary">
+<span class="sig-name descname"><span class="pre">vocabulary</span></span><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipCooccurrence.vocabulary" title="Link to this definition"></a></dt>
+<dd><p>Maps terms to identifiers used in <code class="docutils literal notranslate"><span class="pre">cooc_freq</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary" title="fuzzy_search.tokenization.vocabulary.Vocabulary">Vocabulary</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipCooccurrence.skip_size">
+<span class="sig-name descname"><span class="pre">skip_size</span></span><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipCooccurrence.skip_size" title="Link to this definition"></a></dt>
+<dd><p>The default maximum number of skips allowed between
+co-occurring terms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipCooccurrence.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vocabulary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary" title="fuzzy_search.tokenization.vocabulary.Vocabulary"><span class="pre">Vocabulary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sentences</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#SkipCooccurrence.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipCooccurrence.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the SkipCooccurrence counter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vocabulary</strong> (<a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary" title="fuzzy_search.tokenization.vocabulary.Vocabulary"><em>Vocabulary</em></a>) – The vocabulary used to map terms to identifiers.</p></li>
+<li><p><strong>skip_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of skips allowed between
+co-occurring terms. Defaults to 1.</p></li>
+<li><p><strong>sentences</strong> (<em>Iterable</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – If given, immediately count
+co-occurrences for these sentences.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipCooccurrence.calculate_skip_cooccurrences">
+<span class="sig-name descname"><span class="pre">calculate_skip_cooccurrences</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sentences</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#SkipCooccurrence.calculate_skip_cooccurrences"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipCooccurrence.calculate_skip_cooccurrences" title="Link to this definition"></a></dt>
+<dd><p>Count the frequency of term (skip) co-occurrences for a given list of sentences.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sentences</strong> (<em>Iterable</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em>) – a list of sentences, where each sentence is itself a list of term tokens</p></li>
+<li><p><strong>skip_size</strong> (<em>int</em>) – the maximum number of skips to allow between co-occurring terms</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipCooccurrence.get_term_coocs">
+<span class="sig-name descname"><span class="pre">get_term_coocs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#SkipCooccurrence.get_term_coocs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipCooccurrence.get_term_coocs" title="Link to this definition"></a></dt>
+<dd><p>Yields all co-occurring term pairs and their frequency for a given term.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>term</strong> (<em>str</em>) – The term to look up co-occurrences for.</p>
+</dd>
+<dt class="field-even">Yields<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Tuple[Tuple[str, str], int]</em> – Each (term pair, frequency) where <code class="docutils literal notranslate"><span class="pre">term</span></code>
+is one of the two terms in the pair.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If <code class="docutils literal notranslate"><span class="pre">term</span></code> is not in the vocabulary.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipgramSimilarity">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.similarity.</span></span><span class="sig-name descname"><span class="pre">SkipgramSimilarity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ngram_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#SkipgramSimilarity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipgramSimilarity" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Indexes terms by their character skipgram frequency vectors and finds similar
+indexed terms for a query term via cosine similarity.</p>
+<p>Terms are bucketed by length (see <code class="docutils literal notranslate"><span class="pre">max_length_diff</span></code>) and, within each length
+bucket, represented as columns of a sparse skipgram-by-term matrix. This lets a
+query be compared against only the terms within the relevant length range using a
+handful of sparse matrix-vector products, rather than scanning the whole vocabulary.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipgramSimilarity.ngram_length">
+<span class="sig-name descname"><span class="pre">ngram_length</span></span><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipgramSimilarity.ngram_length" title="Link to this definition"></a></dt>
+<dd><p>The number of characters per skipgram.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipgramSimilarity.skip_length">
+<span class="sig-name descname"><span class="pre">skip_length</span></span><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipgramSimilarity.skip_length" title="Link to this definition"></a></dt>
+<dd><p>The maximum number of skipped characters per skipgram.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipgramSimilarity.vocabulary">
+<span class="sig-name descname"><span class="pre">vocabulary</span></span><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipgramSimilarity.vocabulary" title="Link to this definition"></a></dt>
+<dd><p>Maps indexed terms to term ids.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary" title="fuzzy_search.tokenization.vocabulary.Vocabulary">Vocabulary</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipgramSimilarity.skipgram_vocabulary">
+<span class="sig-name descname"><span class="pre">skipgram_vocabulary</span></span><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipgramSimilarity.skipgram_vocabulary" title="Link to this definition"></a></dt>
+<dd><p>Maps observed skipgram strings to skipgram ids.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="fuzzy_search.tokenization.html#fuzzy_search.tokenization.vocabulary.Vocabulary" title="fuzzy_search.tokenization.vocabulary.Vocabulary">Vocabulary</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipgramSimilarity.max_length_diff">
+<span class="sig-name descname"><span class="pre">max_length_diff</span></span><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipgramSimilarity.max_length_diff" title="Link to this definition"></a></dt>
+<dd><p>The maximum term-length difference considered when
+searching for similar terms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipgramSimilarity.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ngram_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_diff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#SkipgramSimilarity.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipgramSimilarity.__init__" title="Link to this definition"></a></dt>
+<dd><p>A class to index terms by their character skipgrams and to find similar terms for a given
+input term based on the cosine similarity of their skipgram overlap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ngram_length</strong> (<em>int</em>) – the number of characters per ngram</p></li>
+<li><p><strong>skip_length</strong> (<em>int</em>) – the maximum number of characters to skip</p></li>
+<li><p><strong>terms</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list of terms</p></li>
+<li><p><strong>max_length_diff</strong> (<em>int</em>) – the maximum difference in length between a search term and a term in the
+index to be considered a match. This is an efficiency parameter to reduce the number of candidate
+similar terms to ones that are roughly similar in length to the search term.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipgramSimilarity.index_terms">
+<span class="sig-name descname"><span class="pre">index_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#SkipgramSimilarity.index_terms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipgramSimilarity.index_terms" title="Link to this definition"></a></dt>
+<dd><p>Make a frequency index of the skip grams for a given list of terms.
+By default, indexing is cumulative, that is, everytime you call index_terms
+with a list of terms, they are added to the index. Use ‘reset_index=True’ to
+reset the index before indexing the given terms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>terms</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list of term to index</p></li>
+<li><p><strong>reset_index</strong> (<em>bool</em>) – whether to reset the index before indexing or to keep the existing index</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.SkipgramSimilarity.rank_similar">
+<span class="sig-name descname"><span class="pre">rank_similar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_cutoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#SkipgramSimilarity.rank_similar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.SkipgramSimilarity.rank_similar" title="Link to this definition"></a></dt>
+<dd><p>Return a ranked list of similar terms from the index for a given input term,
+based on their character skipgram cosine similarity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>term</strong> (<em>str</em>) – a term (any string) to match against the indexed terms</p></li>
+<li><p><strong>top_n</strong> (<em>int</em><em> (</em><em>default 10</em><em>)</em>) – the number of highest ranked terms to return</p></li>
+<li><p><strong>score_cutoff</strong> (<em>float</em>) – the minimum similarity score after which to cutoff the ranking</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a ranked list of terms and their similarity scores</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Tuple[str, float]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.get_begin_sim">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.similarity.</span></span><span class="sig-name descname"><span class="pre">get_begin_sim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">begin_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#get_begin_sim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.get_begin_sim" title="Link to this definition"></a></dt>
+<dd><p>Computes the Levenshtein-based similarity of the first <code class="docutils literal notranslate"><span class="pre">begin_length</span></code> characters
+of two phrases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phrase1</strong> (<em>str</em>) – The first phrase.</p></li>
+<li><p><strong>phrase2</strong> (<em>str</em>) – The second phrase.</p></li>
+<li><p><strong>begin_length</strong> (<em>int</em>) – The number of leading characters to compare (clamped to the
+shorter phrase’s length).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>1 minus the normalised Levenshtein distance between the two prefixes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.get_end_sim">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.similarity.</span></span><span class="sig-name descname"><span class="pre">get_end_sim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#get_end_sim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.get_end_sim" title="Link to this definition"></a></dt>
+<dd><p>Computes the Levenshtein-based similarity of the last <code class="docutils literal notranslate"><span class="pre">end_length</span></code> characters
+of two phrases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phrase1</strong> (<em>str</em>) – The first phrase.</p></li>
+<li><p><strong>phrase2</strong> (<em>str</em>) – The second phrase.</p></li>
+<li><p><strong>end_length</strong> (<em>int</em>) – The number of trailing characters to compare (clamped to the
+shorter phrase’s length).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>1 minus the normalised Levenshtein distance between the two suffixes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.get_min_length">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.similarity.</span></span><span class="sig-name descname"><span class="pre">get_min_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phrase1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phrase2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">begin_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#get_min_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.get_min_length" title="Link to this definition"></a></dt>
+<dd><p>Returns the smallest of the two phrase lengths and a requested length.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.get_skip_coocs">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.similarity.</span></span><span class="sig-name descname"><span class="pre">get_skip_coocs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#get_skip_coocs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.get_skip_coocs" title="Link to this definition"></a></dt>
+<dd><p>Generates all (current, following) id pairs within a skip window of a sequence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seq_ids</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – A sequence of (term) identifiers.</p></li>
+<li><p><strong>skip_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of extra positions beyond the immediate
+neighbour to pair with each element. Defaults to 0 (only adjacent pairs).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Yields<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Tuple[int, int]</em> – Each (current_id, following_id) co-occurrence pair.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.is_close_distance_keyword_pair">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.similarity.</span></span><span class="sig-name descname"><span class="pre">is_close_distance_keyword_pair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keyword1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_distance_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length_difference</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#is_close_distance_keyword_pair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.is_close_distance_keyword_pair" title="Link to this definition"></a></dt>
+<dd><p>Checks whether two keywords are close enough to be considered near-duplicates.</p>
+<p>Two keywords are considered close if their length difference is within
+<code class="docutils literal notranslate"><span class="pre">max_length_difference</span></code> and their Levenshtein distance is both below
+<code class="docutils literal notranslate"><span class="pre">max_distance</span></code> and below <code class="docutils literal notranslate"><span class="pre">max_distance_ratio</span></code> relative to either keyword’s length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keyword1</strong> (<em>str</em>) – The first keyword.</p></li>
+<li><p><strong>keyword2</strong> (<em>str</em>) – The second keyword.</p></li>
+<li><p><strong>max_distance_ratio</strong> (<em>float</em>) – The maximum allowed distance-to-length ratio.</p></li>
+<li><p><strong>max_length_difference</strong> (<em>int</em>) – The maximum allowed difference in keyword lengths.</p></li>
+<li><p><strong>max_distance</strong> (<em>int</em>) – The maximum allowed absolute Levenshtein distance.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the keywords are considered a close-distance pair.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.similarity.vector_length">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.similarity.</span></span><span class="sig-name descname"><span class="pre">vector_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skipgram_freq</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/similarity.html#vector_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.similarity.vector_length" title="Link to this definition"></a></dt>
+<dd><p>Computes the Euclidean length of a skipgram frequency vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>skipgram_freq</strong> – A mapping (e.g. dict or Counter) of skipgram -&gt; frequency.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The square root of the sum of squared frequencies.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-fuzzy_search.analysis.spelling_compare">
+<span id="fuzzy-search-analysis-spelling-compare-module"></span><h2>fuzzy_search.analysis.spelling_compare module<a class="headerlink" href="#module-fuzzy_search.analysis.spelling_compare" title="Link to this heading"></a></h2>
+<p>Compares word frequencies between two corpora to detect words that increase, decrease,
+emerge, disappear, or get replaced/shifted to a semantically similar word (via embeddings).</p>
+<p><code class="docutils literal notranslate"><span class="pre">SpellingCompare</span></code> computes, for each high-frequency word, how its relative frequency
+changed between two corpora, and uses an embedding model’s similarity to link a word
+that dropped in frequency in one corpus to a similar word that jumped in frequency in
+the other (e.g. detecting spelling variant shifts).</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Change">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.spelling_compare.</span></span><span class="sig-name descname"><span class="pre">Change</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">decrease_word</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decrease_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">increase_word</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">increase_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_score</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/spelling_compare.html#Change"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Change" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a detected change between two corpora linking a decreasing word to an
+increasing word.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Change.decrease_word">
+<span class="sig-name descname"><span class="pre">decrease_word</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Change.decrease_word" title="Link to this definition"></a></dt>
+<dd><p>The word that decreased/disappeared.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Change.decrease_type">
+<span class="sig-name descname"><span class="pre">decrease_type</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Change.decrease_type" title="Link to this definition"></a></dt>
+<dd><p>The type of decrease (‘decrease’ or ‘disappear’).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Change.increase_word">
+<span class="sig-name descname"><span class="pre">increase_word</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Change.increase_word" title="Link to this definition"></a></dt>
+<dd><p>The word that increased/emerged.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Change.increase_type">
+<span class="sig-name descname"><span class="pre">increase_type</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Change.increase_type" title="Link to this definition"></a></dt>
+<dd><p>The type of increase (‘increase’ or ‘emerge’).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Change.sim_score">
+<span class="sig-name descname"><span class="pre">sim_score</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Change.sim_score" title="Link to this definition"></a></dt>
+<dd><p>The embedding similarity score between the two words.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Change.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">decrease_word</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decrease_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">increase_word</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">increase_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_score</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/spelling_compare.html#Change.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Change.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes a Change record.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>decrease_word</strong> (<em>str</em><em>, </em><em>optional</em>) – The word that decreased/disappeared.</p></li>
+<li><p><strong>decrease_type</strong> (<em>str</em><em>, </em><em>optional</em>) – The type of decrease (‘decrease’ or ‘disappear’).</p></li>
+<li><p><strong>increase_word</strong> (<em>str</em><em>, </em><em>optional</em>) – The word that increased/emerged.</p></li>
+<li><p><strong>increase_type</strong> (<em>str</em><em>, </em><em>optional</em>) – The type of increase (‘increase’ or ‘emerge’).</p></li>
+<li><p><strong>sim_score</strong> (<em>float</em><em>, </em><em>optional</em>) – The embedding similarity score between the two words.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Diff">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.spelling_compare.</span></span><span class="sig-name descname"><span class="pre">Diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">word</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perc_diff1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perc_diff2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Diff" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Diff.direction">
+<span class="sig-name descname"><span class="pre">direction</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Diff.direction" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 8</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Diff.frac1">
+<span class="sig-name descname"><span class="pre">frac1</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Diff.frac1" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Diff.frac2">
+<span class="sig-name descname"><span class="pre">frac2</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Diff.frac2" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Diff.freq1">
+<span class="sig-name descname"><span class="pre">freq1</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Diff.freq1" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Diff.freq2">
+<span class="sig-name descname"><span class="pre">freq2</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Diff.freq2" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Diff.llr">
+<span class="sig-name descname"><span class="pre">llr</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Diff.llr" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 7</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Diff.perc_diff1">
+<span class="sig-name descname"><span class="pre">perc_diff1</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Diff.perc_diff1" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Diff.perc_diff2">
+<span class="sig-name descname"><span class="pre">perc_diff2</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Diff.perc_diff2" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 6</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.Diff.word">
+<span class="sig-name descname"><span class="pre">word</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.Diff.word" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.spelling_compare.</span></span><span class="sig-name descname"><span class="pre">SpellingCompare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">word_freq1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">word_freq2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embeddings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/spelling_compare.html#SpellingCompare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Compares word frequencies between two corpora and links words that dropped in
+one corpus to similar words that rose in the other, using word embeddings.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare.word_freq1">
+<span class="sig-name descname"><span class="pre">word_freq1</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare.word_freq1" title="Link to this definition"></a></dt>
+<dd><p>Word frequencies in the first corpus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Counter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare.word_freq2">
+<span class="sig-name descname"><span class="pre">word_freq2</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare.word_freq2" title="Link to this definition"></a></dt>
+<dd><p>Word frequencies in the second corpus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Counter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare.embeddings">
+<span class="sig-name descname"><span class="pre">embeddings</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare.embeddings" title="Link to this definition"></a></dt>
+<dd><p>A word embedding model exposing <code class="docutils literal notranslate"><span class="pre">wv.similarity(word1,</span> <span class="pre">word2)</span></code>
+(e.g. a gensim <code class="docutils literal notranslate"><span class="pre">Word2Vec</span></code>-like model).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare.total1">
+<span class="sig-name descname"><span class="pre">total1</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare.total1" title="Link to this definition"></a></dt>
+<dd><p>The total token count of the first corpus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare.total2">
+<span class="sig-name descname"><span class="pre">total2</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare.total2" title="Link to this definition"></a></dt>
+<dd><p>The total token count of the second corpus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare.word_frac1">
+<span class="sig-name descname"><span class="pre">word_frac1</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare.word_frac1" title="Link to this definition"></a></dt>
+<dd><p>Relative frequency of each word in the first corpus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare.word_frac2">
+<span class="sig-name descname"><span class="pre">word_frac2</span></span><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare.word_frac2" title="Link to this definition"></a></dt>
+<dd><p>Relative frequency of each word in the second corpus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">word_freq1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">word_freq2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embeddings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/spelling_compare.html#SpellingCompare.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the SpellingCompare with word frequencies from two corpora.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>word_freq1</strong> (<em>Counter</em>) – Word frequencies in the first corpus.</p></li>
+<li><p><strong>word_freq2</strong> (<em>Counter</em>) – Word frequencies in the second corpus.</p></li>
+<li><p><strong>embeddings</strong> – A word embedding model exposing <code class="docutils literal notranslate"><span class="pre">wv.similarity(word1,</span> <span class="pre">word2)</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare.compute_percentage_diff">
+<span class="sig-name descname"><span class="pre">compute_percentage_diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">word</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/spelling_compare.html#SpellingCompare.compute_percentage_diff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare.compute_percentage_diff" title="Link to this definition"></a></dt>
+<dd><p>Computes the frequency and percentage-difference statistics for a word between
+the two corpora.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>word</strong> (<em>str</em>) – The word to compute statistics for.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A namedtuple with the word’s frequency, fraction and percentage
+difference in each corpus, plus the log-likelihood ratio and its direction.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#fuzzy_search.analysis.spelling_compare.Diff" title="fuzzy_search.analysis.spelling_compare.Diff">Diff</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare.get_frequency_change_words">
+<span class="sig-name descname"><span class="pre">get_frequency_change_words</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hf_words</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">increase_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emerge_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decrease_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disappear_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">similarity_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.6</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/spelling_compare.html#SpellingCompare.get_frequency_change_words"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare.get_frequency_change_words" title="Link to this definition"></a></dt>
+<dd><p>Classifies frequency changes for a set of high-frequency words and links
+decreasing/disappearing words to similar increasing/emerging words.</p>
+<p>Words are first sorted into ‘decrease’/’disappear’ (dropped from corpus 1 to 2)
+and ‘increase’/’emerge’ (rose from corpus 1 to 2) buckets based on the percentage
+difference thresholds (see <a class="reference internal" href="#fuzzy_search.analysis.spelling_compare.sort_drop_jump" title="fuzzy_search.analysis.spelling_compare.sort_drop_jump"><code class="xref py py-func docutils literal notranslate"><span class="pre">sort_drop_jump()</span></code></a>). Each dropped word is then
+compared via embedding similarity to every risen word; if the similarity exceeds
+<code class="docutils literal notranslate"><span class="pre">similarity_threshold</span></code>, the pair is recorded as a ‘replace’ (if the word
+disappeared) or ‘shift’ (if it merely decreased) change. Dropped or risen words
+with no matching counterpart are recorded as unlinked changes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hf_words</strong> (<em>Union</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>Set</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The high-frequency words to compare.</p></li>
+<li><p><strong>increase_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum percentage increase to count as
+‘increase’. Defaults to 0.5.</p></li>
+<li><p><strong>emerge_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum percentage increase to count as
+‘emerge’. Defaults to 5.0.</p></li>
+<li><p><strong>decrease_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum percentage decrease to count as
+‘decrease’. Defaults to 0.5.</p></li>
+<li><p><strong>disappear_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum percentage decrease to count as
+‘disappear’. Defaults to 5.0.</p></li>
+<li><p><strong>similarity_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum embedding similarity required
+to link a dropped word to a risen word. Defaults to 0.6.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of (drop_diff, jump_diff, drop_level, jump_level, change_type)
+tuples describing each detected change (drop_diff/jump_diff or their levels may
+be None when a word has no linked counterpart).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[tuple]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.SpellingCompare.get_high_frequency_words">
+<span class="sig-name descname"><span class="pre">get_high_frequency_words</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_frac</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/spelling_compare.html#SpellingCompare.get_high_frequency_words"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare.get_high_frequency_words" title="Link to this definition"></a></dt>
+<dd><p>Returns the union of words meeting a minimum frequency/fraction threshold in
+either corpus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min_freq</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum absolute frequency in either corpus.</p></li>
+<li><p><strong>min_frac</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum relative frequency (fraction) in either
+corpus. Only used if <code class="docutils literal notranslate"><span class="pre">min_freq</span></code> is not given.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The sorted list of words meeting the threshold in corpus 1 or corpus 2.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If neither <code class="docutils literal notranslate"><span class="pre">min_freq</span></code> nor <code class="docutils literal notranslate"><span class="pre">min_frac</span></code> is given.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.spelling_compare.sort_drop_jump">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.spelling_compare.</span></span><span class="sig-name descname"><span class="pre">sort_drop_jump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hf_words</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spelling_compare</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare" title="fuzzy_search.analysis.spelling_compare.SpellingCompare"><span class="pre">SpellingCompare</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">increase_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emerge_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decrease_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disappear_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/spelling_compare.html#sort_drop_jump"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.spelling_compare.sort_drop_jump" title="Link to this definition"></a></dt>
+<dd><p>Sorts high-frequency words into ‘decrease’/’disappear’ and ‘increase’/’emerge’
+buckets based on their percentage frequency difference between two corpora.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hf_words</strong> (<em>Union</em><em>[</em><em>Set</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The high-frequency words to classify.</p></li>
+<li><p><strong>spelling_compare</strong> (<a class="reference internal" href="#fuzzy_search.analysis.spelling_compare.SpellingCompare" title="fuzzy_search.analysis.spelling_compare.SpellingCompare"><em>SpellingCompare</em></a>) – Provides per-word percentage-difference stats.</p></li>
+<li><p><strong>increase_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum percentage increase to count as
+‘increase’. Defaults to 0.5.</p></li>
+<li><p><strong>emerge_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum percentage increase to count as
+‘emerge’ (checked before ‘increase’). Defaults to 5.0.</p></li>
+<li><p><strong>decrease_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum percentage decrease to count as
+‘decrease’. Defaults to 0.5.</p></li>
+<li><p><strong>disappear_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum percentage decrease to count as
+‘disappear’ (checked before ‘decrease’). Defaults to 5.0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pair of dicts (drop, jump), each
+mapping a change-level name (‘decrease’/’disappear’ or ‘emerge’/’increase’) to
+the list of Diff records at that level.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[Dict[str, list], Dict[str, list]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-fuzzy_search.analysis.subtoken">
+<span id="fuzzy-search-analysis-subtoken-module"></span><h2>fuzzy_search.analysis.subtoken module<a class="headerlink" href="#module-fuzzy_search.analysis.subtoken" title="Link to this heading"></a></h2>
+<p>Byte Pair Encoding (BPE) subword tokenization utilities.</p>
+<p>This module implements a simple BPE training algorithm operating on tokens
+split into characters (plus a trailing word-boundary marker). It builds a
+corpus of <code class="docutils literal notranslate"><span class="pre">BPEToken</span></code> objects, repeatedly finds the most frequent adjacent
+symbol pair using a <code class="docutils literal notranslate"><span class="pre">FrequencyTracker</span></code> index, merges that pair into a new
+symbol across all tokens, and updates the frequency index incrementally,
+producing a learned subword vocabulary.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.BPEToken">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">BPEToken</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#BPEToken"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.BPEToken" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A token represented as a mutable list of BPE symbols.</p>
+<p>Initially each symbol is a single character of the token, with a
+trailing space symbol marking the end of the token. As BPE merges are
+applied, adjacent symbols get combined into longer symbols.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.BPEToken.token">
+<span class="sig-name descname"><span class="pre">token</span></span><a class="headerlink" href="#fuzzy_search.analysis.subtoken.BPEToken.token" title="Link to this definition"></a></dt>
+<dd><p>The original token string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.BPEToken.symbols">
+<span class="sig-name descname"><span class="pre">symbols</span></span><a class="headerlink" href="#fuzzy_search.analysis.subtoken.BPEToken.symbols" title="Link to this definition"></a></dt>
+<dd><p>The current list of symbols representing the token.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.BPEToken.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#BPEToken.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.BPEToken.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes a BPEToken by splitting it into characters plus an end-of-word marker.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>token</strong> (<em>str</em>) – The token string to represent.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.BPEToken.symbol_pairs">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">symbol_pairs</span></span><a class="headerlink" href="#fuzzy_search.analysis.subtoken.BPEToken.symbol_pairs" title="Link to this definition"></a></dt>
+<dd><p>All adjacent pairs of symbols in the token.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Tuple[str, str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.FrequencyTracker">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">FrequencyTracker</span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#FrequencyTracker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.FrequencyTracker" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Tracks symbol-pair frequencies and supports fast lookup of the most frequent pair(s).</p>
+<p>Frequencies are organized into buckets keyed first by frequency, then by the
+combined character length of the symbol pair, so that the most frequent pair
+(optionally the shortest among ties) can be retrieved without scanning all pairs.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.FrequencyTracker.freq_buckets">
+<span class="sig-name descname"><span class="pre">freq_buckets</span></span><a class="headerlink" href="#fuzzy_search.analysis.subtoken.FrequencyTracker.freq_buckets" title="Link to this definition"></a></dt>
+<dd><p>Maps
+frequency -&gt; combined symbol length -&gt; set of symbol pairs with that
+frequency and length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[int, Dict[int, Set[Tuple[str, str]]]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.FrequencyTracker.symbol_pair_freq">
+<span class="sig-name descname"><span class="pre">symbol_pair_freq</span></span><a class="headerlink" href="#fuzzy_search.analysis.subtoken.FrequencyTracker.symbol_pair_freq" title="Link to this definition"></a></dt>
+<dd><p>Maps each symbol pair to its
+current frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[Tuple[str, str], int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.FrequencyTracker.max_freq">
+<span class="sig-name descname"><span class="pre">max_freq</span></span><a class="headerlink" href="#fuzzy_search.analysis.subtoken.FrequencyTracker.max_freq" title="Link to this definition"></a></dt>
+<dd><p>The highest frequency currently present in <code class="docutils literal notranslate"><span class="pre">freq_buckets</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.FrequencyTracker.all_with_max_frequency">
+<span class="sig-name descname"><span class="pre">all_with_max_frequency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#FrequencyTracker.all_with_max_frequency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.FrequencyTracker.all_with_max_frequency" title="Link to this definition"></a></dt>
+<dd><p>Returns all symbol pairs that currently have the maximum frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>length</strong> (<em>int</em><em>, </em><em>optional</em>) – If given, restrict to symbol pairs whose combined
+character length equals this value.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The set of symbol pairs at the maximum frequency.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Set[Tuple[str, str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.FrequencyTracker.frequency_of">
+<span class="sig-name descname"><span class="pre">frequency_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol_pair</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#FrequencyTracker.frequency_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.FrequencyTracker.frequency_of" title="Link to this definition"></a></dt>
+<dd><p>Returns the current frequency of a symbol pair, or 0 if it is not tracked.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.FrequencyTracker.most_frequent">
+<span class="sig-name descname"><span class="pre">most_frequent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#FrequencyTracker.most_frequent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.FrequencyTracker.most_frequent" title="Link to this definition"></a></dt>
+<dd><p>Returns one symbol pair with the current maximum frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>length</strong> (<em>int</em><em>, </em><em>optional</em>) – If given, restrict the search to symbol pairs whose
+combined character length equals this value.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple of (symbol_pair, frequency),
+or None if there is no pair (matching the length, if given).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Tuple[Tuple[str, str], int]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.FrequencyTracker.most_frequent_shortest">
+<span class="sig-name descname"><span class="pre">most_frequent_shortest</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#FrequencyTracker.most_frequent_shortest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.FrequencyTracker.most_frequent_shortest" title="Link to this definition"></a></dt>
+<dd><p>Return one symbol pair with the highest frequency and, among ties, the shortest
+combined string length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple of (symbol_pair, frequency,
+length), or None if no symbol pairs are tracked.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[Tuple[Tuple[str, str], int, int]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.FrequencyTracker.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol_pair</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#FrequencyTracker.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.FrequencyTracker.update" title="Link to this definition"></a></dt>
+<dd><p>Adjusts the frequency of a symbol pair by <code class="docutils literal notranslate"><span class="pre">count</span></code> and updates the buckets.</p>
+<p>Removes the pair from its old frequency/length bucket (if any) and re-inserts
+it into the bucket for its new frequency, also maintaining <code class="docutils literal notranslate"><span class="pre">max_freq</span></code>. If the
+new frequency is zero or below, the pair is removed entirely.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>symbol_pair</strong> (<em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – The symbol pair to update.</p></li>
+<li><p><strong>count</strong> (<em>int</em>) – The (positive or negative) amount to add to the pair’s frequency.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.compare_token_symbol_pairs">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">compare_token_symbol_pairs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#compare_token_symbol_pairs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.compare_token_symbol_pairs" title="Link to this definition"></a></dt>
+<dd><p>Compares the adjacent symbol pairs of two symbol sequences (e.g. a token before
+and after a merge).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>token1</strong> (<em>Union</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em><em>]</em>) – The first symbol sequence.</p></li>
+<li><p><strong>token2</strong> (<em>Union</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em><em>]</em>) – The second symbol sequence.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple of (pairs present in both, pairs only in
+<code class="docutils literal notranslate"><span class="pre">token1</span></code>, pairs only in <code class="docutils literal notranslate"><span class="pre">token2</span></code>).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[Set, Set, Set]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.find_new_symbol_pairs">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">find_new_symbol_pairs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">merge_symbol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#find_new_symbol_pairs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.find_new_symbol_pairs" title="Link to this definition"></a></dt>
+<dd><p>Finds the new adjacent symbol pairs introduced around each occurrence of a merged symbol.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>merge_symbol</strong> (<em>str</em>) – The newly merged symbol to search for in <code class="docutils literal notranslate"><span class="pre">token</span></code>.</p></li>
+<li><p><strong>token</strong> (<em>Tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em>) – The token’s (already merged) symbol sequence.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The new symbol pairs formed with <code class="docutils literal notranslate"><span class="pre">merge_symbol</span></code>’s neighbours.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Tuple[str, str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.generate_corpus_symbol_pairs">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">generate_corpus_symbol_pairs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corpus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><span class="pre">BPEToken</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><span class="pre">BPEToken</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#generate_corpus_symbol_pairs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.generate_corpus_symbol_pairs" title="Link to this definition"></a></dt>
+<dd><p>Iterate over all tokens in a corpus and return all tuples of two
+adjacent symbols together with their corresponding token</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.generate_symbol_pairs">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">generate_symbol_pairs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#generate_symbol_pairs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.generate_symbol_pairs" title="Link to this definition"></a></dt>
+<dd><p>Returns all adjacent pairs of symbols in a sequence.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.generate_vocab">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">generate_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corpus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><span class="pre">BPEToken</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#generate_vocab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.generate_vocab" title="Link to this definition"></a></dt>
+<dd><p>Collects the set of all distinct symbols currently used across a corpus of BPETokens.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>corpus</strong> (<em>Counter</em><em>[</em><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><em>BPEToken</em></a><em>, </em><em>int</em><em>]</em>) – The tokens in the corpus.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The set of distinct symbols in the corpus.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Set[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.index_symbol_pair">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">index_symbol_pair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corpus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><span class="pre">BPEToken</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><span class="pre">BPEToken</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#index_symbol_pair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.index_symbol_pair" title="Link to this definition"></a></dt>
+<dd><p>Builds an index mapping each adjacent symbol pair to the set of tokens it occurs in.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>corpus</strong> (<em>Counter</em><em>[</em><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><em>BPEToken</em></a><em>, </em><em>int</em><em>]</em>) – The tokens in the corpus.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Maps each symbol pair to the tokens containing it.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[Tuple[str, str], Set[<a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken">BPEToken</a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.make_byte_pair_encoding">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">make_byte_pair_encoding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#make_byte_pair_encoding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.make_byte_pair_encoding" title="Link to this definition"></a></dt>
+<dd><p>Trains a Byte Pair Encoding vocabulary from a list of token strings.</p>
+<p>Iteratively merges the most frequent (and, among ties, shortest) adjacent symbol
+pair across the corpus for <code class="docutils literal notranslate"><span class="pre">k</span></code> iterations, growing the vocabulary by one merged
+symbol per iteration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tokens</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The token strings (e.g. words) to train the BPE model on.</p></li>
+<li><p><strong>k</strong> (<em>int</em>) – The number of merge iterations (and roughly the number of new
+subword symbols to learn).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The learned vocabulary of symbols, including the original characters
+and the merged subword units.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Set[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.make_symbol_pair_freq">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">make_symbol_pair_freq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corpus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><span class="pre">BPEToken</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symbol_pair_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><span class="pre">BPEToken</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#make_symbol_pair_freq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.make_symbol_pair_freq" title="Link to this definition"></a></dt>
+<dd><p>Builds a FrequencyTracker of symbol-pair frequencies from a corpus and its symbol pair index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corpus</strong> (<em>Counter</em><em>[</em><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><em>BPEToken</em></a><em>, </em><em>int</em><em>]</em>) – Token frequencies in the corpus.</p></li>
+<li><p><strong>symbol_pair_index</strong> (<em>Dict</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>, </em><em>Set</em><em>[</em><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><em>BPEToken</em></a><em>]</em><em>]</em>) – Maps each symbol pair to
+the set of tokens it occurs in.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tracker initialised with each symbol pair’s total frequency,
+summed over the tokens it occurs in.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#fuzzy_search.analysis.subtoken.FrequencyTracker" title="fuzzy_search.analysis.subtoken.FrequencyTracker">FrequencyTracker</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.merge_symbols_in_token">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">merge_symbols_in_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">merge_symbol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><span class="pre">BPEToken</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#merge_symbols_in_token"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.merge_symbols_in_token" title="Link to this definition"></a></dt>
+<dd><p>Returns a new symbol sequence for a token with every occurrence of an adjacent
+symbol pair merged into a single combined symbol.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>merge_symbol</strong> (<em>str</em>) – The concatenated string of the symbol pair being merged
+(used to detect matching adjacent pairs in the token’s symbol list).</p></li>
+<li><p><strong>token</strong> (<a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><em>BPEToken</em></a>) – The token whose symbols are being merged.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The token’s new symbol sequence, with matching adjacent pairs
+replaced by the merged symbol.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[str, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.merge_symbols_in_tokens">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">merge_symbols_in_tokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol_pair_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><span class="pre">BPEToken</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symbol_pair_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fuzzy_search.analysis.subtoken.FrequencyTracker" title="fuzzy_search.analysis.subtoken.FrequencyTracker"><span class="pre">FrequencyTracker</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">corpus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><span class="pre">BPEToken</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_symbols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#merge_symbols_in_tokens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.merge_symbols_in_tokens" title="Link to this definition"></a></dt>
+<dd><p>Applies a BPE merge of <code class="docutils literal notranslate"><span class="pre">merge_symbols</span></code> to every token containing it, updating
+the symbol pair index and frequency tracker in place.</p>
+<p>For each affected token, this computes which symbol pairs disappear and which new
+ones appear as a result of the merge (via <a class="reference internal" href="#fuzzy_search.analysis.subtoken.compare_token_symbol_pairs" title="fuzzy_search.analysis.subtoken.compare_token_symbol_pairs"><code class="xref py py-func docutils literal notranslate"><span class="pre">compare_token_symbol_pairs()</span></code></a>), removes
+the disappearing pairs from the index/frequencies, adds the new ones, and finally
+removes the now-fully-merged <code class="docutils literal notranslate"><span class="pre">merge_symbols</span></code> entry from the index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>symbol_pair_index</strong> (<em>Dict</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>, </em><em>Set</em><em>[</em><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><em>BPEToken</em></a><em>]</em><em>]</em>) – The symbol pair to
+tokens index, updated in place.</p></li>
+<li><p><strong>symbol_pair_freq</strong> (<a class="reference internal" href="#fuzzy_search.analysis.subtoken.FrequencyTracker" title="fuzzy_search.analysis.subtoken.FrequencyTracker"><em>FrequencyTracker</em></a>) – The frequency tracker, updated in place.</p></li>
+<li><p><strong>corpus</strong> (<em>Counter</em><em>[</em><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><em>BPEToken</em></a><em>, </em><em>int</em><em>]</em>) – Token frequencies in the corpus.</p></li>
+<li><p><strong>merge_symbols</strong> (<em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – The symbol pair to merge.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.prune_symbol_pair_freq">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">prune_symbol_pair_freq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol_pair_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Counter</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#prune_symbol_pair_freq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.prune_symbol_pair_freq" title="Link to this definition"></a></dt>
+<dd><p>Removes symbol pairs with a frequency of zero from a symbol-pair frequency counter, in place.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fuzzy_search.analysis.subtoken.string_tokens_to_corpus">
+<span class="sig-prename descclassname"><span class="pre">fuzzy_search.analysis.subtoken.</span></span><span class="sig-name descname"><span class="pre">string_tokens_to_corpus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Counter</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken"><span class="pre">BPEToken</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fuzzy_search/analysis/subtoken.html#string_tokens_to_corpus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fuzzy_search.analysis.subtoken.string_tokens_to_corpus" title="Link to this definition"></a></dt>
+<dd><p>Builds a BPE corpus from a list of token strings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tokens</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The token strings, e.g. words from a document collection.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A counter mapping each unique token (wrapped as a
+BPEToken) to its frequency in <code class="docutils literal notranslate"><span class="pre">tokens</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Counter[<a class="reference internal" href="#fuzzy_search.analysis.subtoken.BPEToken" title="fuzzy_search.analysis.subtoken.BPEToken">BPEToken</a>, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-fuzzy_search.analysis">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-fuzzy_search.analysis" title="Link to this heading"></a></h2>
+<p>Standalone corpus/vocabulary analysis tools that build on the tokenization layer but are not
+wired into the core fuzzy phrase-search engine: skipgram-based term similarity
+(<a class="reference internal" href="#module-fuzzy_search.analysis.similarity" title="fuzzy_search.analysis.similarity"><code class="xref py py-mod docutils literal notranslate"><span class="pre">similarity</span></code></a>), ngram frequency and log-likelihood-ratio statistics
+(<a class="reference internal" href="#module-fuzzy_search.analysis.freq" title="fuzzy_search.analysis.freq"><code class="xref py py-mod docutils literal notranslate"><span class="pre">freq</span></code></a>), and spelling-variant comparison
+(<a class="reference internal" href="#module-fuzzy_search.analysis.spelling_compare" title="fuzzy_search.analysis.spelling_compare"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spelling_compare</span></code></a>).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fuzzy_search.html" class="btn btn-neutral float-left" title="fuzzy_search package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fuzzy_search.match.html" class="btn btn-neutral float-right" title="fuzzy_search.match package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

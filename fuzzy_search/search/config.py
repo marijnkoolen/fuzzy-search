@@ -1,3 +1,10 @@
+"""Default configuration values for fuzzy searchers.
+
+Exposes :data:`default_config`, the dictionary of default thresholds and
+behavior flags used by :class:`~fuzzy_search.search.searcher.FuzzySearcher`
+and its subclasses. Pass a partial dictionary with overrides to a searcher's
+constructor or ``configure`` method to change only the desired settings.
+"""
 import string
 
 default_config = {

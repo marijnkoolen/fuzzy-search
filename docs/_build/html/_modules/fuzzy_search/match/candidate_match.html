@@ -1,0 +1,477 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.match.candidate_match &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.match.candidate_match</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.match.candidate_match</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Candidate match objects and the skipgram-based logic used to build, grow and validate</span>
+<span class="sd">fuzzy match candidates between a text and a phrase.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.string</span> <span class="kn">import</span> <span class="n">SkipGram</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase</span> <span class="kn">import</span> <span class="n">Phrase</span>
+
+
+<div class="viewcode-block" id="Candidate">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate">[docs]</a>
+<span class="k">class</span> <span class="nc">Candidate</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A finalized candidate match between a phrase and a span of text, with the matching</span>
+<span class="sd">    string, its offsets, and the skipgram overlap score.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Candidate.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.Candidate.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span> <span class="n">match_start_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">match_end_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">match_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">skipgram_overlap</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Candidate for a matched phrase.</span>
+
+<span class="sd">        :param phrase: the phrase that this candidate is a match for</span>
+<span class="sd">        :type phrase: Phrase</span>
+<span class="sd">        :param match_start_offset: the start offset of the match in the text</span>
+<span class="sd">        :type match_start_offset: int</span>
+<span class="sd">        :param match_end_offset: the end offset of the match in the text</span>
+<span class="sd">        :type match_end_offset: int</span>
+<span class="sd">        :param match_string: the matching text string</span>
+<span class="sd">        :type match_string: str</span>
+<span class="sd">        :param skipgram_overlap: the skipgram overlap score between phrase and match string</span>
+<span class="sd">        :type skipgram_overlap: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase</span> <span class="o">=</span> <span class="n">phrase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_start_offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">match_start_offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_end_offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">match_end_offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_string</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">match_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_overlap</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">skipgram_overlap</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a debug representation showing the phrase, match string, and offsets.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Candidate(&#39;</span> <span class="o">+</span> \
+               <span class="sa">f</span><span class="s1">&#39;phrase: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s1">&quot;, match_string: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">match_string</span><span class="si">}</span><span class="s1">&quot;, &#39;</span> <span class="o">+</span> \
+               <span class="sa">f</span><span class="s1">&#39;match_start_offset: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">match_start_offset</span><span class="si">}</span><span class="s1">, match_end_offset: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">match_end_offset</span><span class="si">}</span><span class="s1">)&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="CandidatePartial">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.CandidatePartial">[docs]</a>
+<span class="k">class</span> <span class="nc">CandidatePartial</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A partially built candidate match for a phrase, accumulating matching skipgrams found in</span>
+<span class="sd">    the text as they are encountered. Used while scanning text for skipgram matches, before a</span>
+<span class="sd">    final Candidate is produced.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CandidatePartial.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.CandidatePartial.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span> <span class="n">max_length_variance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                 <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">debug</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Candidate instance for a given Phrase object.</span>
+
+<span class="sd">        :param phrase: a phrase object</span>
+<span class="sd">        :type phrase: Phrase</span>
+<span class="sd">        :param ignorecase: whether to ignore case when matching skip grams</span>
+<span class="sd">        :type ignorecase: bool</span>
+<span class="sd">        :param debug: level to show debugging info</span>
+<span class="sd">        :type debug: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SkipGram</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_count</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase</span> <span class="o">=</span> <span class="n">phrase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="o">=</span> <span class="n">ignorecase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="n">debug</span>
+        <span class="k">if</span> <span class="n">ignorecase</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skipgrams</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">skipgrams_lower</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_index</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">skipgram_index_lower</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_freq</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">skipgram_freq_lower</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">early_skipgram_index</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">early_skipgram_index_lower</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">late_skipgram_index</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">late_skipgram_index_lower</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skipgrams</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">skipgrams</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_index</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">skipgram_index</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_freq</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">skipgram_freq</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">early_skipgram_index</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">early_skipgram_index</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">late_skipgram_index</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">late_skipgram_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_length_variance</span> <span class="o">=</span> <span class="n">max_length_variance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length_variance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_start_offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_end_offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_string</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_overlap</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a debug representation showing the phrase, match string, and offsets.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Candidate(&#39;</span> <span class="o">+</span> \
+               <span class="sa">f</span><span class="s1">&#39;phrase: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s1">&quot;, match_string: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">match_string</span><span class="si">}</span><span class="s1">&quot;, &#39;</span> <span class="o">+</span> \
+               <span class="sa">f</span><span class="s1">&#39;match_start_offset: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">match_start_offset</span><span class="si">}</span><span class="s1">, match_end_offset: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">match_end_offset</span><span class="si">}</span><span class="s1">)&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="candidate_from_partial">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.candidate_from_partial">[docs]</a>
+<span class="k">def</span> <span class="nf">candidate_from_partial</span><span class="p">(</span><span class="n">candidate_partial</span><span class="p">:</span> <span class="n">CandidatePartial</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Candidate</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a finalized Candidate instance from a CandidatePartial object.</span>
+
+<span class="sd">    :param candidate_partial: a partially built candidate match</span>
+<span class="sd">    :type candidate_partial: CandidatePartial</span>
+<span class="sd">    :param text: the text object that the candidate match string is taken from</span>
+<span class="sd">    :type text: Dict[str, any]</span>
+<span class="sd">    :return: a finalized Candidate</span>
+<span class="sd">    :rtype: Candidate</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">candidate_partial</span><span class="o">.</span><span class="n">match_string</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">match_string</span> <span class="o">=</span> <span class="n">get_match_string</span><span class="p">(</span><span class="n">candidate_partial</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">match_string</span> <span class="o">=</span> <span class="n">candidate_partial</span><span class="o">.</span><span class="n">match_string</span>
+    <span class="k">return</span> <span class="n">Candidate</span><span class="p">(</span><span class="n">candidate_partial</span><span class="o">.</span><span class="n">phrase</span><span class="p">,</span> <span class="n">candidate_partial</span><span class="o">.</span><span class="n">match_start_offset</span><span class="p">,</span>
+                     <span class="n">candidate_partial</span><span class="o">.</span><span class="n">match_end_offset</span><span class="p">,</span> <span class="n">match_string</span><span class="p">,</span>
+                     <span class="n">get_skip_count_overlap</span><span class="p">(</span><span class="n">candidate_partial</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="same_candidate">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.same_candidate">[docs]</a>
+<span class="k">def</span> <span class="nf">same_candidate</span><span class="p">(</span><span class="n">candidate1</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">CandidatePartial</span><span class="p">,</span> <span class="n">Candidate</span><span class="p">],</span>
+                   <span class="n">candidate2</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">CandidatePartial</span><span class="p">,</span> <span class="n">Candidate</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if this candidate has the same start and end offsets as another candidate.</span>
+
+<span class="sd">    :param candidate1: first candidate .</span>
+<span class="sd">    :type candidate1: Candidate</span>
+<span class="sd">    :param candidate2: second candidate.</span>
+<span class="sd">    :type candidate2: Candidate</span>
+<span class="sd">    :return: this candidate match has the same offsets as the other candidate</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">candidate1</span><span class="o">.</span><span class="n">match_start_offset</span> <span class="o">!=</span> <span class="n">candidate2</span><span class="o">.</span><span class="n">match_start_offset</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">candidate1</span><span class="o">.</span><span class="n">match_end_offset</span> <span class="o">!=</span> <span class="n">candidate2</span><span class="o">.</span><span class="n">match_end_offset</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
+<div class="viewcode-block" id="add_skip_match">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.add_skip_match">[docs]</a>
+<span class="k">def</span> <span class="nf">add_skip_match</span><span class="p">(</span><span class="n">candidate</span><span class="p">:</span> <span class="n">CandidatePartial</span><span class="p">,</span> <span class="n">skipgram</span><span class="p">:</span> <span class="n">SkipGram</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a skipgram match between a text and a phrase to the candidate, updating its offsets</span>
+<span class="sd">    and skipgram counts. If adding the skipgram makes the candidate&#39;s matched span longer than</span>
+<span class="sd">    the phrase allows, or its start no longer lies in the phrase&#39;s early skipgram index, the</span>
+<span class="sd">    earliest skipgrams are dropped from the front until the candidate is valid again.</span>
+
+<span class="sd">    :param candidate: the candidate to add the skipgram to</span>
+<span class="sd">    :type candidate: CandidatePartial</span>
+<span class="sd">    :param skipgram: a matching skipgram</span>
+<span class="sd">    :type skipgram: SkipGram</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidate</span><span class="o">.</span><span class="n">early_skipgram_index</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;skipping skipgram as first for candidate:&quot;</span><span class="p">,</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">)</span>
+    <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">skipgram</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span> <span class="o">=</span> <span class="n">get_match_start_offset</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">start_offset</span> <span class="o">+</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_end_offset</span><span class="p">:</span>
+        <span class="n">candidate</span><span class="o">.</span><span class="n">match_end_offset</span> <span class="o">=</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">start_offset</span> <span class="o">+</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">length</span>
+    <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_count</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">add - skipgram:&quot;</span><span class="p">,</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">string</span><span class="p">,</span> <span class="n">skipgram</span><span class="o">.</span><span class="n">start_offset</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">add - match length:&quot;</span><span class="p">,</span> <span class="n">get_skip_match_length</span><span class="p">(</span><span class="n">candidate</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">add - list:&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">skip</span><span class="o">.</span><span class="n">string</span> <span class="k">for</span> <span class="n">skip</span> <span class="ow">in</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">])</span>
+    <span class="c1"># check if the candidate string is too long to match the phrase</span>
+    <span class="c1"># if too long, remove the first skipgrams until the string is short enough</span>
+    <span class="k">while</span> <span class="n">get_skip_match_length</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">candidate</span><span class="o">.</span><span class="n">max_length</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">remove_first_skip</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+        <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span> <span class="o">=</span> <span class="n">get_match_start_offset</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">remove - too long - length:&quot;</span><span class="p">,</span> <span class="n">get_skip_match_length</span><span class="p">(</span><span class="n">candidate</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">remove - too long - list:&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">skip</span><span class="o">.</span><span class="n">string</span> <span class="k">for</span> <span class="n">skip</span> <span class="ow">in</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">remove - too long - start:&quot;</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">end:&quot;</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_end_offset</span><span class="p">)</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidate</span><span class="o">.</span><span class="n">early_skipgram_index</span><span class="p">:</span>
+        <span class="n">remove_first_skip</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+        <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span> <span class="o">=</span> <span class="n">get_match_start_offset</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">remove - no start - length:&quot;</span><span class="p">,</span> <span class="n">get_skip_match_length</span><span class="p">(</span><span class="n">candidate</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">remove - no start - list:&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">skip</span><span class="o">.</span><span class="n">string</span> <span class="k">for</span> <span class="n">skip</span> <span class="ow">in</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">remove - no start - start:&quot;</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">end:&quot;</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_end_offset</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="shift_start_skip">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.shift_start_skip">[docs]</a>
+<span class="k">def</span> <span class="nf">shift_start_skip</span><span class="p">(</span><span class="n">candidate</span><span class="p">:</span> <span class="n">CandidatePartial</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a later skipgram in the candidate would make a better starting point than the</span>
+<span class="sd">    current first skipgram (i.e. it shortens an overly long match without losing the best start),</span>
+<span class="sd">    and if so, shift the candidate&#39;s start to that skipgram.</span>
+
+<span class="sd">    :param candidate: a candidate match to check and potentially shift</span>
+<span class="sd">    :type candidate: CandidatePartial</span>
+<span class="sd">    :return: whether the start was shifted</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">get_skip_match_length</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="n">start_skip</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">start_phrase_offset</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_index</span><span class="p">[</span><span class="n">start_skip</span><span class="o">.</span><span class="n">string</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">start_offset</span>
+    <span class="n">best_start_phrase_offset</span> <span class="o">=</span> <span class="n">start_phrase_offset</span>
+    <span class="n">best_start_index</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">best_start_skip</span> <span class="o">=</span> <span class="n">start_skip</span>
+    <span class="k">for</span> <span class="n">si</span><span class="p">,</span> <span class="n">skip</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">):</span>
+        <span class="n">skip_phrase_offset</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_index</span><span class="p">[</span><span class="n">skip</span><span class="o">.</span><span class="n">string</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">start_offset</span>
+        <span class="k">if</span> <span class="n">skip</span><span class="o">.</span><span class="n">start_offset</span> <span class="o">-</span> <span class="n">start_skip</span><span class="o">.</span><span class="n">start_offset</span> <span class="o">&gt;</span> <span class="n">get_skip_match_length</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">):</span>
+            <span class="c1"># stop looking for better start when remaining skips result in too short match length</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="n">skip</span><span class="o">.</span><span class="n">start_offset</span> <span class="o">&gt;</span> <span class="n">best_start_skip</span><span class="o">.</span><span class="n">start_offset</span> <span class="ow">and</span> <span class="n">skip_phrase_offset</span> <span class="o">&lt;=</span> <span class="n">best_start_phrase_offset</span><span class="p">:</span>
+            <span class="n">best_start_index</span> <span class="o">=</span> <span class="n">si</span>
+            <span class="n">best_start_skip</span> <span class="o">=</span> <span class="n">skip</span>
+            <span class="n">best_start_phrase_offset</span> <span class="o">=</span> <span class="n">skip_phrase_offset</span>
+        <span class="k">if</span> <span class="n">skip</span><span class="o">.</span><span class="n">string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidate</span><span class="o">.</span><span class="n">early_skipgram_index</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">best_start_index</span><span class="p">):</span>
+        <span class="n">remove_first_skip</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+    <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span> <span class="o">=</span> <span class="n">get_match_start_offset</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">best_start_index</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="remove_first_skip">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.remove_first_skip">[docs]</a>
+<span class="k">def</span> <span class="nf">remove_first_skip</span><span class="p">(</span><span class="n">candidate</span><span class="p">:</span> <span class="n">CandidatePartial</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove the first matching skipgram from the candidate&#39;s list and update its skipgram</span>
+<span class="sd">    count and set accordingly.</span>
+
+<span class="sd">    :param candidate: the candidate to remove the first skipgram from</span>
+<span class="sd">    :type candidate: CandidatePartial</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">first_skip</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">remove_first_skip - removing first skip&#39;</span><span class="p">)</span>
+    <span class="c1"># reduce count of first skipgram by 1</span>
+    <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_count</span><span class="p">[</span><span class="n">first_skip</span><span class="o">.</span><span class="n">string</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="c1"># if count has dropped to zero, remove skipgram from the set</span>
+    <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_count</span><span class="p">[</span><span class="n">first_skip</span><span class="o">.</span><span class="n">string</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_set</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">first_skip</span><span class="o">.</span><span class="n">string</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_skip_match_length">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.get_skip_match_length">[docs]</a>
+<span class="k">def</span> <span class="nf">get_skip_match_length</span><span class="p">(</span><span class="n">candidate</span><span class="p">:</span> <span class="n">CandidatePartial</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the length of the matching string spanned by the candidate&#39;s current offsets.</span>
+
+<span class="sd">    :param candidate: the candidate to measure</span>
+<span class="sd">    :type candidate: CandidatePartial</span>
+<span class="sd">    :return: the length of the candidate&#39;s matching span</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_end_offset</span> <span class="o">-</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span></div>
+
+
+<div class="viewcode-block" id="is_match">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.is_match">[docs]</a>
+<span class="k">def</span> <span class="nf">is_match</span><span class="p">(</span><span class="n">candidate</span><span class="p">:</span> <span class="n">CandidatePartial</span><span class="p">,</span> <span class="n">skipgram_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if the candidate is a likely match for its corresponding phrase, based on its</span>
+<span class="sd">    length relative to the phrase, whether its first/last skipgrams are in the phrase&#39;s</span>
+<span class="sd">    early/late skipgram indexes, and whether its skipgram set overlap meets the given threshold.</span>
+
+<span class="sd">    :param candidate: the candidate to validate</span>
+<span class="sd">    :type candidate: CandidatePartial</span>
+<span class="sd">    :param skipgram_threshold: the minimum required skipgram set overlap</span>
+<span class="sd">    :type skipgram_threshold: float</span>
+<span class="sd">    :return: whether the candidate is a likely match</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">is_match - NO MATCH: there are no matching skipgrams&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidate</span><span class="o">.</span><span class="n">early_skipgram_index</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">is_match - NO MATCH: first skipgram not in early index&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="n">phrase_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+    <span class="n">match_len</span> <span class="o">=</span> <span class="n">get_skip_match_length</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">match_len</span> <span class="o">&gt;</span> <span class="n">phrase_len</span> <span class="o">+</span> <span class="n">candidate</span><span class="o">.</span><span class="n">max_length_variance</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">debug</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">is_match - NO MATCH: skip match length too long&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">match_len</span> <span class="o">&lt;</span> <span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">late_threshold</span> <span class="o">-</span> <span class="n">candidate</span><span class="o">.</span><span class="n">max_length_variance</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidate</span><span class="o">.</span><span class="n">late_skipgram_index</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">get_skip_set_overlap</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">skipgram_threshold</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="get_skip_set_overlap">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.get_skip_set_overlap">[docs]</a>
+<span class="k">def</span> <span class="nf">get_skip_set_overlap</span><span class="p">(</span><span class="n">candidate</span><span class="p">:</span> <span class="n">CandidatePartial</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the skipgram set overlap between the candidate and its phrase (fraction of the</span>
+<span class="sd">    phrase&#39;s distinct skipgrams that are present in the candidate), store it on the candidate,</span>
+<span class="sd">    and return it.</span>
+
+<span class="sd">    :param candidate: the candidate to score</span>
+<span class="sd">    :type candidate: CandidatePartial</span>
+<span class="sd">    :return: the skipgram set overlap</span>
+<span class="sd">    :rtype: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_overlap</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_set</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">skipgram_set</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_overlap</span></div>
+
+
+
+<div class="viewcode-block" id="get_skip_count_overlap">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.get_skip_count_overlap">[docs]</a>
+<span class="k">def</span> <span class="nf">get_skip_count_overlap</span><span class="p">(</span><span class="n">candidate</span><span class="p">:</span> <span class="n">CandidatePartial</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate deviation of candidate skipgrams from phrase skipgrams.</span>
+
+<span class="sd">            :param candidate: the candidate to score</span>
+<span class="sd">            :type candidate: CandidatePartial</span>
+<span class="sd">            :return: the skipgram overlap (-inf, 1.0]</span>
+<span class="sd">            :rtype: float</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">skipgram_string</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_count</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">diff</span> <span class="o">+=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">count</span> <span class="o">-</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_freq</span><span class="p">[</span><span class="n">skipgram_string</span><span class="p">])</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">count</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">total</span> <span class="o">-</span> <span class="n">diff</span><span class="p">)</span> <span class="o">/</span> <span class="n">candidate</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">num_skipgrams</span></div>
+
+
+<div class="viewcode-block" id="get_match_start_offset">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.get_match_start_offset">[docs]</a>
+<span class="k">def</span> <span class="nf">get_match_start_offset</span><span class="p">(</span><span class="n">candidate</span><span class="p">:</span> <span class="n">CandidatePartial</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the start offset of the match in the text, based on the candidate&#39;s first</span>
+<span class="sd">    skipgram and that skipgram&#39;s offset within the phrase.</span>
+
+<span class="sd">    :param candidate: the candidate to compute the start offset for</span>
+<span class="sd">    :type candidate: CandidatePartial</span>
+<span class="sd">    :return: the match start offset, or None if the candidate has no skipgrams</span>
+<span class="sd">    :rtype: Union[None, int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">first_skip</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">first_skip_in_phrase</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_index</span><span class="p">[</span><span class="n">first_skip</span><span class="o">.</span><span class="n">string</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">match_start_offset</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">skipgram_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">start_offset</span> <span class="o">-</span> <span class="n">first_skip_in_phrase</span><span class="o">.</span><span class="n">start_offset</span>
+    <span class="k">return</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">match_start_offset</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">match_start_offset</span></div>
+
+
+<div class="viewcode-block" id="get_match_string">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.candidate_match.get_match_string">[docs]</a>
+<span class="k">def</span> <span class="nf">get_match_string</span><span class="p">(</span><span class="n">candidate</span><span class="p">:</span> <span class="n">CandidatePartial</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the matching string of a candidate fuzzy match by slicing the text between the</span>
+<span class="sd">    candidate&#39;s start and end offsets.</span>
+
+<span class="sd">    :param candidate: the candidate whose match string to extract</span>
+<span class="sd">    :type candidate: CandidatePartial</span>
+<span class="sd">    :param text: the text object containing the candidate&#39;s match string</span>
+<span class="sd">    :type text: Dict[str, any]</span>
+<span class="sd">    :return: the matching text string</span>
+<span class="sd">    :rtype: Union[str, None]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span> <span class="o">==</span> <span class="n">candidate</span><span class="o">.</span><span class="n">match_end_offset</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;start and end offset cannot be the same&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">candidate</span><span class="o">.</span><span class="n">match_start_offset</span><span class="p">:</span><span class="n">candidate</span><span class="o">.</span><span class="n">match_end_offset</span><span class="p">]</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

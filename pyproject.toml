@@ -1,6 +1,6 @@
 [project]
 name = "fuzzy-search"
-version = "2.7.1"
+version = "3.0.3"
 description = "Tool for fuzzy searching in texts with historical language use and OCR/HTR errors"
 authors = [{name = "Marijn Koolen", email = "marijn.koolen@gmail.com"}]
 readme = "README.md"
@@ -17,10 +17,11 @@ classifiers = [
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.26, <3.0.0",
+    "scipy>=1.13",
     "levenshtein>=0.26",
-    "nltk==3.9.4",
+    "nltk>=3.9.4",
     "flake8 (>=7.1.1,<8.0.0)",
-    "pytest (>=8.3.4,<9.0.0)",
+    "pytest (>=9.0.3,<10.0.0)",
 ]
 packages = [
     { include = "fuzzy_search" }
@@ -29,7 +30,7 @@ packages = [
 [tool.poetry.group.dev.dependencies]
 
 [tool.poetry.group.test.dependencies]
-pytest = "^8.3.4"
+pytest = "^9.0.3"
 icecream = "^2.1.2"
 loguru = "^0.6.0"
 

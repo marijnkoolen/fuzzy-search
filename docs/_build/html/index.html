@@ -1,26 +1,25 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to fuzzy-search’s documentation! &mdash; fuzzy-search 0.3.0 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+  <title>Welcome to fuzzy-search’s documentation! &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="fuzzy_search package" href="source/fuzzy_search.html" /> 
+    <link rel="next" title="Quick Start" href="source/quickstart.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -28,11 +27,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="#" class="icon icon-home"> fuzzy-search
+
+          
+          
+          <a href="#" class="icon icon-home">
+            fuzzy-search
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -40,6 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="source/quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source/fuzzy_search.html">fuzzy_search package</a></li>
 </ul>
 
@@ -56,7 +60,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="#" class="icon icon-home"></a></li>
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">Welcome to fuzzy-search’s documentation!</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
@@ -68,7 +72,7 @@
            <div itemprop="articleBody">
              
   <section id="welcome-to-fuzzy-search-s-documentation">
-<h1>Welcome to fuzzy-search’s documentation!<a class="headerlink" href="#welcome-to-fuzzy-search-s-documentation" title="Permalink to this heading"></a></h1>
+<h1>Welcome to fuzzy-search’s documentation!<a class="headerlink" href="#welcome-to-fuzzy-search-s-documentation" title="Link to this heading"></a></h1>
 <p>The fuzzy-search package is a Python library for searching keywords and phrases in digitized (OCR/HTR) historic
 documents that contain historic language use, spelling variation and text recognition errors.</p>
 <p>The library allows you to create simples lists of keywords and phrases and use fuzzy search
@@ -79,31 +83,21 @@ difficult to find these keywords or phrases.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="source/quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="source/quickstart.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="source/quickstart.html#basic-usage">Basic usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="source/quickstart.html#tuning-the-fuzziness">Tuning the fuzziness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="source/quickstart.html#spelling-variants-and-phrase-models">Spelling variants and phrase models</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="source/fuzzy_search.html">fuzzy_search package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="source/fuzzy_search.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.analysis.html">fuzzy_search.analysis package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.match.html">fuzzy_search.match package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.pattern.html">fuzzy_search.pattern package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.phrase.html">fuzzy_search.phrase package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.search.html">fuzzy_search.search package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.tokenization.html">fuzzy_search.tokenization package</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="source/fuzzy_search.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="source/fuzzy_search.html#module-fuzzy_search.fuzzy_searcher">fuzzy_search.fuzzy_searcher module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.html#fuzzy_search.fuzzy_searcher.FuzzySearcher"><code class="docutils literal notranslate"><span class="pre">FuzzySearcher</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.html#fuzzy_search.fuzzy_searcher.create_term_match"><code class="docutils literal notranslate"><span class="pre">create_term_match()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="source/fuzzy_search.html#module-fuzzy_search.similarity">fuzzy_search.similarity module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.html#fuzzy_search.similarity.KeywordList"><code class="docutils literal notranslate"><span class="pre">KeywordList</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.html#fuzzy_search.similarity.SkipCooccurrence"><code class="docutils literal notranslate"><span class="pre">SkipCooccurrence</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.html#fuzzy_search.similarity.SkipgramSimilarity"><code class="docutils literal notranslate"><span class="pre">SkipgramSimilarity</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.html#fuzzy_search.similarity.get_begin_sim"><code class="docutils literal notranslate"><span class="pre">get_begin_sim()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.html#fuzzy_search.similarity.get_end_sim"><code class="docutils literal notranslate"><span class="pre">get_end_sim()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.html#fuzzy_search.similarity.get_min_length"><code class="docutils literal notranslate"><span class="pre">get_min_length()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.html#fuzzy_search.similarity.get_skip_coocs"><code class="docutils literal notranslate"><span class="pre">get_skip_coocs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.html#fuzzy_search.similarity.is_close_distance_keyword_pair"><code class="docutils literal notranslate"><span class="pre">is_close_distance_keyword_pair()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="source/fuzzy_search.html#fuzzy_search.similarity.vector_length"><code class="docutils literal notranslate"><span class="pre">vector_length()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="source/fuzzy_search.html#module-fuzzy_search">Module contents</a><ul>
@@ -116,7 +110,7 @@ difficult to find these keywords or phrases.</p>
 </div>
 </section>
 <section id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading"></a></h1>
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
@@ -128,7 +122,7 @@ difficult to find these keywords or phrases.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="source/fuzzy_search.html" class="btn btn-neutral float-right" title="fuzzy_search package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="source/quickstart.html" class="btn btn-neutral float-right" title="Quick Start" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

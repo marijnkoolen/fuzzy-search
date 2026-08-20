@@ -9,37 +9,45 @@ fuzzy\_search.match.candidate\_match module
 
 .. automodule:: fuzzy_search.match.candidate_match
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 fuzzy\_search.match.exact\_match module
 ---------------------------------------
 
 .. automodule:: fuzzy_search.match.exact_match
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
+
+fuzzy\_search.match.match\_offsets module
+-----------------------------------------
+
+.. automodule:: fuzzy_search.match.match_offsets
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
 fuzzy\_search.match.phrase\_match module
 ----------------------------------------
 
 .. automodule:: fuzzy_search.match.phrase_match
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 fuzzy\_search.match.skip\_match module
 --------------------------------------
 
 .. automodule:: fuzzy_search.match.skip_match
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 Module contents
 ---------------
 
 .. automodule:: fuzzy_search.match
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

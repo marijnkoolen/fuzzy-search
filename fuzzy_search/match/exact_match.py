@@ -1,3 +1,6 @@
+"""Functions for finding exact (non-fuzzy) matches of phrases in text, with or without
+requiring word boundaries."""
+
 import re
 from typing import Dict, List, Set
 from collections import defaultdict
@@ -8,6 +11,13 @@ from fuzzy_search.match.phrase_match import PhraseMatch
 
 
 def index_known_word_offsets(exact_matches: List[PhraseMatch]) -> Dict[int, Dict[str, any]]:
+    """Index the individual words of a list of exact phrase matches by their text offset.
+
+    :param exact_matches: a list of exact phrase matches
+    :type exact_matches: List[PhraseMatch]
+    :return: a dictionary mapping word start offset to word info (word, start, end, matching phrases)
+    :rtype: Dict[int, Dict[str, any]]
+    """
     exact_match_offset: Dict[int, Set[PhraseMatch]] = defaultdict(set)
     known_word_offset: Dict[int, Dict[str, any]] = defaultdict(dict)
     for exact_match in exact_matches:
@@ -39,6 +49,23 @@ def index_known_word_offsets(exact_matches: List[PhraseMatch]) -> Dict[int, Dict
 def search_exact_phrases(phrase_model: PhraseModel, text: Dict[str, str],
                          ignorecase: bool = False, use_word_boundaries: bool = True,
                          include_variants: bool = False, debug: int = 0):
+    """Search for exact occurrences of phrases from a phrase model in a text, dispatching to
+    word-boundary-aware or plain substring search depending on ``use_word_boundaries``.
+
+    :param phrase_model: the phrase model containing phrases to search for
+    :type phrase_model: PhraseModel
+    :param text: the text object to search, with at least 'text' and 'id' keys
+    :type text: Dict[str, str]
+    :param ignorecase: whether to ignore case when matching
+    :type ignorecase: bool
+    :param use_word_boundaries: whether matches must be on word boundaries
+    :type use_word_boundaries: bool
+    :param include_variants: whether to also search for registered phrase variants
+    :type include_variants: bool
+    :param debug: level to show debug information
+    :type debug: int
+    :return: a generator of exact phrase matches
+    """
     if use_word_boundaries:
         # print('searching with word boundaries')
         return search_exact_phrases_with_word_boundaries(phrase_model, text, ignorecase=ignorecase,
@@ -49,6 +76,13 @@ def search_exact_phrases(phrase_model: PhraseModel, text: Dict[str, str],
 
 
 def add_exact_match_score(match: PhraseMatch) -> PhraseMatch:
+    """Set perfect (1.0) similarity scores on a match, since it is an exact match.
+
+    :param match: the exact phrase match to score
+    :type match: PhraseMatch
+    :return: the same match, with scores set
+    :rtype: PhraseMatch
+    """
     match.character_overlap = 1.0
     match.ngram_overlap = 1.0
     match.levenshtein_similarity = 1.0
@@ -58,6 +92,22 @@ def add_exact_match_score(match: PhraseMatch) -> PhraseMatch:
 def search_exact_phrases_with_word_boundaries(phrase_model: PhraseModel, text: Dict[str, str],
                                               ignorecase: bool = False, include_variants: bool = False,
                                               debug: int = 0):
+    """Search for exact phrase matches in text, requiring matches to start and end on word
+    boundaries. For each word in the text that is the first word of a known phrase, check whether
+    the full phrase string matches the text starting at that word.
+
+    :param phrase_model: the phrase model containing phrases to search for
+    :type phrase_model: PhraseModel
+    :param text: the text object to search, with at least 'text' and 'id' keys
+    :type text: Dict[str, str]
+    :param ignorecase: whether to ignore case when matching
+    :type ignorecase: bool
+    :param include_variants: whether to also search for registered phrase variants
+    :type include_variants: bool
+    :param debug: level to show debug information
+    :type debug: int
+    :return: a generator of exact phrase matches
+    """
     for word in re.finditer(r"\w+", text["text"]):
         if debug > 0:
             print('search_exact_phrases_with_word_boundaries - word:', word)
@@ -114,6 +164,21 @@ def search_exact_phrases_with_word_boundaries(phrase_model: PhraseModel, text: D
 def search_exact_phrases_without_word_boundaries(phrase_model: PhraseModel, text: Dict[str, str],
                                                  ignorecase: bool = False,
                                                  include_variants: bool = False, debug: int = 0):
+    """Search for exact phrase matches in text as plain substring matches, without requiring
+    matches to be on word boundaries.
+
+    :param phrase_model: the phrase model containing phrases to search for
+    :type phrase_model: PhraseModel
+    :param text: the text object to search, with at least 'text' and 'id' keys
+    :type text: Dict[str, str]
+    :param ignorecase: whether to ignore case when matching
+    :type ignorecase: bool
+    :param include_variants: whether to also search for registered phrase variants
+    :type include_variants: bool
+    :param debug: level to show debug information
+    :type debug: int
+    :return: a generator of exact phrase matches
+    """
     for phrase_string in phrase_model.phrase_index:
         phrase = phrase_model.phrase_index[phrase_string]
         if debug > 0:
@@ -142,6 +207,18 @@ def search_exact_phrases_without_word_boundaries(phrase_model: PhraseModel, text
 
 
 def search_exact(phrase: Phrase, text: Dict[str, str], ignorecase: bool = False, use_word_boundaries: bool = True):
+    """Search for all exact occurrences of a single phrase in a text.
+
+    :param phrase: the phrase to search for
+    :type phrase: Phrase
+    :param text: the text object to search, with at least a 'text' key
+    :type text: Dict[str, str]
+    :param ignorecase: whether to ignore case when matching
+    :type ignorecase: bool
+    :param use_word_boundaries: whether matches must be on word boundaries
+    :type use_word_boundaries: bool
+    :return: an iterator of regex match objects
+    """
     search_string = phrase.extact_word_boundary_string if use_word_boundaries else phrase.exact_string
     if ignorecase:
         return re.finditer(search_string, text["text"], flags=re.IGNORECASE)
@@ -150,6 +227,16 @@ def search_exact(phrase: Phrase, text: Dict[str, str], ignorecase: bool = False,
 
 
 def get_known_word_offsets(match_ranges: List[Dict[str, any]], text_doc: Dict[str, str]) -> Dict[int, dict]:
+    """Index the individual words within a list of match ranges by their text offset.
+
+    :param match_ranges: a list of match range dictionaries with 's' (start), 'e' (end) and
+        'phrases' keys
+    :type match_ranges: List[Dict[str, any]]
+    :param text_doc: the text document the match ranges were found in
+    :type text_doc: Dict[str, str]
+    :return: a dictionary mapping word start offset to word info
+    :rtype: Dict[int, dict]
+    """
     known_word_offset = {}
     offset = match_ranges[0]["s"]
     for match_range in match_ranges:
@@ -174,6 +261,14 @@ def get_known_word_offsets(match_ranges: List[Dict[str, any]], text_doc: Dict[st
 
 
 def get_exact_match_ranges(exact_matches: List[PhraseMatch]) -> List[dict]:
+    """Merge a list of exact phrase matches into contiguous, possibly overlapping, character
+    ranges, each annotated with the set of phrases that matched within that range.
+
+    :param exact_matches: a list of exact phrase matches
+    :type exact_matches: List[PhraseMatch]
+    :return: a list of match range dictionaries with 's' (start), 'e' (end) and 'phrases' keys
+    :rtype: List[dict]
+    """
     sorted_matches = sorted(exact_matches, key=lambda m: m.offset)
     match_ranges = []
     if len(exact_matches) == 0:

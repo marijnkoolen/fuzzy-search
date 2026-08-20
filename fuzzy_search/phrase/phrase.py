@@ -1,3 +1,6 @@
+"""The Phrase class, representing a single phrase to be matched against text, along with its
+skipgram index and other metadata used by the fuzzy matching algorithms."""
+
 import re
 from collections import defaultdict, Counter
 from typing import Dict, List, Set, Union
@@ -24,10 +27,36 @@ def is_valid_label(label: Union[str, List[str]]) -> bool:
 
 
 class Phrase:
+    """A phrase to be matched against text. Computes and indexes the phrase's skipgrams (and an
+    early/late subset of them) on construction, which are used by the fuzzy matching algorithms
+    to score candidate matches in noisy/historical text.
+    """
 
     def __init__(self, phrase: Union[str, Dict[str, str]], ngram_size: int = 2, skip_size: int = 2,
                  early_threshold: int = 3, late_threshold: int = 3, within_range_threshold: int = 3,
                  ignorecase: bool = False, tokens: List[Token] = None, tokenizer: Tokenizer = None):
+        """Create a Phrase from a string or a phrase dictionary.
+
+        :param phrase: a phrase string, or a dict with at least a 'phrase' key and optional
+            'label', 'metadata' and other keys
+        :type phrase: Union[str, Dict[str, str]]
+        :param ngram_size: the size of the ngrams used to compute skipgrams
+        :type ngram_size: int
+        :param skip_size: the maximum number of characters skipped between ngram parts
+        :type skip_size: int
+        :param early_threshold: the character offset below which a skipgram is considered "early"
+        :type early_threshold: int
+        :param late_threshold: the number of characters from the end below which a skipgram is considered "late"
+        :type late_threshold: int
+        :param within_range_threshold: the maximum offset distance for two skipgrams to be considered within range
+        :type within_range_threshold: int
+        :param ignorecase: whether to ignore case when matching
+        :type ignorecase: bool
+        :param tokens: an optional pre-computed list of tokens for the phrase
+        :type tokens: List[Token]
+        :param tokenizer: an optional tokenizer to tokenize the phrase string if tokens is not given
+        :type tokenizer: Tokenizer
+        """
         if isinstance(phrase, str):
             phrase = {"phrase": phrase}
         self.name = phrase["phrase"]
@@ -90,9 +119,11 @@ class Phrase:
                 self.token_index[token.n].append(ti)
 
     def __repr__(self):
+        """Return a debug representation showing the phrase string and label."""
         return f"Phrase({self.phrase_string}, {self.label})"
 
     def __len__(self):
+        """Return the length of the phrase string."""
         return len(self.phrase_string)
     # internal methods
 
@@ -104,6 +135,9 @@ class Phrase:
             self.skipgram_index_lower[skipgram.string] += [skipgram]
 
     def _set_within_range(self):
+        """Compute the minimal offset distance between each pair of skipgrams that lie within
+        ``within_range_threshold`` characters of each other, and store these in
+        ``skipgram_distance``."""
         self.skipgram_distance = {}
         for index1 in range(0, len(self.skipgrams)-1):
             skipgram1 = self.skipgrams[index1]
@@ -191,9 +225,11 @@ class Phrase:
         self.max_end_start = self.max_end_offset - len(self.phrase_string)
 
     def has_max_start_offset(self) -> bool:
+        """Return whether this phrase has a maximum start offset configured."""
         return self.max_start_offset is not None and self.max_start_offset >= 0
 
     def has_max_end_offset(self) -> bool:
+        """Return whether this phrase has a maximum end offset configured."""
         return self.max_end_offset is not None and self.max_end_offset >= 0
 
     def has_skipgram(self, skipgram: str) -> bool:
@@ -217,6 +253,14 @@ class Phrase:
         return [skipgram.start_offset for skipgram in self.skipgram_index[skipgram_string]]
 
     def within_range(self, skipgram1, skipgram2):
+        """Check whether two skipgrams occur close enough together in the phrase (within
+        ``within_range_threshold`` characters) to be considered within range of each other.
+
+        :param skipgram1: the first skipgram string
+        :param skipgram2: the second skipgram string
+        :return: whether the two skipgrams are within range of each other
+        :rtype: bool
+        """
         if not self.has_skipgram(skipgram1) or not self.has_skipgram(skipgram2):
             return False
         elif (skipgram1, skipgram2) not in self.skipgram_distance:

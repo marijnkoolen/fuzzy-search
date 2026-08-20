@@ -1,0 +1,562 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.match.phrase_match &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.match.phrase_match</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.match.phrase_match</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;PhraseMatch and related classes that represent a fuzzy match between a phrase (or a part of</span>
+<span class="sd">it) and a span of text, along with their JSON (de)serialization.</span>
+
+<span class="sd">Algorithms for building and adjusting the offsets of matches live in</span>
+<span class="sd">:mod:`fuzzy_search.match.match_offsets`; this module only defines the match data models</span>
+<span class="sd">themselves.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">fuzzy_search._version</span> <span class="kn">import</span> <span class="n">__version__</span>
+<span class="kn">import</span> <span class="nn">fuzzy_search.tokenization.string</span> <span class="k">as</span> <span class="nn">fuzzy_string</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase</span> <span class="kn">import</span> <span class="n">Phrase</span>
+
+
+<div class="viewcode-block" id="validate_match_props">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.validate_match_props">[docs]</a>
+<span class="k">def</span> <span class="nf">validate_match_props</span><span class="p">(</span><span class="n">match_phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span> <span class="n">match_variant</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span>
+                         <span class="n">match_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">match_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate match properties.</span>
+
+<span class="sd">    :param match_phrase: the phrase that has been matched</span>
+<span class="sd">    :type match_phrase: Phrase</span>
+<span class="sd">    :param match_variant: the variant of the phrase that the match is based on</span>
+<span class="sd">    :type match_variant: Phrase</span>
+<span class="sd">    :param match_string: the text string that matches the variant phrase</span>
+<span class="sd">    :type match_string: str</span>
+<span class="sd">    :param match_offset: the offset of the match string in the text</span>
+<span class="sd">    :type match_offset: int</span>
+<span class="sd">    :return: None</span>
+<span class="sd">    :rtype: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">match_phrase</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;match_phrase: </span><span class="si">{</span><span class="n">match_phrase</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">match_phrase</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;match_phrase MUST be of class Phrase&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">match_variant</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;match_variant MUST be of class Phrase&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">match_string</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;match string MUST be a string&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_string</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;match_phrase: </span><span class="si">{</span><span class="n">match_phrase</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;match string cannot be empty string&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">match_offset</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;match_offset must be an integer&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match_offset</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;offset cannot be negative&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="c1">###############</span>
+<span class="c1"># Match class #</span>
+<span class="c1">###############</span>
+
+<div class="viewcode-block" id="PhraseMatch">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch">[docs]</a>
+<span class="k">class</span> <span class="nc">PhraseMatch</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A fuzzy match between a phrase (and a specific spelling variant of it) and a string</span>
+<span class="sd">    found in a text, with its offsets, label(s) and similarity scores.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="PhraseMatch.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">match_phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span> <span class="n">match_variant</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span> <span class="n">match_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">match_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ignorecase</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">text_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">match_scores</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">match_label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">match_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">levenshtein_similarity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a PhraseMatch.</span>
+
+<span class="sd">        :param match_phrase: a phrase object for which a matching string is found in the text</span>
+<span class="sd">        :param match_variant: a phrase object for the variant that matches the string in the text</span>
+<span class="sd">        :param match_string: the matching string found in the text</span>
+<span class="sd">        :param match_offset: the offset of the matching string in the text</span>
+<span class="sd">        :param ignorecase: boolean flag whether to ignore case differences</span>
+<span class="sd">        :param text_id: the identifier of the text in which the match is found</span>
+<span class="sd">        :param match_scores: the similarity scores of the match</span>
+<span class="sd">        :param match_label: one or more labels to attach to the match</span>
+<span class="sd">        :param match_id: an optional identifier to use for the match</span>
+<span class="sd">        :param levenshtein_similarity: an optional precomputed levenshtein similarity score</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">validate_match_props</span><span class="p">(</span><span class="n">match_phrase</span><span class="p">,</span> <span class="n">match_variant</span><span class="p">,</span> <span class="n">match_string</span><span class="p">,</span> <span class="n">match_offset</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">match_id</span> <span class="k">if</span> <span class="n">match_id</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase</span> <span class="o">=</span> <span class="n">match_phrase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">match_phrase</span><span class="o">.</span><span class="n">label</span>
+        <span class="k">if</span> <span class="n">match_label</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">match_label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variant</span> <span class="o">=</span> <span class="n">match_variant</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">string</span> <span class="o">=</span> <span class="n">match_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="o">=</span> <span class="n">ignorecase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">match_offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_id</span> <span class="o">=</span> <span class="n">text_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">character_overlap</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ngram_overlap</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_overlap</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">levenshtein_similarity</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">levenshtein_similarity</span>
+        <span class="k">if</span> <span class="n">match_scores</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">character_overlap</span> <span class="o">=</span> <span class="n">match_scores</span><span class="p">[</span><span class="s1">&#39;char_match&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ngram_overlap</span> <span class="o">=</span> <span class="n">match_scores</span><span class="p">[</span><span class="s1">&#39;ngram_match&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">levenshtein_similarity</span> <span class="o">=</span> <span class="n">match_scores</span><span class="p">[</span><span class="s1">&#39;levenshtein_similarity&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">created</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a debug representation showing the phrase, variant, string, offset and score.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;PhraseMatch(&#39;</span> <span class="o">+</span> \
+            <span class="sa">f</span><span class="s1">&#39;phrase: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s1">&quot;, variant: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s1">&quot;, &#39;</span> <span class="o">+</span> \
+            <span class="sa">f</span><span class="s1">&#39;string: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="si">}</span><span class="s1">&quot;, offset: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s1">, ignorecase: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span><span class="si">}</span><span class="s1">, &#39;</span> <span class="o">+</span> \
+            <span class="sa">f</span><span class="s1">&#39;levenshtein_similarity: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">levenshtein_similarity</span><span class="si">}</span><span class="s1">)&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">label_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the match&#39;s label(s) as a list, regardless of whether it is stored as a</span>
+<span class="sd">        single string, a list, or None.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="PhraseMatch.has_label">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.has_label">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check whether this match has the given label.</span>
+
+<span class="sd">        :param label: a label string</span>
+<span class="sd">        :type label: str</span>
+<span class="sd">        :return: whether the match has this label</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">label</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">label</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">label</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span></div>
+
+
+<div class="viewcode-block" id="PhraseMatch.json">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.json">[docs]</a>
+    <span class="k">def</span> <span class="nf">json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a JSON-serializable dictionary representation of the match.&quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;PhraseMatch&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;phrase&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">,</span>
+            <span class="s2">&quot;variant&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">,</span>
+            <span class="s2">&quot;string&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="p">,</span>
+            <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span>
+            <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+            <span class="s2">&quot;ignorecase&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span><span class="p">,</span>
+            <span class="s2">&quot;text_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_id</span><span class="p">,</span>
+            <span class="s2">&quot;match_scores&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;char_match&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">character_overlap</span><span class="p">,</span>
+                <span class="s2">&quot;ngram_match&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ngram_overlap</span><span class="p">,</span>
+                <span class="s2">&quot;levenshtein_similarity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">levenshtein_similarity</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="s2">&quot;label&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="PhraseMatch.from_json">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.from_json">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="n">match_json</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reconstruct a PhraseMatch from its JSON dictionary representation.</span>
+
+<span class="sd">        :param match_json: a JSON dictionary as produced by :meth:`json`</span>
+<span class="sd">        :return: the reconstructed phrase match</span>
+<span class="sd">        :rtype: PhraseMatch</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">match_phrase</span> <span class="o">=</span> <span class="n">Phrase</span><span class="p">(</span><span class="n">phrase</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;phrase&#39;</span><span class="p">])</span>
+        <span class="n">match_variant</span> <span class="o">=</span> <span class="n">Phrase</span><span class="p">(</span><span class="n">phrase</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;variant&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">PhraseMatch</span><span class="p">(</span><span class="n">match_phrase</span><span class="o">=</span><span class="n">match_phrase</span><span class="p">,</span> <span class="n">match_variant</span><span class="o">=</span><span class="n">match_variant</span><span class="p">,</span>
+                           <span class="n">match_string</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;string&#39;</span><span class="p">],</span> <span class="n">match_offset</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">],</span>
+                           <span class="n">text_id</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;text_id&#39;</span><span class="p">],</span> <span class="n">match_scores</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;match_scores&#39;</span><span class="p">],</span>
+                           <span class="n">match_label</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">],</span> <span class="n">ignorecase</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;ignorecase&#39;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="PhraseMatch.add_scores">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.add_scores">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_scores</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skipgram_overlap</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute overlap and similarity scores between the match variant and the match string</span>
+<span class="sd">        and add these to the match object.</span>
+
+<span class="sd">        :param skipgram_overlap: the overlap in skipgrams between match string and match variant</span>
+<span class="sd">        :type skipgram_overlap: Union[float, None]</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">match_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span>
+        <span class="n">phrase_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">character_overlap</span> <span class="o">=</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">score_char_overlap_ratio</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">,</span> <span class="n">match_string</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ngram_overlap</span> <span class="o">=</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">score_ngram_overlap_ratio</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">,</span> <span class="n">match_string</span><span class="p">,</span>
+                                                                    <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">levenshtein_similarity</span> <span class="o">=</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">score_levenshtein_similarity_ratio</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">,</span>
+                                                                                      <span class="n">match_string</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">skipgram_overlap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skipgram_overlap</span> <span class="o">=</span> <span class="n">skipgram_overlap</span></div>
+
+
+<div class="viewcode-block" id="PhraseMatch.score_character_overlap">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.score_character_overlap">[docs]</a>
+    <span class="k">def</span> <span class="nf">score_character_overlap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the character overlap between the variant phrase_string and the match_string</span>
+
+<span class="sd">        :return: the character overlap as proportion of the variant phrase string</span>
+<span class="sd">        :rtype: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">match_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span>
+        <span class="n">phrase_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">character_overlap</span> <span class="o">=</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">score_char_overlap_ratio</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">,</span> <span class="n">match_string</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">character_overlap</span></div>
+
+
+<div class="viewcode-block" id="PhraseMatch.score_ngram_overlap">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.score_ngram_overlap">[docs]</a>
+    <span class="k">def</span> <span class="nf">score_ngram_overlap</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the ngram overlap between the variant phrase_string and the match_string</span>
+
+<span class="sd">        :return: the ngram overlap as proportion of the variant phrase string</span>
+<span class="sd">        :rtype: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">match_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span>
+        <span class="n">phrase_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ngram_overlap</span> <span class="o">=</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">score_ngram_overlap_ratio</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">,</span>
+                                                                    <span class="n">match_string</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ngram_overlap</span></div>
+
+
+<div class="viewcode-block" id="PhraseMatch.score_levenshtein_similarity">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.score_levenshtein_similarity">[docs]</a>
+    <span class="k">def</span> <span class="nf">score_levenshtein_similarity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the levenshtein similarity between the variant phrase_string and the match_string</span>
+
+<span class="sd">        :return: the levenshtein similarity as proportion of the variant phrase string</span>
+<span class="sd">        :rtype: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">match_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span>
+        <span class="n">phrase_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignorecase</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">levenshtein_similarity</span> <span class="o">=</span> <span class="n">fuzzy_string</span><span class="o">.</span><span class="n">score_levenshtein_similarity_ratio</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">,</span>
+                                                                                      <span class="n">match_string</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">levenshtein_similarity</span></div>
+
+
+<div class="viewcode-block" id="PhraseMatch.overlaps">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.overlaps">[docs]</a>
+    <span class="k">def</span> <span class="nf">overlaps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">PhraseMatch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the match string of this match object overlaps with the match string of another match object.</span>
+
+<span class="sd">        :param other: another match object</span>
+<span class="sd">        :type other: PhraseMatch</span>
+<span class="sd">        :return: a boolean indicating whether the match_strings of the two objects overlap in the source text</span>
+<span class="sd">        :rtype: bool&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_id</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">text_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">&lt;=</span> <span class="n">other</span><span class="o">.</span><span class="n">offset</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">other</span><span class="o">.</span><span class="n">offset</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">end</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="PhraseMatch.as_web_anno">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatch.as_web_anno">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_web_anno</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn match object into a W3C Web Annotation representation.</span>
+
+<span class="sd">        :return: a W3C Web Annotation dictionary</span>
+<span class="sd">        :rtype: Dict[str, any]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot make target: match object has no text_id&#39;</span><span class="p">)</span>
+        <span class="n">body_match</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;TextualBody&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;purpose&#39;</span><span class="p">:</span> <span class="s1">&#39;tagging&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;TextualBody&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;purpose&#39;</span><span class="p">:</span> <span class="s1">&#39;highlighting&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span>
+            <span class="p">}</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="p">:</span>
+            <span class="n">correction</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;TextualBody&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;purpose&#39;</span><span class="p">:</span> <span class="s1">&#39;correcting&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span>
+            <span class="p">}</span>
+            <span class="n">body_match</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">correction</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">:</span>
+            <span class="n">classification</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;TextualBody&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;purpose&#39;</span><span class="p">:</span> <span class="s1">&#39;classifying&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span>
+            <span class="p">}</span>
+            <span class="n">body_match</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">classification</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;@context&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.w3.org/ns/anno.jsonld&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Annotation&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;motivation&quot;</span><span class="p">:</span> <span class="s2">&quot;classifying&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;created&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">created</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;generator&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/marijnkoolen/fuzzy-search&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Software&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;fuzzy-search v</span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_id</span><span class="p">,</span>
+                <span class="s2">&quot;selector&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;TextPositionSelector&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;start&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span>
+                    <span class="s2">&quot;end&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">body_match</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PhraseMatchInContext">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatchInContext">[docs]</a>
+<span class="k">class</span> <span class="nc">PhraseMatchInContext</span><span class="p">(</span><span class="n">PhraseMatch</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A PhraseMatch extended with a window of surrounding text (prefix and suffix context)</span>
+<span class="sd">    taken from the source document.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">match</span><span class="p">:</span> <span class="n">PhraseMatch</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">context_start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context_end</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">prefix_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="n">suffix_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">match_phrase</span><span class="o">=</span><span class="n">match</span><span class="o">.</span><span class="n">phrase</span><span class="p">,</span> <span class="n">match_variant</span><span class="o">=</span><span class="n">match</span><span class="o">.</span><span class="n">variant</span><span class="p">,</span> <span class="n">match_string</span><span class="o">=</span><span class="n">match</span><span class="o">.</span><span class="n">string</span><span class="p">,</span>
+                         <span class="n">match_offset</span><span class="o">=</span><span class="n">match</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">text_id</span><span class="o">=</span><span class="n">match</span><span class="o">.</span><span class="n">text_id</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;MatchInContext extends a Match object with surrounding context from the text document that the match</span>
+<span class="sd">        phrase was taken from. Alternatively, the context can be submitted.</span>
+
+<span class="sd">        :param text: the text (string or dictionary with &#39;text&#39; and &#39;id&#39; properties) that the match phrase was taken from</span>
+<span class="sd">        :type text: Union[str, dict]</span>
+<span class="sd">        :param context: the context string around the match phrase</span>
+<span class="sd">        :type context: Union[str, dict]</span>
+<span class="sd">        :param match: the match phrase object</span>
+<span class="sd">        :type match: Match</span>
+<span class="sd">        :param context_start: the start offset of the context in the original text</span>
+<span class="sd">        :type context_start: int</span>
+<span class="sd">        :param context_end: the end offset of the context in the original text</span>
+<span class="sd">        :type context_end: int</span>
+<span class="sd">        :param prefix_size: the size of the prefix window</span>
+<span class="sd">        :type prefix_size: int</span>
+<span class="sd">        :param suffix_size: the size of the suffix window</span>
+<span class="sd">        :type suffix_size: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">character_overlap</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">character_overlap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ngram_overlap</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">ngram_overlap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">levenshtein_similarity</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">levenshtein_similarity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefix_size</span> <span class="o">=</span> <span class="n">prefix_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">suffix_size</span> <span class="o">=</span> <span class="n">suffix_size</span>
+        <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">match</span><span class="o">.</span><span class="n">text_id</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">context_start</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">offset</span> <span class="o">-</span> <span class="n">prefix_size</span> <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">offset</span> <span class="o">&gt;=</span> <span class="n">prefix_size</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">context_end</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">end</span> <span class="o">+</span> <span class="n">suffix_size</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">match</span><span class="o">.</span><span class="n">end</span> <span class="o">+</span> <span class="n">suffix_size</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">context_start</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">context_end</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">context</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">context_start</span> <span class="o">=</span> <span class="n">context_start</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">context_end</span> <span class="o">=</span> <span class="n">context_end</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">context_start</span><span class="p">:</span><span class="n">match</span><span class="o">.</span><span class="n">offset</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">suffix</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">context_end</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a debug representation showing the phrase, variant, string, offset and context.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;PhraseMatchInContext(&#39;</span> <span class="o">+</span> \
+               <span class="sa">f</span><span class="s1">&#39;phrase: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s1">&quot;, variant: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s1">&quot;,&#39;</span> <span class="o">+</span> \
+               <span class="sa">f</span><span class="s1">&#39;string: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="si">}</span><span class="s1">&quot;, offset: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="si">}</span><span class="s1">), context: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+
+<div class="viewcode-block" id="PhraseMatchInContext.json">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatchInContext.json">[docs]</a>
+    <span class="k">def</span> <span class="nf">json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a JSON-serializable dictionary representation including the context.&quot;&quot;&quot;</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">json_data</span><span class="p">[</span><span class="s2">&quot;context_start&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_start</span>
+        <span class="n">json_data</span><span class="p">[</span><span class="s2">&quot;context_end&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context_end</span>
+        <span class="n">json_data</span><span class="p">[</span><span class="s2">&quot;context&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span>
+        <span class="n">json_data</span><span class="p">[</span><span class="s1">&#39;prefix_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix_size</span>
+        <span class="n">json_data</span><span class="p">[</span><span class="s1">&#39;suffix_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">suffix_size</span>
+        <span class="n">json_data</span><span class="p">[</span><span class="s1">&#39;prefix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span>
+        <span class="n">json_data</span><span class="p">[</span><span class="s1">&#39;suffix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">suffix</span>
+        <span class="k">return</span> <span class="n">json_data</span></div>
+
+
+<div class="viewcode-block" id="PhraseMatchInContext.as_web_anno">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.PhraseMatchInContext.as_web_anno">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_web_anno</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn match object into a W3C Web Annotation representation, including a</span>
+<span class="sd">        TextQuoteSelector with the prefix/exact/suffix context.&quot;&quot;&quot;</span>
+        <span class="n">match_anno</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">as_web_anno</span><span class="p">()</span>
+        <span class="n">position_selector</span> <span class="o">=</span> <span class="n">match_anno</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">][</span><span class="s1">&#39;selector&#39;</span><span class="p">]</span>
+        <span class="n">quote_selector</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;TextQuoteSelector&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;prefix&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">,</span>
+            <span class="s1">&#39;exact&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="p">,</span>
+            <span class="s1">&#39;suffix&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">suffix</span>
+        <span class="p">}</span>
+        <span class="n">match_anno</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">][</span><span class="s1">&#39;selector&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">position_selector</span><span class="p">,</span> <span class="n">quote_selector</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">match_anno</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="phrase_match_from_json">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.phrase_match_from_json">[docs]</a>
+<span class="k">def</span> <span class="nf">phrase_match_from_json</span><span class="p">(</span><span class="n">match_json</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PhraseMatch</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reconstruct a PhraseMatch (or PhraseMatchInContext, if context info is present) from its</span>
+<span class="sd">    JSON dictionary representation.</span>
+
+<span class="sd">    :param match_json: a JSON dictionary representation of a phrase match</span>
+<span class="sd">    :type match_json: dict</span>
+<span class="sd">    :return: the reconstructed phrase match</span>
+<span class="sd">    :rtype: PhraseMatch</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">match_phrase</span> <span class="o">=</span> <span class="n">Phrase</span><span class="p">(</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;phrase&#39;</span><span class="p">])</span>
+    <span class="n">match_variant</span> <span class="o">=</span> <span class="n">Phrase</span><span class="p">(</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;variant&#39;</span><span class="p">])</span>
+    <span class="n">phrase_match</span> <span class="o">=</span> <span class="n">PhraseMatch</span><span class="p">(</span><span class="n">match_phrase</span><span class="p">,</span> <span class="n">match_variant</span><span class="p">,</span> <span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;string&#39;</span><span class="p">],</span>
+                               <span class="n">match_offset</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">],</span>
+                               <span class="n">match_scores</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;match_scores&#39;</span><span class="p">],</span>
+                               <span class="n">match_label</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="s1">&#39;context&#39;</span> <span class="ow">in</span> <span class="n">match_json</span><span class="p">:</span>
+        <span class="n">phrase_match</span> <span class="o">=</span> <span class="n">PhraseMatchInContext</span><span class="p">(</span><span class="n">phrase_match</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;context&#39;</span><span class="p">],</span>
+                                            <span class="n">prefix_size</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;prefix_size&#39;</span><span class="p">],</span>
+                                            <span class="n">suffix_size</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;suffix_size&#39;</span><span class="p">],</span>
+                                            <span class="n">context_start</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;context_start&#39;</span><span class="p">],</span>
+                                            <span class="n">context_end</span><span class="o">=</span><span class="n">match_json</span><span class="p">[</span><span class="s1">&#39;context_end&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">phrase_match</span></div>
+
+
+
+<div class="viewcode-block" id="MatchType">
+<a class="viewcode-back" href="../../../source/fuzzy_search.match.html#fuzzy_search.match.phrase_match.MatchType">[docs]</a>
+<span class="k">class</span> <span class="nc">MatchType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enumerates how a token match relates a text token to a phrase token: no match, a partial</span>
+<span class="sd">    match within a phrase token, a full match, or a partial match within a text token.&quot;&quot;&quot;</span>
+    <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">PARTIAL_OF_PHRASE_TOKEN</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">FULL</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">PARTIAL_OF_TEXT_TOKEN</span> <span class="o">=</span> <span class="mf">1.5</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

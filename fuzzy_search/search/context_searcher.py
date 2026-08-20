@@ -1,3 +1,10 @@
+"""Context-aware fuzzy phrase searcher.
+
+Defines :class:`FuzzyContextSearcher`, which extends
+:class:`~fuzzy_search.search.phrase_searcher.FuzzyPhraseSearcher` to attach a
+window of surrounding text to each match, and to search within that context
+window for additional phrase matches.
+"""
 from typing import List, Union
 
 from fuzzy_search.match.phrase_match import PhraseMatch, PhraseMatchInContext
@@ -5,11 +12,17 @@ from fuzzy_search.search.phrase_searcher import FuzzyPhraseSearcher
 
 
 class FuzzyContextSearcher(FuzzyPhraseSearcher):
-    """
+    """Fuzzy phrase searcher that attaches surrounding text context to each match.
+
+    Extends FuzzyPhraseSearcher's matching with a configurable prefix/suffix
+    context window around each match, and supports re-searching that context
+    window for further matches.
 
     Attributes
     ----------
     context_size : int
+        default size (in characters) of the prefix and suffix context window
+        added around each match.
     """
 
     def __init__(self, config: Union[dict, None] = None):

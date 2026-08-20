@@ -1,0 +1,1028 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fuzzy_search.phrase.phrase_model &mdash; fuzzy-search 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            fuzzy-search
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/fuzzy_search.html">fuzzy_search package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">fuzzy-search</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../fuzzy_search.html">fuzzy_search</a></li>
+      <li class="breadcrumb-item active">fuzzy_search.phrase.phrase_model</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fuzzy_search.phrase.phrase_model</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;The PhraseModel class, which holds a collection of phrases together with their spelling</span>
+<span class="sd">variants, distractors, labels, and custom metadata, and provides the indexes used to search</span>
+<span class="sd">for them in text.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">fuzzy_search.phrase.phrase</span> <span class="kn">import</span> <span class="n">Phrase</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.token</span> <span class="kn">import</span> <span class="n">Token</span>
+<span class="kn">from</span> <span class="nn">fuzzy_search.tokenization.token</span> <span class="kn">import</span> <span class="n">Tokenizer</span>
+
+
+<div class="viewcode-block" id="as_phrase_object">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.as_phrase_object">[docs]</a>
+<span class="k">def</span> <span class="nf">as_phrase_object</span><span class="p">(</span><span class="n">phrase</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">],</span>
+                     <span class="n">ngram_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+                     <span class="n">skip_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+                     <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Tokenizer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Phrase</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Coerce a phrase given as a string, dictionary, or Phrase object into a Phrase object.</span>
+
+<span class="sd">    :param phrase: a phrase string, phrase dictionary, or Phrase object</span>
+<span class="sd">    :type phrase: Union[str, dict, Phrase]</span>
+<span class="sd">    :param ngram_size: the ngram size to use when constructing a new Phrase</span>
+<span class="sd">    :type ngram_size: int</span>
+<span class="sd">    :param skip_size: the skip size to use when constructing a new Phrase</span>
+<span class="sd">    :type skip_size: int</span>
+<span class="sd">    :param tokenizer: an optional tokenizer to use when constructing a new Phrase</span>
+<span class="sd">    :type tokenizer: Tokenizer</span>
+<span class="sd">    :return: a Phrase object</span>
+<span class="sd">    :rtype: Phrase</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">phrase</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_phrase_dict</span><span class="p">(</span><span class="n">phrase</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;phrase: </span><span class="si">{</span><span class="n">phrase</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;invalid phrase dictionary&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Phrase</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="n">skip_size</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="n">tokenizer</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Phrase</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="n">skip_size</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="n">tokenizer</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;phrase must be of type string&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="is_phrase_dict">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.is_phrase_dict">[docs]</a>
+<span class="k">def</span> <span class="nf">is_phrase_dict</span><span class="p">(</span><span class="n">phrase_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check whether a dictionary is a valid phrase dictionary, i.e. it has a &#39;phrase&#39; string</span>
+<span class="sd">    value, and any &#39;variants&#39;, &#39;distractors&#39; and &#39;labels&#39; values are valid strings/lists of strings.</span>
+
+<span class="sd">    :param phrase_dict: a dictionary to validate as a phrase dictionary</span>
+<span class="sd">    :type phrase_dict: Dict[str, Union[str, List[str]]]</span>
+<span class="sd">    :return: whether the dictionary is a valid phrase dictionary</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="s2">&quot;phrase&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">phrase_dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase_dict</span><span class="p">[</span><span class="s2">&quot;phrase&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="s2">&quot;variants&quot;</span> <span class="ow">in</span> <span class="n">phrase_dict</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">phrase_dict</span><span class="p">[</span><span class="s2">&quot;variants&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="s2">&quot;distractors&quot;</span> <span class="ow">in</span> <span class="n">phrase_dict</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">distractor</span> <span class="ow">in</span> <span class="n">phrase_dict</span><span class="p">[</span><span class="s2">&quot;distractors&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">distractor</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="s2">&quot;labels&quot;</span> <span class="ow">in</span> <span class="n">phrase_dict</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase_dict</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase_dict</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">phrase_dict</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
+<div class="viewcode-block" id="PhraseModel">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel">[docs]</a>
+<span class="k">class</span> <span class="nc">PhraseModel</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A collection of phrases for fuzzy searching, along with their registered spelling</span>
+<span class="sd">    variants, distractors, labels and custom metadata. Maintains the indexes (by word, token,</span>
+<span class="sd">    length, label, etc.) used by the search routines to find matching phrases efficiently.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="PhraseModel.__init__">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrases</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]],</span> <span class="n">Phrase</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">variants</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">Phrase</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">phrase_labels</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">distractors</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">Phrase</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">custom</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Tokenizer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a PhraseModel, optionally pre-populated with phrases, variants, distractors,</span>
+<span class="sd">        labels, an entire model, and/or custom metadata.</span>
+
+<span class="sd">        :param phrases: a list of phrases (strings, phrase dictionaries, or Phrase objects)</span>
+<span class="sd">        :type phrases: Union[None, List[Union[str, Dict[str, Union[str, list]], Phrase]]]</span>
+<span class="sd">        :param variants: a list of phrase dictionaries with a &#39;variants&#39; property</span>
+<span class="sd">        :type variants: Union[None, List[Union[Dict[str, List[str]], Phrase]]]</span>
+<span class="sd">        :param phrase_labels: a list of phrase/label dictionaries</span>
+<span class="sd">        :type phrase_labels: Union[None, List[Dict[str, str]]]</span>
+<span class="sd">        :param distractors: a list of phrase dictionaries with a &#39;distractors&#39; property</span>
+<span class="sd">        :type distractors: Union[None, List[Union[Dict[str, List[str]], Phrase]]]</span>
+<span class="sd">        :param model: a list of phrase dictionaries combining phrases, variants, distractors, labels and custom data</span>
+<span class="sd">        :type model: Union[None, List[Dict[str, Union[str, list]]]]</span>
+<span class="sd">        :param custom: a list of phrase dictionaries with custom metadata properties</span>
+<span class="sd">        :type custom: Union[None, List[Dict[str, Union[str, int, float, list]]]]</span>
+<span class="sd">        :param config: a configuration dictionary, supporting &#39;ngram_size&#39; and &#39;skip_size&#39; keys</span>
+<span class="sd">        :type config: dict</span>
+<span class="sd">        :param tokenizer: an optional tokenizer used to tokenize phrases</span>
+<span class="sd">        :type tokenizer: Tokenizer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;ngram_size&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;ngram_size&quot;</span> <span class="ow">in</span> <span class="n">config</span> <span class="k">else</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;skip_size&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;skip_size&quot;</span> <span class="ow">in</span> <span class="n">config</span> <span class="k">else</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># only register variants of known phrases</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variant_index</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_variant_of</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distractor_index</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_distractor_of</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_length_index</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">set</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variant_length_index</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">set</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_labels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_label_of</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">word_in_phrase</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">token_in_phrase</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_word_in_phrase</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_token_in_phrase</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_token_offset_in_phrase</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_token_offset_in_phrase</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_token_max_start_offset</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_token_max_end_offset</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_string_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">tokenizer</span> <span class="k">if</span> <span class="n">tokenizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Tokenizer</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">phrases</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_phrases</span><span class="p">(</span><span class="n">phrases</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">variants</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_variants</span><span class="p">(</span><span class="n">variants</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">distractors</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_distractors</span><span class="p">(</span><span class="n">distractors</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phrase_labels</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="n">phrase_labels</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">custom</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_custom</span><span class="p">(</span><span class="n">custom</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_phrase_token_max_start_offsets</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_phrase_token_max_end_offsets</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a debug representation showing the model&#39;s JSON representation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;PhraseModel(</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">,</span><span class="w"> </span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the same representation as __repr__.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="PhraseModel.add_model">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_model">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add an entire model with list of phrase dictionaries.</span>
+
+<span class="sd">        :param model: a list of phrase dictionaries</span>
+<span class="sd">        :type model: List[Union[str, Dict[str, Union[str list]]]]</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_phrases</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_variants</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_distractors</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_custom</span><span class="p">(</span><span class="n">model</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a JSON representation of the phrase model.</span>
+
+<span class="sd">        :return: a JSON respresentation of the phrase model</span>
+<span class="sd">        :rtype: List[Dict[str, Union[str, List[str]]]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">model_json</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;phrase&#39;</span><span class="p">:</span> <span class="n">phrase</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">:</span>
+                <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;variants&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">[</span><span class="n">phrase</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_labels</span><span class="p">:</span>
+                <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">has_labels</span><span class="p">[</span><span class="n">phrase</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom</span><span class="p">:</span>
+                <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;custom&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom</span><span class="p">[</span><span class="n">phrase</span><span class="p">]</span>
+            <span class="n">model_json</span> <span class="o">+=</span> <span class="p">[</span><span class="n">entry</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">model_json</span>
+
+<div class="viewcode-block" id="PhraseModel.add_phrase">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_phrase">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_phrase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a phrase to the model as main phrase.</span>
+
+<span class="sd">        :param phrase: a phrase to be added</span>
+<span class="sd">        :type phrase: Phrase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_string_map</span><span class="p">[</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">phrase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;phrase&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">phrase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_length_index</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index_phrase_words</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index_phrase_tokens</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.add_variant">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_variant">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_variant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span> <span class="n">main_phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a phrase to the model as variant of a given main phrase.</span>
+
+<span class="sd">        :param variant_phrase: a variant phrase to be added as variant of main_phrase</span>
+<span class="sd">        :type variant_phrase: Phrase</span>
+<span class="sd">        :param main_phrase: a main phrase that the variant phrase is a variant of</span>
+<span class="sd">        :type main_phrase: Phrase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_string_map</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phrase_string_map</span><span class="p">[</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">variant_phrase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variant_index</span><span class="p">[</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">variant_phrase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_variant_of</span><span class="p">[</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">main_phrase</span><span class="o">.</span><span class="n">phrase_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">[</span><span class="n">main_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;variant&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variant_length_index</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index_phrase_words</span><span class="p">(</span><span class="n">variant_phrase</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index_phrase_tokens</span><span class="p">(</span><span class="n">variant_phrase</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.add_distractor">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_distractor">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_distractor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distractor_phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span> <span class="n">main_phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a phrase to the model as distractor of a given main phrase.</span>
+
+<span class="sd">        :param distractor_phrase: a distractor phrase to be added as distractor of main_phrase</span>
+<span class="sd">        :type distractor_phrase: Phrase</span>
+<span class="sd">        :param main_phrase: a main phrase that the distractor phrase is a distractor of</span>
+<span class="sd">        :type main_phrase: Phrase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_string_map</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phrase_string_map</span><span class="p">[</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">distractor_phrase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distractor_index</span><span class="p">[</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">distractor_phrase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_distractor_of</span><span class="p">[</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">main_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">[</span><span class="n">main_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;distractor&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index_phrase_words</span><span class="p">(</span><span class="n">distractor_phrase</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index_phrase_tokens</span><span class="p">(</span><span class="n">distractor_phrase</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.get_phrase">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.get_phrase">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_phrase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the indexed phrase object for a given phrase string,</span>
+<span class="sd">        or None if no phrase has that phrase string.</span>
+
+<span class="sd">        :param phrase_string: a string representation of an indexed phrase</span>
+<span class="sd">        :type phrase_string: str</span>
+<span class="sd">        :return: the phrase object that has the given phrase</span>
+<span class="sd">        :rtype: Union[Phrase, None]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distractor_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">distractor_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.remove_phrase">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.remove_phrase">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_phrase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a main phrase from the model, including its connections to any variant and distractor phrases.</span>
+
+<span class="sd">        :param phrase: a phrase that is registered as a main phrase</span>
+<span class="sd">        :type phrase: Phrase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># first check if phrase is registered in this phrase model</span>
+        <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s2"> is not registered as a main phrase&quot;</span><span class="p">)</span>
+        <span class="c1"># remove phrase from the type index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;phrase&quot;</span><span class="p">)</span>
+        <span class="c1"># remove the phrase string from the main phrase index</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span>
+        <span class="c1"># remove the phrase from the phrase length index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_length_index</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># if the phrase string is not registered as another type (variant or distractor)</span>
+            <span class="c1"># remove the phrase words from the word_to_phrase index</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_remove_phrase_words</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_remove_phrase_tokens</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+        <span class="c1"># if the phrase has variants, remove those as well</span>
+        <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">variant_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">:</span>
+                <span class="n">variant_phrase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant_index</span><span class="p">[</span><span class="n">variant_string</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_variant</span><span class="p">(</span><span class="n">variant_phrase</span><span class="p">)</span>
+        <span class="c1"># if the phrase has distractors, remove its connections with them as well</span>
+        <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">distractor_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">:</span>
+                <span class="n">distractor_phrase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distractor_index</span><span class="p">[</span><span class="n">distractor_string</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_distractor_of</span><span class="p">[</span><span class="n">distractor_string</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">is_distractor_of</span><span class="p">[</span><span class="n">distractor_string</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># if the distractor is only connected to this phrase, remove the distractor as well</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">remove_distractor</span><span class="p">(</span><span class="n">distractor_phrase</span><span class="p">)</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">[</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.remove_variant">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.remove_variant">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_variant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a variant phrase from the model, including its connection to the phrase it is a</span>
+<span class="sd">        variant of.</span>
+
+<span class="sd">        :param variant_phrase: a phrase that is registered as a variant of one or more main phrases</span>
+<span class="sd">        :type variant_phrase: Phrase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># first check if variant phrase is registered as a variant</span>
+        <span class="k">if</span> <span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_variant_of</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s2"> is not registered as a variant&quot;</span><span class="p">)</span>
+        <span class="c1"># remove variant from the type index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;variant&quot;</span><span class="p">)</span>
+        <span class="c1"># if that is the only type of the phrase, remove it from the word_to_phrase index</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_remove_phrase_words</span><span class="p">(</span><span class="n">variant_phrase</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_remove_phrase_tokens</span><span class="p">(</span><span class="n">variant_phrase</span><span class="p">)</span>
+        <span class="c1"># remove the variant from the variant index</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant_index</span><span class="p">[</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span>
+        <span class="c1"># remove the variant from the phrase length index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variant_length_index</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+        <span class="c1"># remove its connection with its main phrase</span>
+        <span class="n">main_phrase_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_variant_of</span><span class="p">[</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_variant_of</span><span class="p">[</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">[</span><span class="n">main_phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">variant_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+        <span class="c1"># if this was the only variant of the main phrase, remove the main phrase from the has_variants index</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">[</span><span class="n">main_phrase_string</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">[</span><span class="n">main_phrase_string</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.remove_distractor">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.remove_distractor">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_distractor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distractor_phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a distractor phrase from the model, including its connection to the phrase it is a</span>
+<span class="sd">        distractor of.</span>
+
+<span class="sd">        :param distractor_phrase: a phrase that is registered as a distractor of one or more main phrases</span>
+<span class="sd">        :type distractor_phrase: Phrase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_distractor_of</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s2"> is not registered as a distractor&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;distractor&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">[</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_remove_phrase_words</span><span class="p">(</span><span class="n">distractor_phrase</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_remove_phrase_tokens</span><span class="p">(</span><span class="n">distractor_phrase</span><span class="p">)</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">distractor_index</span><span class="p">[</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">main_phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_distractor_of</span><span class="p">[</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">[</span><span class="n">main_phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">[</span><span class="n">main_phrase_string</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">[</span><span class="n">main_phrase_string</span><span class="p">]</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_distractor_of</span><span class="p">[</span><span class="n">distractor_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.add_phrases">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_phrases">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_phrases</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrases</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span> <span class="n">Phrase</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a list of phrases to the phrase model. Phrases must be either:</span>
+<span class="sd">        - a list of strings</span>
+<span class="sd">        - a list of dictionaries with property &#39;phrase&#39; and the phrase as a string value</span>
+<span class="sd">        - a list of Phrase objects</span>
+
+<span class="sd">        :param phrases: a list of phrases</span>
+<span class="sd">        :type phrases: List[Union[str, Dict[str, Union[str, List[str]]]]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">phrases</span><span class="p">:</span>
+            <span class="n">phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span>
+                                      <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_phrase</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+        <span class="c1"># if phrases is a dictionary with possible variants, distractors, labels and custom metadata</span>
+        <span class="c1"># per phrase, add those variants and distractors</span>
+        <span class="n">phrase_dicts</span> <span class="o">=</span> <span class="p">[</span><span class="n">phrase</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">phrases</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)]</span>
+        <span class="n">phrases</span> <span class="o">=</span> <span class="p">[</span><span class="n">Phrase</span><span class="p">(</span><span class="n">phrase_dict</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span> <span class="k">for</span> <span class="n">phrase_dict</span> <span class="ow">in</span> <span class="n">phrase_dicts</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_variants</span><span class="p">(</span><span class="n">phrases</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_distractors</span><span class="p">(</span><span class="n">phrases</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_custom</span><span class="p">(</span><span class="n">phrases</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="n">phrases</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.remove_phrases">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.remove_phrases">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_phrases</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrases</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span> <span class="n">Phrase</span><span class="p">]]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a list of phrases from the phrase model. If it has any registered spelling variants,</span>
+<span class="sd">        remove those as well.</span>
+
+<span class="sd">        :param phrases: a list of phrases/keyphrases</span>
+<span class="sd">        :type phrases: List[Union[str, Dict[str, Union[str, List[str]]]]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># print(&#39;REMOVING PHRASES&#39;)</span>
+        <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">phrases</span><span class="p">:</span>
+            <span class="c1"># print(&#39;\tphrase:&#39;, phrase)</span>
+            <span class="n">phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+            <span class="c1"># print(&#39;\tas phrase:&#39;, phrase)</span>
+            <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown phrase: </span><span class="si">{</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_phrase</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.get_phrases_by_max_length">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.get_phrases_by_max_length">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_phrases_by_max_length</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                                  <span class="n">include_variants</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Phrase</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return all phrase in the phrase model that are no longer than a given length.</span>
+
+<span class="sd">        :param max_length: the maximum length of phrases to be returned</span>
+<span class="sd">        :type max_length: int</span>
+<span class="sd">        :param include_variants: whether to include variants</span>
+<span class="sd">        :return: a generator that yield phrases</span>
+<span class="sd">        :rtype: Generator[Phrase, None, None]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">phrase_length</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_length_index</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">phrase_length</span> <span class="o">&gt;</span> <span class="n">max_length</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">for</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_length_index</span><span class="p">[</span><span class="n">phrase_length</span><span class="p">]:</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">include_variants</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant_length_index</span><span class="p">[</span><span class="n">phrase_length</span><span class="p">]:</span>
+                    <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">variant_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.get_phrases">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.get_phrases">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_phrases</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Phrase</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of all registered phrases.</span>
+
+<span class="sd">        :return: a list of all registered phrases</span>
+<span class="sd">        :rtype: List[Phrase]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.has_phrase">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.has_phrase">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_phrase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">],</span> <span class="n">Phrase</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if phrase is registered in phrase_model.</span>
+
+<span class="sd">        :param phrase: a phrase string</span>
+<span class="sd">        :type phrase: Union[str, Dict[str, any], Phrase]</span>
+<span class="sd">        :return: a boolean indicating whether phrase is registered</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.add_variants">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_variants">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_variants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variants</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Phrase</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]]],</span>
+                     <span class="n">add_new_phrases</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add variants of a phrase. If the phrase is not registered, add it to the set.</span>
+<span class="sd">        - input is a list of dictionaries:</span>
+<span class="sd">        variants = [{&#39;phrase&#39;: &#39;some phrase&#39;, &#39;variants&#39;: [&#39;some variant&#39;, &#39;some other variant&#39;]}]</span>
+
+<span class="sd">        :param variants: a list of phrases or phrase dictionaries with &#39;variant&#39; property</span>
+<span class="sd">        :type variants: List[Dict[str, Union[str, List[str]]]]</span>
+<span class="sd">        :param add_new_phrases: a Boolean to indicate if unknown phrases should be added</span>
+<span class="sd">        :type add_new_phrases: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">:</span>
+            <span class="n">main_phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+            <span class="c1"># print(main_phrase.metadata)</span>
+            <span class="k">if</span> <span class="n">main_phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">add_new_phrases</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_phrase</span><span class="p">(</span><span class="n">main_phrase</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">if</span> <span class="s2">&quot;variants&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">main_phrase</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">variant_phrase_string</span> <span class="ow">in</span> <span class="n">main_phrase</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;variants&quot;</span><span class="p">]:</span>
+                <span class="n">variant_phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">variant_phrase_string</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span>
+                                                  <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+                <span class="n">variant_phrase</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="n">main_phrase</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_variant</span><span class="p">(</span><span class="n">variant_phrase</span><span class="p">,</span> <span class="n">main_phrase</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.remove_variants">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.remove_variants">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_variants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variants</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">variants_of_phrase</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a list of spelling variants of a phrase.</span>
+
+<span class="sd">        :param variants: a list of variant strings or variant phrase objects to remove</span>
+<span class="sd">        :type variants: Union[List[str, Phrase]], None]</span>
+<span class="sd">        :param variants_of_phrase: an optional phrase string or phrase object for which all variants are to be removed</span>
+<span class="sd">        :type variants_of_phrase: Union[str, Phrase, None]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">variants</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">:</span>
+                <span class="n">variant</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_variant</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">variants_of_phrase</span><span class="p">:</span>
+            <span class="n">main_phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">variants_of_phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">main_phrase</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">main_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s2"> is not registered in this phrase model&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">main_phrase</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">variant_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">[</span><span class="n">main_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]:</span>
+                <span class="n">variant</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">variant_string</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_variant</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.get_variants">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.get_variants">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_variants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrases</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return registered variants of a specific list of phrases or</span>
+<span class="sd">        of all registered phrases (when no list of phrases is given).</span>
+
+<span class="sd">        :param phrases: a list of registered phrase strings</span>
+<span class="sd">        :type phrases: List[str]</span>
+<span class="sd">        :return: a list of dictionaries of phrases and their variants</span>
+<span class="sd">        :rtype: List[Dict[str, Union[str, List[str]]]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">phrases</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">phrases</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">phrases</span> <span class="o">=</span> <span class="p">[</span><span class="n">as_phrase_object</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">phrases</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[{</span><span class="s1">&#39;phrase&#39;</span><span class="p">:</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">,</span> <span class="s1">&#39;variants&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">[</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]}</span>
+                <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">phrases</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.variant_of">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.variant_of">[docs]</a>
+    <span class="k">def</span> <span class="nf">variant_of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the main phrase that a given variant is registered as a variant of.</span>
+
+<span class="sd">        :param variant: a variant phrase string or phrase object</span>
+<span class="sd">        :type variant: Union[str, Phrase]</span>
+<span class="sd">        :return: the main phrase the variant belongs to, or None if it is not a registered variant</span>
+<span class="sd">        :rtype: Union[None, Phrase]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">variant_string</span> <span class="o">=</span> <span class="n">variant</span><span class="o">.</span><span class="n">phrase_string</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">)</span> <span class="k">else</span> <span class="n">variant</span>
+        <span class="k">if</span> <span class="n">variant_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_variant_of</span><span class="p">:</span>
+            <span class="n">phrase_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_variant_of</span><span class="p">[</span><span class="n">variant_string</span><span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.variants">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.variants">[docs]</a>
+    <span class="k">def</span> <span class="nf">variants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Phrase</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return all variants of a given phrase.</span>
+
+<span class="sd">        :param phrase: a phrase string or phrase object</span>
+<span class="sd">        :type phrase: Union[str, Phrase]</span>
+<span class="sd">        :return: a list of variants of the phrase or None if it doesn&#39;t have any</span>
+<span class="sd">        :type: Union[None, List[Phrase]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phrase_string</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">)</span> <span class="k">else</span> <span class="n">phrase</span>
+        <span class="k">if</span> <span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">variant_index</span><span class="p">[</span><span class="n">variant_string</span><span class="p">]</span> <span class="k">for</span> <span class="n">variant_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_variants</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]]</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.add_distractors">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_distractors">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_distractors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distractors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Phrase</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]]],</span>
+                        <span class="n">add_new_phrases</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add distractors of a phrase. If the phrase is not registered, add it to the set.</span>
+<span class="sd">        - input is a list of dictionaries:</span>
+<span class="sd">        distractors = [{&#39;phrase&#39;: &#39;some phrase&#39;, &#39;distractors&#39;: [&#39;some distractor&#39;, &#39;some other distractor&#39;]}]</span>
+
+<span class="sd">        :param distractors: a list of phrase dictionaries with &#39;distractor&#39; property</span>
+<span class="sd">        :type distractors: List[Dict[str, Union[str, List[str]]]]</span>
+<span class="sd">        :param add_new_phrases: a Boolean to indicate if unknown phrases should be added</span>
+<span class="sd">        :type add_new_phrases: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">distractors</span><span class="p">:</span>
+            <span class="n">main_phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">main_phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">add_new_phrases</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_phrase</span><span class="p">(</span><span class="n">main_phrase</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">if</span> <span class="s2">&quot;distractors&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">main_phrase</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">distractor_string</span> <span class="ow">in</span> <span class="n">main_phrase</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;distractors&quot;</span><span class="p">]:</span>
+                <span class="n">distractor_phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">distractor_string</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span>
+                                                     <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+                <span class="n">distractor_phrase</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="n">main_phrase</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_distractor</span><span class="p">(</span><span class="n">distractor_phrase</span><span class="p">,</span> <span class="n">main_phrase</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.remove_distractors">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.remove_distractors">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_distractors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distractors</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                           <span class="n">distractors_of_phrase</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a list of distractors of a phrase.</span>
+<span class="sd">        - distractors: a list of dictionaries with phrases as key and the list of distractors to be removed as values</span>
+<span class="sd">        distractors = [{&#39;phrase&#39;: &#39;some phrase&#39;, &#39;distractors&#39;: [&#39;distractor to remove&#39;, &#39;some other distractor&#39;]}]</span>
+<span class="sd">        - phrase: remove all distractors of a given phrase</span>
+
+<span class="sd">        :param distractors: an optional list of phrase dictionaries with &#39;distractors&#39; property</span>
+<span class="sd">        :type distractors: Union[List[Union[str, Phrase]], None]</span>
+<span class="sd">        :param distractors_of_phrase: an optional string of a registered phrase for which all distractors are removed</span>
+<span class="sd">        :type distractors_of_phrase: Union[str, None]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">distractors</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">distractor</span> <span class="ow">in</span> <span class="n">distractors</span><span class="p">:</span>
+                <span class="n">distractor</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">distractor</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_distractor</span><span class="p">(</span><span class="n">distractor</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">distractors_of_phrase</span><span class="p">:</span>
+            <span class="n">main_phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">distractors_of_phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">main_phrase</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">main_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s2"> is not registered in this phrase model&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">main_phrase</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">distractor_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_distractors</span><span class="p">[</span><span class="n">main_phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]:</span>
+                <span class="n">distractor</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">distractor_string</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_distractor</span><span class="p">(</span><span class="n">distractor</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.add_labels">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_labels">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Phrase</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]]]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a label to a phrase. This can be used to group phrases under the same label.</span>
+<span class="sd">        - input is a list of phrase/label pair dictionaries:</span>
+<span class="sd">        labels = [{&#39;phrase&#39;: &#39;some phrase&#39;, &#39;label&#39;: &#39;some label&#39;}]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">phrase_labels</span><span class="p">:</span>
+            <span class="n">phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;skipping label for unknown phrase </span><span class="si">{</span><span class="n">phrase</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">phrase</span><span class="o">.</span><span class="n">label_set</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">has_labels</span><span class="p">[</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">is_label_of</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.remove_labels">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.remove_labels">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrases</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Phrase</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove labels for known phrases.</span>
+
+<span class="sd">        :param phrases: is a list of known phrases (either as Phrase objects or strings)</span>
+<span class="sd">        :type phrases: Union[List[Phrase], List[str]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">phrases</span><span class="p">:</span>
+            <span class="n">phrase_string</span> <span class="o">=</span> <span class="n">phrase</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span>
+            <span class="k">if</span> <span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;unknown phrase </span><span class="si">{</span><span class="n">phrase_string</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_labels</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">is_label_of</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_label_of</span><span class="p">[</span><span class="n">label</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_label_of</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_labels</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.is_label">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.is_label">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if label is registered as label of any known phrase.</span>
+
+<span class="sd">        :param label: a label string to be checked</span>
+<span class="sd">        :type label: str</span>
+<span class="sd">        :return: a boolean whether the label belongs to a known phrase</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">label</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_label_of</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.has_label">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.has_label">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a registered phrase has a label.</span>
+
+<span class="sd">        :param phrase_string: a phrase string of a registered phrase</span>
+<span class="sd">        :type phrase_string: str</span>
+<span class="sd">        :return: a boolean indicating if the registered phrase has a label</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_labels</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.get_labels">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.get_labels">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the label(s) of a registered phrase.</span>
+
+<span class="sd">        :param phrase: a phrase string or object</span>
+<span class="sd">        :type phrase: Union[str, Phrase]</span>
+<span class="sd">        :return: a set of labels</span>
+<span class="sd">        :rtype: List[str]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phrase_string</span> <span class="o">=</span> <span class="n">phrase</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_phrase</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown phrase: </span><span class="si">{</span><span class="n">phrase</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_labels</span><span class="p">[</span><span class="n">phrase</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.add_custom">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.add_custom">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_custom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">custom</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Phrase</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add custom key/value pairs to the entry as phrase metadata.</span>
+
+<span class="sd">        param entry: an Array of phrase dictionaries, each with a &#39;phrase&#39; property and additional key/value pairs</span>
+<span class="sd">        type entry: Dict[str, Union[str, int, float, list]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">custom</span><span class="p">:</span>
+            <span class="n">phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">custom</span><span class="p">[</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.remove_custom">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.remove_custom">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_custom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">custom</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove custom properties for a list of phrases.</span>
+
+<span class="sd">        :param custom: a list of phrase dictionaries with custom properties to remove</span>
+<span class="sd">        :type custom: List[Dict[str, any]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">custom</span><span class="p">:</span>
+            <span class="n">phrase</span> <span class="o">=</span> <span class="n">as_phrase_object</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">ngram_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ngram_size</span><span class="p">,</span> <span class="n">skip_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_size</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">custom_property</span> <span class="ow">in</span> <span class="n">phrase</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom</span><span class="p">[</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">][</span><span class="n">custom_property</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.has_custom">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.has_custom">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_custom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">custom_property</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a phrase has a given custom property.</span>
+
+<span class="sd">        :param phrase_string: a phrase string of a registered phrase.</span>
+<span class="sd">        :type phrase_string: str</span>
+<span class="sd">        :param custom_property: the name of a custom property of the registered phrase</span>
+<span class="sd">        :type custom_property: str</span>
+<span class="sd">        :return: a boolean to indicate whether the phrase has a custom property of the given property name</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># print(&#39;CUSTOM:&#39;, self.custom)</span>
+        <span class="k">return</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom</span> <span class="ow">and</span> <span class="n">custom_property</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.get">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.get">[docs]</a>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">custom_property</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the value of a custom property for a given phrase.</span>
+
+<span class="sd">        :param phrase_string: a phrase string of a registered phrase.</span>
+<span class="sd">        :type phrase_string: str</span>
+<span class="sd">        :param custom_property: the name of a custom property of the registered phrase</span>
+<span class="sd">        :type custom_property: str</span>
+<span class="sd">        :return: the custom property of a given phrase</span>
+<span class="sd">        :rtype: any</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_index</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Unknown phrase_string&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_custom</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">,</span> <span class="n">custom_property</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown custom property&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom</span><span class="p">[</span><span class="n">phrase_string</span><span class="p">][</span><span class="n">custom_property</span><span class="p">]</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_index_phrase_words</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Index a phrase on its individual words, for exact match look up routines.</span>
+
+<span class="sd">        :param phrase: a phrase object that is part of the phrase model</span>
+<span class="sd">        :type phrase: Phrase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phrase_type</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot index phrase words for non-registered phrase: </span><span class="si">{</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">wi</span><span class="p">,</span> <span class="n">word</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\w+&quot;</span><span class="p">,</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">wi</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">first_word_in_phrase</span><span class="p">[</span><span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)][</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">word</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">word_in_phrase</span><span class="p">[</span><span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_remove_phrase_words</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the individual words of a phrase from the index. Only use this is you are removing</span>
+<span class="sd">        the phrase from the phrase model.</span>
+
+<span class="sd">        :param phrase: a phrase object that is part of the phrase model</span>
+<span class="sd">        :type phrase: Phrase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">wi</span><span class="p">,</span> <span class="n">word</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\w+&quot;</span><span class="p">,</span> <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">wi</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_word_in_phrase</span><span class="p">[</span><span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)][</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">first_word_in_phrase</span><span class="p">[</span><span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_word_in_phrase</span><span class="p">[</span><span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">word_in_phrase</span><span class="p">[</span><span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">word_in_phrase</span><span class="p">[</span><span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">word_in_phrase</span><span class="p">[</span><span class="n">word</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">_remove_phrase_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Tokenizer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the individual words of a phrase from the index. Only use this is you are removing</span>
+<span class="sd">        the phrase from the phrase model.</span>
+
+<span class="sd">        :param phrase: a phrase object that is part of the phrase model</span>
+<span class="sd">        :type phrase: Phrase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tokenizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tokenizer</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tokenizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ti</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ti</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_token_in_phrase</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;phrase_model._remove_phrase_tokens - token not in first_token_in_phrase index&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    token: </span><span class="si">{</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    first_token_in_phrase.keys(): </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">first_token_in_phrase</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_token_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">][</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">first_token_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_token_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">token_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_token_offset_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">][</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_token_offset_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">][</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_token_offset_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_token_offset_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_token_offset_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_get_tokenizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Tokenizer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">tokenizer</span> <span class="k">if</span> <span class="n">tokenizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span>
+
+    <span class="k">def</span> <span class="nf">_index_phrase_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phrase</span><span class="p">:</span> <span class="n">Phrase</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Tokenizer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">tokenizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tokenizer</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tokenizer</span><span class="p">:</span>
+            <span class="n">phrase</span><span class="o">.</span><span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">,</span> <span class="n">doc_id</span><span class="o">=</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">ti</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">tokens</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">ti</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">first_token_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">][</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">char_index</span>
+                <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_token_offset_in_phrase</span> <span class="ow">or</span> \
+                        <span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_token_offset_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">min_token_offset_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">][</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">char_index</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">max_token_offset_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">][</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">]</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">char_index</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">token_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">phrase_string</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PhraseModel.has_token">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.has_token">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Token</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a given token occurs in any registered phrase.</span>
+
+<span class="sd">        :param token: a token object whose normalized form is checked against the token index</span>
+<span class="sd">        :type token: Union[str, Token]</span>
+<span class="sd">        :return: whether the token occurs in any registered phrase</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">token</span><span class="o">.</span><span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_in_phrase</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.set_phrase_token_max_start_offsets">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.set_phrase_token_max_start_offsets">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_phrase_token_max_start_offsets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a token only occurs in phrases with a max start offset, and if so</span>
+<span class="sd">        set its max.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_in_phrase</span><span class="p">:</span>
+            <span class="n">token_has_phrase_with_max_start</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">token_has_phrase_without_max_start</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">max_start</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">for</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="p">]:</span>
+                <span class="n">phrase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_phrase</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">)</span> <span class="ow">and</span> <span class="n">phrase</span><span class="o">.</span><span class="n">has_max_start_offset</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">token_has_phrase_with_max_start</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="c1"># print(f&quot;phrase_model.PhraseModel.set_phrase_token_max_start_offset:&quot;)</span>
+                    <span class="c1"># print(f&quot;    token: {token}\tphrase: {phrase}&quot;)</span>
+                    <span class="c1"># print(f&quot;    phrase.max_start_offset: {phrase.max_start_offset}&quot;)</span>
+                    <span class="c1"># print(f&quot;    self.max_token_offset_in_phrase[token][phrase_string]: &quot;</span>
+                    <span class="c1">#       f&quot;{self.max_token_offset_in_phrase[token][phrase_string]}&quot;)</span>
+                    <span class="n">token_max_offset</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">max_start_offset</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_token_offset_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="p">][</span><span class="n">phrase_string</span><span class="p">]</span>
+                    <span class="c1"># print(f&quot;    token_max_offset: {token_max_offset}&quot;)</span>
+                    <span class="k">if</span> <span class="n">token_max_offset</span> <span class="o">&gt;</span> <span class="n">max_start</span><span class="p">:</span>
+                        <span class="n">max_start</span> <span class="o">=</span> <span class="n">token_max_offset</span>
+                    <span class="c1"># print(f&quot;    max_start: {max_start}&quot;)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">)</span> <span class="ow">and</span> <span class="n">phrase</span><span class="o">.</span><span class="n">has_max_start_offset</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="n">token_has_phrase_without_max_start</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="c1"># print(f&quot;without max_start - token: {token}\tphrase: {phrase_string}&quot;)</span>
+            <span class="k">if</span> <span class="n">token_has_phrase_with_max_start</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">token_has_phrase_without_max_start</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phrase_token_max_start_offset</span><span class="p">[</span><span class="n">token</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_start</span></div>
+
+
+<div class="viewcode-block" id="PhraseModel.set_phrase_token_max_end_offsets">
+<a class="viewcode-back" href="../../../source/fuzzy_search.phrase.html#fuzzy_search.phrase.phrase_model.PhraseModel.set_phrase_token_max_end_offsets">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_phrase_token_max_end_offsets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a token only occurs in phrases with a max end offset, and if so</span>
+<span class="sd">        set its max.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_in_phrase</span><span class="p">:</span>
+            <span class="n">token_has_phrase_with_max_end</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">token_has_phrase_without_max_end</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">max_end</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">for</span> <span class="n">phrase_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="p">]:</span>
+                <span class="n">phrase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_phrase</span><span class="p">(</span><span class="n">phrase_string</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">)</span> <span class="ow">and</span> <span class="n">phrase</span><span class="o">.</span><span class="n">has_max_end_offset</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">token_has_phrase_with_max_end</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">token_max_offset</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">max_end_offset</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_token_offset_in_phrase</span><span class="p">[</span><span class="n">token</span><span class="p">][</span><span class="n">phrase_string</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">token_max_offset</span> <span class="o">&gt;</span> <span class="n">max_end</span><span class="p">:</span>
+                        <span class="n">max_end</span> <span class="o">=</span> <span class="n">token_max_offset</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">Phrase</span><span class="p">)</span> <span class="ow">and</span> <span class="n">phrase</span><span class="o">.</span><span class="n">has_max_end_offset</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="n">token_has_phrase_without_max_end</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">token_has_phrase_with_max_end</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">token_has_phrase_without_max_end</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phrase_token_max_end_offset</span><span class="p">[</span><span class="n">token</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_end</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Marijn Koolen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

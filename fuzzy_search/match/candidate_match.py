@@ -1,3 +1,6 @@
+"""Candidate match objects and the skipgram-based logic used to build, grow and validate
+fuzzy match candidates between a text and a phrase."""
+
 from __future__ import annotations
 from collections import Counter
 from typing import Dict, List, Union
@@ -7,9 +10,24 @@ from fuzzy_search.phrase.phrase import Phrase
 
 
 class Candidate:
+    """A finalized candidate match between a phrase and a span of text, with the matching
+    string, its offsets, and the skipgram overlap score."""
 
     def __init__(self, phrase: Phrase, match_start_offset: int,
                  match_end_offset: int, match_string: str, skipgram_overlap: float = 0.0):
+        """Create a Candidate for a matched phrase.
+
+        :param phrase: the phrase that this candidate is a match for
+        :type phrase: Phrase
+        :param match_start_offset: the start offset of the match in the text
+        :type match_start_offset: int
+        :param match_end_offset: the end offset of the match in the text
+        :type match_end_offset: int
+        :param match_string: the matching text string
+        :type match_string: str
+        :param skipgram_overlap: the skipgram overlap score between phrase and match string
+        :type skipgram_overlap: float
+        """
         self.phrase = phrase
         self.match_start_offset: int = match_start_offset
         self.match_end_offset: int = match_end_offset
@@ -17,12 +35,16 @@ class Candidate:
         self.skipgram_overlap: float = skipgram_overlap
 
     def __repr__(self):
+        """Return a debug representation showing the phrase, match string, and offsets."""
         return f'Candidate(' + \
                f'phrase: "{self.phrase.phrase_string}", match_string: "{self.match_string}", ' + \
                f'match_start_offset: {self.match_start_offset}, match_end_offset: {self.match_end_offset})'
 
 
 class CandidatePartial:
+    """A partially built candidate match for a phrase, accumulating matching skipgrams found in
+    the text as they are encountered. Used while scanning text for skipgram matches, before a
+    final Candidate is produced."""
 
     def __init__(self, phrase: Phrase, max_length_variance: int = 1,
                  ignorecase: bool = False, debug: int = 0):
@@ -61,13 +83,22 @@ class CandidatePartial:
         self.skipgram_overlap: float = 0.0
 
     def __repr__(self):
+        """Return a debug representation showing the phrase, match string, and offsets."""
         return f'Candidate(' + \
                f'phrase: "{self.phrase.phrase_string}", match_string: "{self.match_string}", ' + \
                f'match_start_offset: {self.match_start_offset}, match_end_offset: {self.match_end_offset})'
 
 
 def candidate_from_partial(candidate_partial: CandidatePartial, text: Dict[str, any]) -> Candidate:
-    """Create a Candidate instance from a CandidatePartial object."""
+    """Create a finalized Candidate instance from a CandidatePartial object.
+
+    :param candidate_partial: a partially built candidate match
+    :type candidate_partial: CandidatePartial
+    :param text: the text object that the candidate match string is taken from
+    :type text: Dict[str, any]
+    :return: a finalized Candidate
+    :rtype: Candidate
+    """
     if candidate_partial.match_string is None:
         match_string = get_match_string(candidate_partial, text)
     else:
@@ -97,7 +128,10 @@ def same_candidate(candidate1: Union[CandidatePartial, Candidate],
 
 
 def add_skip_match(candidate: CandidatePartial, skipgram: SkipGram) -> None:
-    """Add a skipgram match between a text and a phrase to the candidate.
+    """Add a skipgram match between a text and a phrase to the candidate, updating its offsets
+    and skipgram counts. If adding the skipgram makes the candidate's matched span longer than
+    the phrase allows, or its start no longer lies in the phrase's early skipgram index, the
+    earliest skipgrams are dropped from the front until the candidate is valid again.
 
     :param candidate: the candidate to add the skipgram to
     :type candidate: CandidatePartial
@@ -137,7 +171,15 @@ def add_skip_match(candidate: CandidatePartial, skipgram: SkipGram) -> None:
             print("\tremove - no start - start:", candidate.match_start_offset, "\tend:", candidate.match_end_offset)
 
 def shift_start_skip(candidate: CandidatePartial) -> bool:
-    """Check if there is a later skip that is a better start."""
+    """Check if a later skipgram in the candidate would make a better starting point than the
+    current first skipgram (i.e. it shortens an overly long match without losing the best start),
+    and if so, shift the candidate's start to that skipgram.
+
+    :param candidate: a candidate match to check and potentially shift
+    :type candidate: CandidatePartial
+    :return: whether the start was shifted
+    :rtype: bool
+    """
     if get_skip_match_length(candidate) <= len(candidate.phrase.phrase_string):
         return False
     start_skip = candidate.skipgram_list[0]
@@ -162,7 +204,12 @@ def shift_start_skip(candidate: CandidatePartial) -> bool:
     return best_start_index > 0
 
 def remove_first_skip(candidate: CandidatePartial) -> None:
-    """Remove the first matching skipgram from the list and update the count and set."""
+    """Remove the first matching skipgram from the candidate's list and update its skipgram
+    count and set accordingly.
+
+    :param candidate: the candidate to remove the first skipgram from
+    :type candidate: CandidatePartial
+    """
     first_skip = candidate.skipgram_list.pop(0)
     if candidate.debug > 3:
         print('\tremove_first_skip - removing first skip')
@@ -173,13 +220,29 @@ def remove_first_skip(candidate: CandidatePartial) -> None:
         candidate.skipgram_set.remove(first_skip.string)
 
 def get_skip_match_length(candidate: CandidatePartial) -> int:
-    """Return the length of the matching string."""
+    """Return the length of the matching string spanned by the candidate's current offsets.
+
+    :param candidate: the candidate to measure
+    :type candidate: CandidatePartial
+    :return: the length of the candidate's matching span
+    :rtype: int
+    """
     if candidate.match_start_offset is None:
         return 0
     return candidate.match_end_offset - candidate.match_start_offset
 
 def is_match(candidate: CandidatePartial, skipgram_threshold: float) -> bool:
-    """Check if the candidate is a likely match for its corresponding phrase."""
+    """Check if the candidate is a likely match for its corresponding phrase, based on its
+    length relative to the phrase, whether its first/last skipgrams are in the phrase's
+    early/late skipgram indexes, and whether its skipgram set overlap meets the given threshold.
+
+    :param candidate: the candidate to validate
+    :type candidate: CandidatePartial
+    :param skipgram_threshold: the minimum required skipgram set overlap
+    :type skipgram_threshold: float
+    :return: whether the candidate is a likely match
+    :rtype: bool
+    """
     if len(candidate.skipgram_list) == 0:
         if candidate.debug > 3:
             print('\tis_match - NO MATCH: there are no matching skipgrams')
@@ -206,7 +269,15 @@ def is_match(candidate: CandidatePartial, skipgram_threshold: float) -> bool:
     return True
 
 def get_skip_set_overlap(candidate: CandidatePartial) -> float:
-    """Calculate and set skipgram overlap."""
+    """Calculate the skipgram set overlap between the candidate and its phrase (fraction of the
+    phrase's distinct skipgrams that are present in the candidate), store it on the candidate,
+    and return it.
+
+    :param candidate: the candidate to score
+    :type candidate: CandidatePartial
+    :return: the skipgram set overlap
+    :rtype: float
+    """
     candidate.skipgram_overlap = len(candidate.skipgram_set) / len(candidate.phrase.skipgram_set)
     return candidate.skipgram_overlap
 
@@ -214,6 +285,8 @@ def get_skip_set_overlap(candidate: CandidatePartial) -> float:
 def get_skip_count_overlap(candidate: CandidatePartial) -> float:
     """Calculate deviation of candidate skipgrams from phrase skipgrams.
 
+            :param candidate: the candidate to score
+            :type candidate: CandidatePartial
             :return: the skipgram overlap (-inf, 1.0]
             :rtype: float
             """
@@ -225,7 +298,14 @@ def get_skip_count_overlap(candidate: CandidatePartial) -> float:
     return (total - diff) / candidate.phrase.num_skipgrams
 
 def get_match_start_offset(candidate: CandidatePartial) -> Union[None, int]:
-    """Calculate the start offset of the match."""
+    """Calculate the start offset of the match in the text, based on the candidate's first
+    skipgram and that skipgram's offset within the phrase.
+
+    :param candidate: the candidate to compute the start offset for
+    :type candidate: CandidatePartial
+    :return: the match start offset, or None if the candidate has no skipgrams
+    :rtype: Union[None, int]
+    """
     if len(candidate.skipgram_list) == 0:
         return None
     first_skip = candidate.skipgram_list[0]
@@ -234,7 +314,16 @@ def get_match_start_offset(candidate: CandidatePartial) -> Union[None, int]:
     return 0 if match_start_offset < 0 else match_start_offset
 
 def get_match_string(candidate: CandidatePartial, text: Dict[str, any]) -> Union[str, None]:
-    """Find the matching string of a candidate fuzzy match."""
+    """Find the matching string of a candidate fuzzy match by slicing the text between the
+    candidate's start and end offsets.
+
+    :param candidate: the candidate whose match string to extract
+    :type candidate: CandidatePartial
+    :param text: the text object containing the candidate's match string
+    :type text: Dict[str, any]
+    :return: the matching text string
+    :rtype: Union[str, None]
+    """
     if candidate.match_start_offset == candidate.match_end_offset:
         raise ValueError('start and end offset cannot be the same')
     return text["text"][candidate.match_start_offset:candidate.match_end_offset]
