@@ -18,7 +18,7 @@ default_config = {
     # Is upper/lowercase a meaningful signal?
     "ignorecase": False,
     # should matches follow word boundaries?
-    "use_word_boundaries": False,
+    "use_word_boundaries": True,
     # for phrases that have variant phrasings
     "include_variants": False,
     # avoid matching with similar but different phrases

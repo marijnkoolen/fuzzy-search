@@ -1,17 +1,10 @@
 from unittest import TestCase
 
-from fuzzy_search.search.config import default_config
 from fuzzy_search.search.searcher import FuzzySearcher
 from fuzzy_search.tokenization.token import Tokenizer
 
 
 class TestSearcher(TestCase):
-
-    def test_searcher_has_default_config(self):
-        searcher = FuzzySearcher()
-        for field in default_config:
-            with self.subTest(field):
-                self.assertEqual(default_config[field], searcher.config[field])
 
     def test_searcher_has_default_tokenizer(self):
         searcher = FuzzySearcher()

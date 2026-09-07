@@ -20,6 +20,13 @@ from fuzzy_search.tokenization.string import text2skipgrams
 from fuzzy_search.tokenization.token import Tokenizer
 
 
+CONFIG_PROPS = [
+    'char_match_threshold', 'ngram_threshold', 'skipgram_threshold', 'levenshtein_threshold',
+    'max_length_variance', 'allow_overlapping_matches', 'skip_exact_matching', 'use_word_boundaries',
+    'ignorecase', 'ngram_size', 'skip_size', 'include_variants', 'filter_distractors', 'punctuation',
+    'debug'
+]
+        
 class FuzzySearcher(object):
 
     def __init__(self, phrase_list: List[any] = None, phrase_model: Union[Dict[str, any], PhraseModel] = None,
@@ -82,12 +89,18 @@ class FuzzySearcher(object):
         self.debug = False
         self.punctuation = string.punctuation
         # non-default configuration
-        self.config = copy.deepcopy(default_config)
-        self.tokenizer = tokenizer if tokenizer is not None else Tokenizer()
         if config:
             for key in config:
-                self.config[key] = config[key]
-            self.configure(config)
+                if not hasattr(self, key):
+                    print(f"Ignoring invalid config key '{key}'")
+                    continue
+                setattr(self, key, config[key])    
+        self.config = {}
+        for prop in CONFIG_PROPS:
+            self.config[prop] = getattr(self, prop)
+        
+        self.tokenizer = tokenizer if tokenizer is not None else Tokenizer()
+        
         if phrase_list is not None:
             phrase_model = PhraseModel(phrases=phrase_list, config=config, tokenizer=self.tokenizer)
             self.index_phrase_model(phrase_model)
@@ -97,43 +110,6 @@ class FuzzySearcher(object):
             elif isinstance(phrase_model, PhraseModel) is False:
                 raise TypeError('invalid phrase_model type, should PhraseModel or a list of dictionaries')
             self.index_phrase_model(phrase_model)
-
-    def configure(self, config: Dict[str, any]) -> None:
-        """Configure the fuzzy searcher with a given config object.
-
-        :param config: a config dictionary
-        :type config: Dict[str, Union[str, int, float]]
-        """
-        if "char_match_threshold" in config:
-            self.char_match_threshold = config["char_match_threshold"]
-        if "ngram_threshold" in config:
-            self.ngram_threshold = config["ngram_threshold"]
-        if "skipgram_threshold" in config:
-            self.skipgram_threshold = config["skipgram_threshold"]
-        if "levenshtein_threshold" in config:
-            self.levenshtein_threshold = config["levenshtein_threshold"]
-        if "max_length_variance" in config:
-            self.max_length_variance = config["max_length_variance"]
-        if "use_word_boundaries" in config:
-            self.use_word_boundaries = config["use_word_boundaries"]
-        if "ignorecase" in config:
-            self.ignorecase = config["ignorecase"]
-        if "ngram_size" in config:
-            self.ngram_size = config["ngram_size"]
-        if "skip_size" in config:
-            self.skip_size = config["skip_size"]
-        if "include_variants" in config:
-            self.include_variants = config["include_variants"]
-        if "filter_distractors" in config:
-            self.filter_distractors = config["filter_distractors"]
-        if "skip_exact_matching" in config:
-            self.skip_exact_matching = config["skip_exact_matching"]
-        if "allow_overlapping_matches" in config:
-            self.allow_overlapping_matches = config["allow_overlapping_matches"]
-        if "punctuation" in config:
-            self.punctuation = config["punctuation"]
-        if "debug" in config:
-            self.debug = config["debug"]
 
     def _get_debug_level(self, debug: int = 0):
         """Return the higher of the given debug level and the searcher's configured debug level."""

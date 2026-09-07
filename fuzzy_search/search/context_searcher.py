@@ -26,20 +26,9 @@ class FuzzyContextSearcher(FuzzyPhraseSearcher):
     """
 
     def __init__(self, config: Union[dict, None] = None):
-        super().__init__(config)
+        super().__init__(config=config)
         self.context_size = 100
-        if config is not None:
-            self.configure_context(config)
-
-    def configure_context(self, config: dict) -> None:
-        """Configure the context searcher.
-
-        :param config: a dictionary with configuration parameters to override the defaults
-        :type config: dict
-        """
-        super().configure(config)
-        if "context_size" in config:
-            self.context_size = config["context_size"]
+        self.config['context_size'] = self.context_size
 
     def add_match_context(self, match: PhraseMatch, text: Union[str, dict], context_size: Union[None, int] = None,
                           prefix_size: Union[None, int] = None,
