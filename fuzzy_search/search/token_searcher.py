@@ -353,14 +353,15 @@ class FuzzyTokenSearcher(FuzzySearcher):
         if debug is None and self.config['debug'] is not None:
             debug = self.config['debug']
         self.debug = debug
-        if 'pad_token' not in self.config:
-            self.config['pad_token'] = False
+        self.pad_token = config['pad_token'] if config and 'pad_token' in config else False
         self.token_skipgram_index = defaultdict(set)
         self.token_num_skips = {}
         self.max_token_gap = max_token_gap
         self.max_char_gap = max_char_gap
-        if 'max_token_length_variance' not in self.config:
-            self.config['max_token_length_variance'] = self.config['max_length_variance']
+        if config and 'max_token_length_variance' in config:
+            self.max_token_length_variance = config['max_token_length_variance']
+        else:
+            self.max_token_length_variance = self.max_length_variance
         self.vocabulary = Vocabulary()
         self.match_pairs = set()
         self.text_phrase_term_pairs = {
@@ -385,6 +386,15 @@ class FuzzyTokenSearcher(FuzzySearcher):
             self.index_text_phrase_term_pairs(distractor_pairs, 'distractor')
         self.add_vocabulary_skipgram_matches()
         # self.term_dist = defaultdict(int)
+
+    @property
+    def config(self):
+        curr_config = super().config
+        curr_config['pad_token'] = self.pad_token
+        curr_config['max_char_gap'] = self.max_char_gap
+        curr_config['max_token_gap'] = self.max_token_gap
+        curr_config['max_token_length_variance'] = self.max_token_length_variance
+        return curr_config
 
     @staticmethod
     def terms_to_string(terms: Union[str, List[str], tuple]):
@@ -702,7 +712,7 @@ class FuzzyTokenSearcher(FuzzySearcher):
                         print(f'\t\tfind_skipgram_token_matches - phrase_token length: {phrase_token_match}')
                         print(f'\t\tfind_skipgram_token_matches - lenght_diff: {length_diff}')
 
-                    if length_diff > 0 or abs(length_diff) <= self.config['max_token_length_variance']:
+                    if length_diff > 0 or abs(length_diff) <= self.max_token_length_variance:
                         token_match = TokenMatch(partial_matches[phrase_token_match],
                                                  phrase_token_match, match_type)
                         token_matches.append(token_match)
@@ -1238,11 +1248,11 @@ def get_token_skip_match_type(text_token_string: str, text_token_num_skips: int,
         match_type = MatchType.NONE
         if debug > 2:
             print(f"        get_token_skip_match_type - below skipgram thresholds, match_type:", match_type)
-    elif length_variance > token_searcher.config['max_token_length_variance']:
+    elif length_variance > token_searcher.max_token_length_variance:
         match_type = MatchType.NONE
         if debug > 2:
             print(f"        get_token_skip_match_type - above max length variance, match_type:", match_type)
-    elif abs(len(text_token_string) - len(phrase_token_match)) <= token_searcher.config['max_token_length_variance']:
+    elif abs(len(text_token_string) - len(phrase_token_match)) <= token_searcher.max_token_length_variance:
         match_type = MatchType.FULL
         if debug > 2:
             print(f"        get_token_skip_match_type - text and phrase tokens equal length, match_type:", match_type)

@@ -8,7 +8,7 @@ upon.
 import copy
 import string
 from collections import defaultdict
-from typing import Dict, List, Set, Union
+from typing import Any, Dict, List, Set, Union
 
 from fuzzy_search._version import __version__
 from fuzzy_search.match.skip_match import SkipMatches
@@ -95,9 +95,6 @@ class FuzzySearcher(object):
                     print(f"Ignoring invalid config key '{key}'")
                     continue
                 setattr(self, key, config[key])    
-        self.config = {}
-        for prop in CONFIG_PROPS:
-            self.config[prop] = getattr(self, prop)
         
         self.tokenizer = tokenizer if tokenizer is not None else Tokenizer()
         
@@ -110,6 +107,13 @@ class FuzzySearcher(object):
             elif isinstance(phrase_model, PhraseModel) is False:
                 raise TypeError('invalid phrase_model type, should PhraseModel or a list of dictionaries')
             self.index_phrase_model(phrase_model)
+
+    @property
+    def config(self) -> Dict[str, Any]:
+        curr_config: Dict[str, Any] = {}
+        for prop in CONFIG_PROPS:
+            curr_config[prop] = getattr(self, prop)
+        return curr_config
 
     def _get_debug_level(self, debug: int = 0):
         """Return the higher of the given debug level and the searcher's configured debug level."""
