@@ -261,7 +261,9 @@ def get_skipmatch_candidates(text: Dict[str, any], skip_matches: SkipMatches,
     :rtype: Dict[str, List[Candidate]]
     """
     phrase_candidates = defaultdict(list)
-    for phrase in skip_matches.matches:
+    # Phrases hash by identity, so set order varies per searcher build; candidates of a phrase and
+    # its variants share one list whose order the overlap filter depends on.
+    for phrase in sorted(skip_matches.matches, key=lambda p: p.phrase_string):
         if debug > 2:
             print("get_skipmatch_candidates - phrase:", phrase.phrase_string)
         if get_skipset_overlap(phrase, skip_matches) < skipgram_threshold:

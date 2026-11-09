@@ -1,0 +1,355 @@
+{
+ "configs": {
+  "n2_s1_l0.5": {
+   "include_variants": true,
+   "levenshtein_threshold": 0.5,
+   "ngram_size": 2,
+   "skip_size": 1
+  },
+  "n2_s1_l0.7": {
+   "include_variants": true,
+   "levenshtein_threshold": 0.7,
+   "ngram_size": 2,
+   "skip_size": 1
+  },
+  "n2_s2_l0.5": {
+   "include_variants": true,
+   "levenshtein_threshold": 0.5,
+   "ngram_size": 2,
+   "skip_size": 2
+  },
+  "n2_s2_l0.7": {
+   "include_variants": true,
+   "levenshtein_threshold": 0.7,
+   "ngram_size": 2,
+   "skip_size": 2
+  },
+  "n3_s1_l0.5": {
+   "include_variants": true,
+   "levenshtein_threshold": 0.5,
+   "ngram_size": 3,
+   "skip_size": 1
+  },
+  "n3_s1_l0.7": {
+   "include_variants": true,
+   "levenshtein_threshold": 0.7,
+   "ngram_size": 3,
+   "skip_size": 1
+  },
+  "n3_s2_l0.5": {
+   "include_variants": true,
+   "levenshtein_threshold": 0.5,
+   "ngram_size": 3,
+   "skip_size": 2
+  },
+  "n3_s2_l0.7": {
+   "include_variants": true,
+   "levenshtein_threshold": 0.7,
+   "ngram_size": 3,
+   "skip_size": 2
+  }
+ },
+ "data_dir": "/Users/Shared/claude_projects/data_scopes/shared-data/NL-HaNA_1.01.02/republic_segmentation_v5",
+ "fuzzy_search_version": "3.0.4",
+ "levenshtein_version": "0.27.3",
+ "num_sampled_paragraphs": 17720,
+ "phrase_model": [
+  {
+   "end_year": 1796,
+   "label": "insertion",
+   "phrase": "geinsereert.",
+   "start_year": 1585
+  },
+  {
+   "end_year": 1796,
+   "label": "extract",
+   "phrase": "Extract uyt de Resolutien",
+   "start_year": 1603,
+   "variants": [
+    "Extract uyt het Resolutie-",
+    "Extract uyt het Register",
+    "Extraheert uyt het Re-"
+   ]
+  },
+  {
+   "end_year": 1796,
+   "label": "tagline",
+   "phrase": "Het eerste jaar der Bataafsche Vryheid",
+   "start_year": 1795
+  },
+  {
+   "end_year": 1796,
+   "label": "rest_day",
+   "phrase": "Nihil actum est",
+   "start_year": 1603
+  },
+  {
+   "end_year": 1796,
+   "label": "holiday",
+   "phrase": "Zynde Vast- en Bede-dag",
+   "start_year": 1703,
+   "variants": [
+    "Zynde Danck-, Vast- en Bededagh"
+   ]
+  },
+  {
+   "end_year": 1796,
+   "label": "special_attendance",
+   "phrase": "GECOMPAREERT,",
+   "start_year": 1703
+  },
+  {
+   "end_year": 1796,
+   "label": "prince_attending",
+   "line_type": "multi_line",
+   "phrase": "Zyne Hoogheid den Heere Prince van ",
+   "start_year": 1703,
+   "variants": [
+    "Syne Hoogheyd den Heere Prince van "
+   ]
+  },
+  {
+   "end_year": 1680,
+   "label": "presiding",
+   "phrase": "Præside,",
+   "start_year": 1603,
+   "variants": [
+    "Praeside"
+   ]
+  },
+  {
+   "end_year": 1680,
+   "label": "attending",
+   "phrase": "Præsentibus,",
+   "start_year": 1603,
+   "variants": [
+    "praesentibus"
+   ]
+  },
+  {
+   "end_year": 1796,
+   "label": "presiding",
+   "phrase": "PRAESIDE,",
+   "start_year": 1703,
+   "variants": [
+    "P R AE S I D E,"
+   ]
+  },
+  {
+   "end_year": 1796,
+   "label": "attending",
+   "phrase": "PRAESENTIBUS,",
+   "start_year": 1703,
+   "variants": [
+    "P R AE S E N T I B U S,"
+   ]
+  },
+  {
+   "end_year": 1796,
+   "label": "president",
+   "phrase": "Den Heere",
+   "start_year": 1603,
+   "variants": [
+    "De Heer"
+   ]
+  },
+  {
+   "end_year": 1796,
+   "label": "attendants",
+   "phrase": "De Heeren",
+   "start_year": 1603
+  },
+  {
+   "end_year": 1796,
+   "label": "president",
+   "phrase": "Den Burger",
+   "start_year": 1795
+  },
+  {
+   "end_year": 1796,
+   "label": "attendants",
+   "phrase": "De Burgers",
+   "start_year": 1795
+  },
+  {
+   "end_year": 1796,
+   "label": "reviewed",
+   "phrase": "DE Resolutien gisteren genomen",
+   "start_year": 1705,
+   "variants": [
+    "DE Resolutien eergisteren genomen",
+    "DE Resolutien voorleede ",
+    "DE Resolutien gisteren ge-"
+   ]
+  },
+  {
+   "end_year": 1704,
+   "label": "reviewed",
+   "phrase": "De resolutien gisteren genomen",
+   "start_year": 1603,
+   "variants": [
+    "De resolutien eergisteren genomen",
+    "De resolutien voorleden ",
+    "De resolutien gisteren ge-"
+   ]
+  },
+  {
+   "label": "resolution_opening",
+   "phrase": "hebben ter Vergaderinge ingebraght",
+   "variants": [
+    "heeft ter Vergaderinge ingebraght"
+   ]
+  },
+  {
+   "label": "resolution_opening",
+   "max_offset": 4,
+   "phrase": "Zynde ter Vergaderinge getoont"
+  },
+  {
+   "label": "resolution_opening",
+   "max_offset": 4,
+   "phrase": "Is ter Vergaderinge gelesen"
+  },
+  {
+   "label": "resolution_opening",
+   "max_offset": 4,
+   "phrase": "Ontfangen een Missive van",
+   "resolution_source": "missive",
+   "variants": [
+    "ON een Missive van",
+    "ONtfangen een Miffive van",
+    "Nogh ontfangen een Missive van"
+   ]
+  },
+  {
+   "label": "resolution_opening",
+   "max_offset": 4,
+   "phrase": "Is gehoort het rapport van",
+   "resolution_source": "rapport"
+  },
+  {
+   "label": "resolution_opening",
+   "max_offset": 4,
+   "phrase": "Op de Requeste van",
+   "resolution_source": "request"
+  },
+  {
+   "label": "resolution_opening",
+   "max_offset": 4,
+   "phrase": "Op de Memorie van",
+   "resolution_source": "memorie"
+  },
+  {
+   "label": "resolution_opening",
+   "max_offset": 4,
+   "phrase": "Op het gerapporteerde van de Heeren van",
+   "resolution_source": "rapport"
+  },
+  {
+   "label": "resolution_opening",
+   "max_offset": 100,
+   "phrase": "heeft aan haar Hoogh Mogende voorgedraagen en bekend gemaackt",
+   "variants": [
+    "hebben aan haar Hoogh Mogende voorgedraagen en bekend gemaackt"
+   ]
+  },
+  {
+   "label": "resolution_decision",
+   "phrase": "is goedgevonden ende verstaan",
+   "variants": [
+    "IS naar voorgaande deliberatie goedgevonden ende verstaan"
+   ]
+  },
+  {
+   "label": "resolution_decision",
+   "phrase": "de voorfchreve Missive copielijck overgenomen"
+  },
+  {
+   "label": "resolution_decision",
+   "phrase": "waar by goedgevonden is"
+  },
+  {
+   "label": "resolution_decision",
+   "phrase": "gehouden voor gecommiteert"
+  },
+  {
+   "label": "resolution_decision",
+   "phrase": "WAAR op gedelibereert en in achtinge genomen zynde"
+  },
+  {
+   "label": "resolution_decision",
+   "phrase": "WAAR op gedelibereert zijnde"
+  },
+  {
+   "label": "resolution_decision",
+   "phrase": "WAAR op gedelibereert"
+  },
+  {
+   "label": "resolution_decision",
+   "phrase": "voor de genomen moeyte bedanckt"
+  },
+  {
+   "label": "resolution_decision",
+   "phrase": "WAAR op geen resolutie is gevallen",
+   "variants": [
+    "Waer op geen resolutie is gevallen",
+    "WAAR op geen resolutie voor alsnoch is gevallen",
+    "Waer op geen resolutie voor alsnoch is gevallen"
+   ]
+  },
+  {
+   "label": "resolution_opening",
+   "max_offset": 4,
+   "phrase": "BY refumptie gedelibereert zynde"
+  },
+  {
+   "label": "resolution_summarized",
+   "max_offset": 4,
+   "phrase": "DE Resolutien, gisteren genomen",
+   "variants": [
+    "DE Resolutien, eergisteren genomen",
+    "DE Resolutien voorleede "
+   ]
+  },
+  {
+   "label": "resolution_summarized",
+   "phrase": "zyn gelesen en gerefumeert"
+  }
+ ],
+ "python_version": "3.14.8",
+ "sampling": {
+  "max_inventories": null,
+  "max_per_phrase": 25,
+  "num_no_match": 200,
+  "other_per_inventory": 10,
+  "per_inventory": 30
+ },
+ "seed": 20261106,
+ "summary": {
+  "num_cases": 1259,
+  "num_cases_with_unstable_config": 0,
+  "num_matches_per_config": {
+   "n2_s1_l0.5": 6341,
+   "n2_s1_l0.7": 4473,
+   "n2_s2_l0.5": 8972,
+   "n2_s2_l0.7": 4879,
+   "n3_s1_l0.5": 3250,
+   "n3_s1_l0.7": 3223,
+   "n3_s2_l0.5": 3641,
+   "n3_s2_l0.7": 3523
+  },
+  "num_no_match_cases": 200,
+  "phrases_with_examples_per_config": {
+   "n2_s1_l0.5": 38,
+   "n2_s1_l0.7": 38,
+   "n2_s2_l0.5": 38,
+   "n2_s2_l0.7": 38,
+   "n3_s1_l0.5": 38,
+   "n3_s1_l0.7": 38,
+   "n3_s2_l0.5": 38,
+   "n3_s2_l0.7": 38
+  },
+  "phrases_without_examples": [],
+  "unstable_case_config_pairs": {}
+ }
+}
