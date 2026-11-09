@@ -19,6 +19,7 @@ from fuzzy_search.match.skip_match import filter_overlapping_phrase_candidates
 from fuzzy_search.match.skip_match import get_skipmatch_candidates
 from fuzzy_search.match.exact_match import index_known_word_offsets
 from fuzzy_search.match.exact_match import search_exact_phrases
+from fuzzy_search.search.batch import find_matches_batch
 from fuzzy_search.search.searcher import FuzzySearcher
 from fuzzy_search.search.token_searcher import FuzzyTokenSearcher
 from fuzzy_search.tokenization.string import score_levenshtein_similarity_ratio
@@ -362,6 +363,20 @@ class FuzzyPhraseSearcher(FuzzySearcher):
             time_step()
             print('find_matches - filtered_matches:', filtered_matches)
         return sorted(filtered_matches, key=lambda x: (x.text_id, x.offset, x.offset + len(x.string)))
+
+    def find_matches_batch(self, texts: List[Union[str, Dict[str, str], Doc]], workers: Union[None, int] = None,
+                           chunk_size: int = 25, **kwargs) -> List[List[PhraseMatch]]:
+        """Find matches in many texts, optionally in parallel worker processes.
+
+        Returns the same as ``[self.find_matches(text, **kwargs) for text in texts]``, in input order.
+        With ``workers`` > 1, scripts need an ``if __name__ == '__main__':`` guard (workers are spawned).
+
+        :param texts: the texts to search
+        :param workers: number of worker processes; None or 1 runs serially, 0 uses one per CPU
+        :param chunk_size: number of texts sent to a worker per task
+        :param kwargs: keyword arguments for find_matches
+        """
+        return find_matches_batch(self, texts, workers=workers, chunk_size=chunk_size, **kwargs)
 
     def find_exact_matches(self, text: Union[str, Dict[str, str]],
                            use_word_boundaries: Union[None, bool] = None,

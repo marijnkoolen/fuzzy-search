@@ -70,12 +70,14 @@ filtering. Move scoring later only if a new profile justifies it. `Levenshtein` 
 
 **Speed-up is not yet known.** Run a spike on steps 1 and 2 and re-measure before committing to the full port.
 
-### Python behaviour a port must not copy blindly
+### Fixed Python behaviour (2026-11-09)
 
-- `first_best` is overwritten with a match in `filter_matches_by_overlap` (`match/match_offsets.py:39`), so
-  `first_best=True` stops applying after the first overlap group.
-- `max_offset` in `republic_phrase_model.py` is ignored: only `max_start_offset` is parsed. A phrase with
-  `max_offset: 4` still matched at offset 100. Fix the key in that model, or support it here.
+- `first_best` was overwritten with a match in `filter_matches_by_overlap`, so `first_best=True` stopped
+  applying after the first overlap group. Fixed.
+- `max_offset` (used by `republic_phrase_model.py`) was ignored. It is now an alias of `max_start_offset`;
+  if both are given, `max_start_offset` wins.
+- Ties in `filter_overlapping_phrase_candidates` (same score and length) now prefer the main phrase, then the
+  alphabetically first variant. The port must use the same rule.
 
 ## Multi-core
 
@@ -92,7 +94,23 @@ long runs.
 
 Pickling is cheap: 0.02 to 0.09s and 1.2 to 5.3 MB per searcher. It is not the bottleneck I first suggested.
 
-**Phase 1, Python:** add `find_matches_batch(texts, workers=None, chunk_size=..., **kwargs)`.
+**Phase 1, Python: done (2026-11-09).** `FuzzyPhraseSearcher.find_matches_batch(texts, workers=None,
+chunk_size=25, **kwargs)`, implemented in `fuzzy_search/search/batch.py`. Measured on the 1,211 fixture paragraphs
+(1.25M characters, `n2_s2_l0.5`, full phrase model); parallel output equals serial output at every worker count:
+
+| Workers | Wall time | Speed-up |
+| --- | --- | --- |
+| serial | 107.5s | 1.0x |
+| 2 | 71.6s | 1.5x |
+| 4 | 40.6s | 2.6x |
+| 8 | 35.5s | 3.0x |
+
+Chunk sizes 2, 5 and 10 at 8 workers gave the same time (37s), and the slowest paragraph takes 3.3s, so neither
+load balancing nor long paragraphs limit scaling. Serial time varied between runs (107s and 131s), so part of the
+flattening above 4 workers may be the machine (8 performance and 2 efficiency cores, clock speed under load).
+Matches built in a worker are relinked to the parent searcher's `Phrase` objects.
+
+Design as planned:
 
 - Use `ProcessPoolExecutor` with an initializer that gives each worker one searcher.
 - Return results in input order. Use `map`, not `as_completed`.
@@ -126,15 +144,23 @@ example for a (config, phrase) pair under the cap of 25, plus 200 paragraphs wit
 stores expected results for all 8 configs (`ngram_size` 2 and 3, `skip_size` 1 and 2, `levenshtein_threshold` 0.5
 and 0.7, variants on). The phrases are `session_phrase_model` plus `resolution_phrase_model`.
 
-**Result after the fix (2026-11-09).** The fixture is in `test/regression/fixtures/`.
+**Current fixture (2026-11-09, after the ordering, tie-break, `first_best` and `max_offset` fixes).**
 
 | Measure | Value |
 | --- | --- |
-| Kept paragraphs | 1,259, including 200 without matches |
+| Kept paragraphs | 1,211, including 200 without matches |
 | Phrases with examples | 38 of 38 in every config |
+| Matches per config | 2,842 to 6,866 |
 | Paragraphs flagged unstable over 4 extra builds | 0 |
-| Fixture size | 971 KB compressed, plus 8 KB metadata |
-| Test result | 8 of 8 configs pass, on 2 runs (about 8 minutes each) |
+| Fixture size | 813 KB compressed, plus 8 KB metadata |
+| Test time | 16s quick (every 20th case), 5m50s with `--regression-full` |
+
+Effect of the tie-break and `max_offset` fixes, measured on the texts of the previous fixture: 113 to 1,380
+matches per config were dropped, all beyond their phrase's `max_offset`; 5 to 113 per config changed variant,
+all to the main phrase; 0 to 11 per config were added, because a main-phrase candidate now survives where a
+variant was dropped. Some additions are weak matches (e.g. `zyne Excie. ende d'heeren Raiden van` at 0.58).
+
+**After the ordering fix only (superseded):** 1,259 paragraphs, 8 of 8 configs passed on 2 runs.
 
 **Result of the full run before the fix, kept for comparison:**
 
@@ -160,17 +186,21 @@ PYTHONPATH=. uv run --no-project --python .venv/bin/python --with pyarrow python
 To test:
 
 ```bash
-.venv/bin/python -m pytest test/regression
+.venv/bin/python -m pytest test/regression                    # quick subset
+.venv/bin/python -m pytest test/regression --regression-full  # every case
 ```
 
-`unstable_configs` is now empty everywhere, so the stability check could become a hard build failure. Consider a smaller default fixture or `pytest -m` marker, since 8 minutes is slow for routine runs.
+The test treats the fixture as a lower bound: every stored match must still be found, with the same scores.
+New matches are allowed and printed (run with `-s` to see them). `--regression-exact` also fails on new
+matches, which is the right check for a port that should behave identically.
+
+The build script now refuses to write a fixture with unstable cases unless `--allow-unstable` is given.
 
 ## Order of work
 
-1. Determinism fix and fixture: done. Still to do: the `first_best` and `max_offset` fixes. Changing them
-   changes results, so rebuild the fixture afterwards.
+1. Determinism, tie-break, `first_best` and `max_offset` fixes, and fixture: done.
 2. Release as a behaviour change.
-3. Add `find_matches_batch` in Python, with a test that it equals serial results.
+3. Add `find_matches_batch` in Python, with a test that it equals serial results: done.
 4. Rust spike on the skipgram scan, and re-profile.
 5. Port the candidate pipeline, using the fixture as the acceptance test.
 6. Move batch parallelism to rayon, and ship wheels through maturin in CI.
