@@ -159,7 +159,8 @@ class FuzzyPhraseSearcher(FuzzySearcher):
                     candidate.match_string = adjusted_match["match_string"]
                     adjusted_candidates.append(candidate)
                 phrase_candidates[phrase_string] = adjusted_candidates
-            filtered_candidates = filter_overlapping_phrase_candidates(phrase_candidates[phrase_string])
+            filtered_candidates = filter_overlapping_phrase_candidates(phrase_candidates[phrase_string],
+                                                                       main_phrase_string=phrase_string)
             if debug > 1 and len(filtered_candidates) > 0:
                 print(f"\tphrase_string: {phrase_string}\tnum overlap filtered candidates: {len(filtered_candidates)}")
                 if debug > 2:
@@ -234,7 +235,8 @@ class FuzzyPhraseSearcher(FuzzySearcher):
 
     def filter_matches_by_threshold(self, matches: List[PhraseMatch]) -> List[PhraseMatch]:
         """Remove matches whose character overlap, ngram overlap, or Levenshtein similarity
-        score falls below the searcher's configured thresholds.
+        score falls below the thresholds. A threshold set on the matched variant overrides one set on
+        its main phrase, which overrides the searcher's configured threshold.
 
         :param matches: phrase matches to filter
         :type matches: List[PhraseMatch]
@@ -243,11 +245,15 @@ class FuzzyPhraseSearcher(FuzzySearcher):
         """
         filtered: List[PhraseMatch] = []
         for match in matches:
-            if match.character_overlap < self.char_match_threshold:
+            thresholds = {'char_match_threshold': self.char_match_threshold,
+                          'ngram_threshold': self.ngram_threshold,
+                          'levenshtein_threshold': self.levenshtein_threshold,
+                          **match.phrase.thresholds, **match.variant.thresholds}
+            if match.character_overlap < thresholds['char_match_threshold']:
                 continue
-            if match.ngram_overlap < self.ngram_threshold:
+            if match.ngram_overlap < thresholds['ngram_threshold']:
                 continue
-            if match.levenshtein_similarity < self.levenshtein_threshold:
+            if match.levenshtein_similarity < thresholds['levenshtein_threshold']:
                 continue
             filtered.append(match)
         return filtered

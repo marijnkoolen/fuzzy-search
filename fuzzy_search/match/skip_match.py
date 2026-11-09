@@ -102,12 +102,16 @@ def filter_skipgram_threshold(skip_matches: SkipMatches, skip_threshold: float) 
     return [phrase for phrase in skip_matches.matches if get_skipset_overlap(phrase, skip_matches) >= skip_threshold]
 
 
-def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate], debug: int = 0) -> List[Candidate]:
+def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate], main_phrase_string: str = None,
+                                         debug: int = 0) -> List[Candidate]:
     """Filter a list of candidate matches for a phrase so that overlapping candidates are
-    reduced to the single best one (by Levenshtein similarity, then by match length).
+    reduced to the single best one: highest Levenshtein similarity, then longest match, then
+    the main phrase over its variants, then the alphabetically first phrase string.
 
     :param phrase_candidates: a list of candidate matches for the same phrase
     :type phrase_candidates: List[Candidate]
+    :param main_phrase_string: the main phrase that the candidates (or their variants) belong to
+    :type main_phrase_string: str
     :param debug: level to show debug information
     :type debug: int
     :return: a list of non-overlapping candidate matches
@@ -116,7 +120,11 @@ def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate], deb
     filtered: List[Candidate] = []
     if len(phrase_candidates) < 2:
         return phrase_candidates
-    phrase_candidates.sort(key=lambda x: x.match_start_offset)
+    def tie_key(candidate: Candidate):
+        # Lower is better: main phrase first, then the alphabetically first variant.
+        return candidate.phrase.phrase_string != main_phrase_string, candidate.phrase.phrase_string
+
+    phrase_candidates.sort(key=lambda x: (x.match_start_offset, tie_key(x)))
     prev_candidate = phrase_candidates[0]
     prev_score = score_levenshtein_similarity_ratio(prev_candidate.phrase.phrase_string, prev_candidate.match_string)
     for ci, curr_candidate in enumerate(phrase_candidates[1:]):
@@ -136,6 +144,11 @@ def filter_overlapping_phrase_candidates(phrase_candidates: List[Candidate], deb
                     prev_score = curr_score
                 elif curr_score == prev_score and len(curr_candidate.match_string) > len(prev_candidate.match_string):
                     # this candidate is longer with the same score, so skip the previous candidate
+                    prev_candidate = curr_candidate
+                    prev_score = curr_score
+                elif curr_score == prev_score and len(curr_candidate.match_string) == len(prev_candidate.match_string) \
+                        and tie_key(curr_candidate) < tie_key(prev_candidate):
+                    # same score and length, so prefer the main phrase, then a fixed variant order
                     prev_candidate = curr_candidate
                     prev_score = curr_score
             else:

@@ -36,8 +36,8 @@ def filter_matches_by_overlap(filtered_matches: List[PhraseMatch], first_best: b
             filtered_matches.extend(overlapping[offset_length])
         else:
             if first_best is True:
-                first_best = max(overlapping[offset_length], key=lambda item: item.levenshtein_similarity)
-                filtered_matches.append(first_best)
+                best_match = max(overlapping[offset_length], key=lambda item: item.levenshtein_similarity)
+                filtered_matches.append(best_match)
             else:
                 sorted_matches = sorted(overlapping[offset_length], key=lambda item: item.levenshtein_similarity,
                                         reverse=True)

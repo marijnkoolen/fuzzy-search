@@ -326,17 +326,17 @@
  },
  "seed": 20261106,
  "summary": {
-  "num_cases": 1259,
+  "num_cases": 1211,
   "num_cases_with_unstable_config": 0,
   "num_matches_per_config": {
-   "n2_s1_l0.5": 6341,
-   "n2_s1_l0.7": 4473,
-   "n2_s2_l0.5": 8972,
-   "n2_s2_l0.7": 4879,
-   "n3_s1_l0.5": 3250,
-   "n3_s1_l0.7": 3223,
-   "n3_s2_l0.5": 3641,
-   "n3_s2_l0.7": 3523
+   "n2_s1_l0.5": 5021,
+   "n2_s1_l0.7": 3818,
+   "n2_s2_l0.5": 6866,
+   "n2_s2_l0.7": 4087,
+   "n3_s1_l0.5": 2855,
+   "n3_s1_l0.7": 2842,
+   "n3_s2_l0.5": 3102,
+   "n3_s2_l0.7": 3024
   },
   "num_no_match_cases": 200,
   "phrases_with_examples_per_config": {

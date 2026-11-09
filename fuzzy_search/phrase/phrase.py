@@ -9,6 +9,8 @@ from fuzzy_search.tokenization.string import SkipGram, text2skipgrams
 from fuzzy_search.tokenization.token import Token
 from fuzzy_search.tokenization.token import Tokenizer
 
+PHRASE_THRESHOLD_KEYS = ('char_match_threshold', 'ngram_threshold', 'levenshtein_threshold')
+
 
 def is_valid_label(label: Union[str, List[str]]) -> bool:
     """Test whether label has a valid value.
@@ -68,6 +70,8 @@ class Phrase:
         self.max_start_end: int = -1
         self.max_end_offset: int = -1
         self.max_end_start: int = -1
+        # similarity thresholds that override the searcher's for this phrase
+        self.thresholds: Dict[str, float] = {}
         self.label_set: Set[str] = set()
         self.label_list: List[str] = []
         self.properties = phrase
@@ -195,8 +199,29 @@ class Phrase:
                 self.set_label(metadata_dict[key])
             elif key == "max_start_offset":
                 self.add_max_start_offset(metadata_dict["max_start_offset"])
+            elif key == "max_offset" and "max_start_offset" not in metadata_dict:
+                # 'max_offset' is an alias used by older phrase models, e.g. the REPUBLIC model
+                self.add_max_start_offset(metadata_dict["max_offset"])
             elif key == "max_end_offset":
                 self.add_max_end_offset(metadata_dict["max_end_offset"])
+            elif key in PHRASE_THRESHOLD_KEYS:
+                self.add_threshold(key, metadata_dict[key])
+
+    def add_threshold(self, threshold_name: str, threshold: float) -> None:
+        """Set a similarity threshold for this phrase that overrides the searcher's threshold.
+
+        :param threshold_name: one of 'char_match_threshold', 'ngram_threshold' or 'levenshtein_threshold'
+        :type threshold_name: str
+        :param threshold: the threshold, between 0 and 1
+        :type threshold: float
+        """
+        if threshold_name not in PHRASE_THRESHOLD_KEYS:
+            raise KeyError(f"unknown phrase threshold '{threshold_name}', must be one of {PHRASE_THRESHOLD_KEYS}")
+        if isinstance(threshold, bool) or not isinstance(threshold, (int, float)):
+            raise TypeError(f"{threshold_name} must be a number")
+        if not 0 <= threshold <= 1:
+            raise ValueError(f"{threshold_name} must be between 0 and 1")
+        self.thresholds[threshold_name] = float(threshold)
 
     def add_max_start_offset(self, max_start_offset: int) -> None:
         """Add a maximum offset from the start for matching a phrase in a text.

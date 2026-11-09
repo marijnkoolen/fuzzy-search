@@ -217,6 +217,8 @@ def parse_args():
     parser.add_argument('--max-per-phrase', type=int, default=25, help='example cap per (config, phrase) pair')
     parser.add_argument('--num-no-match', type=int, default=200, help='paragraphs without any match to keep')
     parser.add_argument('--stability-builds', type=int, default=4, help='extra searcher builds to compare results with')
+    parser.add_argument('--allow-unstable', action='store_true',
+                        help='write the fixture even if results differ between searcher builds')
     parser.add_argument('--workers', type=int, default=max(1, multiprocessing.cpu_count() - 1))
     parser.add_argument('--seed', type=int, default=20261106)
     return parser.parse_args()
@@ -245,8 +247,12 @@ def main():
         'phrase_model': phrase_model,
         'summary': summarise(cases, phrase_model, configs),
     }
-    write_fixture(args.output_dir, args.name, cases, metadata)
     print(json.dumps(metadata['summary'], ensure_ascii=False, indent=1))
+    num_unstable = metadata['summary']['num_cases_with_unstable_config']
+    if num_unstable and not args.allow_unstable:
+        raise SystemExit(f'{num_unstable} cases differ between searcher builds; fixture not written '
+                         f'(use --allow-unstable to write it anyway)')
+    write_fixture(args.output_dir, args.name, cases, metadata)
 
 
 if __name__ == '__main__':
