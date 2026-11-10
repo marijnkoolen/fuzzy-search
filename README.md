@@ -13,6 +13,11 @@ This package has been developed for finding occurrences of formulaic phrases in 
 
 The basic fuzzy searcher uses character skip-grams to exhaustively search for approximately matching strings for a given list of target words and phrases. 
 
+**New in 3.1.0:** an optional Rust implementation of the `FuzzyPhraseSearcher` makes searching about 35
+times faster on one CPU core, and `find_matches_batch` can spread many texts over all cores (about 118
+times faster on 8 cores). It finds exactly the same matches as the Python code and is used automatically
+once installed. See [Speeding Up Search with Rust](#speeding-up-search-with-rust).
+
 ## Usage
 
 Below is an example of searching for key words and phrases in the corpus of resolutions of the States General of the Dutch Republic. 
@@ -540,6 +545,41 @@ print(json.dumps(matches[0].as_web_anno(), indent=2))
       ]
     }
 
+
+## Speeding Up Search with Rust
+
+The package `fuzzy-search-rs` contains a Rust implementation of the most expensive steps of
+`FuzzyPhraseSearcher.find_matches`: the skipgram scan, candidate building, word-boundary adjustment and
+scoring. It returns exactly the same matches, with the same scores, as the Python code.
+
+Install it next to `fuzzy-search`:
+
+```bash
+pip install fuzzy-search-rs
+```
+
+or build it from the [`rust/`](rust/README.md) directory of this repository. Once it is installed, the searcher
+uses it automatically (setting `backend='auto'`, the default). No other code changes are needed:
+
+```python
+from fuzzy_search import FuzzyPhraseSearcher
+
+searcher = FuzzyPhraseSearcher(phrase_model=domain_phrases, config=config)
+matches = searcher.find_matches(text)                       # one text, in Rust
+results = searcher.find_matches_batch(texts, workers=0)     # many texts, on all CPU cores
+```
+
+Speed on 1,211 paragraphs of the States General resolutions (`ngram_size=2`, `skip_size=2`):
+
+| | time | speed-up |
+|---|---|---|
+| Python | 92.7 s | 1× |
+| Rust, 1 thread | 2.56 s | 36× |
+| Rust, 8 threads | 0.79 s | 118× |
+
+Use `backend='python'` to force the Python code, or `backend='rust'` to raise an error when the Rust
+backend is not installed. A few settings always run in Python, such as `ngram_size` above 6 and phrases
+with `max_end_offset`; see [rust/README.md](rust/README.md) for the details.
 
 ## Configuration
 
