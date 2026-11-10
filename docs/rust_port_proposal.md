@@ -1,7 +1,57 @@
 # Proposal: Rust port, multi-core search and regression test set
 
-Status: proposal, nothing ported yet. Measured on 2026-11-06 with fuzzy-search 3.0.4, Python 3.14 and a
-10-core Mac. The determinism fix and the fixture were done on 2026-11-09 (see below).
+Status: **ported (2026-11-10)**, see "Result of the port" below and `rust/README.md`. The earlier sections
+are the proposal as written, measured on 2026-11-06 with fuzzy-search 3.0.4, Python 3.14 and a 10-core Mac
+(8 performance and 2 efficiency cores).
+
+## Result of the port (2026-11-10)
+
+The Rust extension `fuzzy_search_rs` (in `rust/`, PyO3 0.30, rayon) is selected with the searcher setting
+`backend` (`'python'` by default, `'rust'` or `'auto'`). Bridge code is in
+`fuzzy_search/search/rust_backend.py`.
+
+**Scope.** More than proposed: besides the skipgram scan and candidate building, Rust also does the
+word-boundary adjustment, the per-phrase overlap filter and the match scoring (character overlap,
+ngram overlap and `Levenshtein.ratio`, bit-parallel). Python keeps exact matching, the phrase model,
+`PhraseMatch` objects (built only for candidates above threshold) and the final filters. After the port,
+94% of single-threaded time is spent inside Rust.
+
+**Exactness.** Output is identical to the Python backend, scores included:
+
+| Check | Result |
+| --- | --- |
+| Regression fixture, all 8 configs, 1,211 paragraphs, `--regression-exact` | passes (14s, Python 5m50s) |
+| Settings grid: `ngram_size` 1-4, `skip_size` 0-3, ignorecase, word boundaries, variants, exact matching on/off; 74 texts | 0 differences in 18,944 comparisons |
+| Raw candidates per phrase group, 32 settings | 0 differences in 3,040 comparisons |
+| `Levenshtein.ratio` (DP and bit-parallel), char and ngram scores against the Python functions | bit-identical on 520,000 random and corpus string pairs |
+| `test/test_search_rust_backend.py` | 12 tests, includes threaded batches and `İ`/`Σ` texts |
+
+Two order effects had to be reproduced: Python creates a group entry for every phrase that passes the
+skipgram threshold, even without candidates, and later steps break ties by list order; and
+`Counter` keeps skipgrams whose count dropped to zero, which affects the skipgram overlap score.
+
+**Speed** on the 1,211 fixture paragraphs (1.25M characters), all results equal to serial Python:
+
+| Config | Python | Rust, 1 thread | 2 threads | 4 threads | 8 threads |
+| --- | --- | --- | --- | --- | --- |
+| `n2_s2_l0.5` | 92.7s | 2.56s (36x) | 1.58s (59x) | 0.95s (98x) | 0.79s (118x) |
+| `n2_s2_l0.5`, ignorecase | 128.5s | 3.66s (35x) | 2.13s (60x) | 1.42s (91x) | 1.10s (116x) |
+| `n3_s1_l0.7` | 16.2s | 0.47s (34x) | 0.27s (60x) | 0.23s (69x) | 0.23s (72x) |
+
+Threads scale about 3x at 8 threads, like worker processes did for the Python backend (3.0x), so the
+machine probably limits scaling above 4 threads. Exact matching and the final filters stay serial
+Python and take about 0.15s (6% of single-threaded time).
+
+**Single-threaded optimisation** after the first working port (2.56s above): dense per-phrase skipgram
+indexes instead of hash maps in candidate building (3.2s to 1.7s for that stage), and bit-parallel LCS
+for `Levenshtein.ratio`.
+
+**Limits.** `ngram_size` up to 6; phrases with `max_end_offset` and `debug > 0` use Python; with
+ignorecase, texts with length-changing lowercase or `Σ` are scored in Python. Degenerate inputs where
+Python raises `ZeroDivisionError` raise `ValueError` in Rust. See `rust/README.md`.
+
+**Not done.** Wheels for other platforms and a CI build; publishing `fuzzy-search-rs`; making `'auto'`
+the default.
 
 ## Summary
 

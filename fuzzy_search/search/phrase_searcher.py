@@ -19,6 +19,7 @@ from fuzzy_search.match.skip_match import filter_overlapping_phrase_candidates
 from fuzzy_search.match.skip_match import get_skipmatch_candidates
 from fuzzy_search.match.exact_match import index_known_word_offsets
 from fuzzy_search.match.exact_match import search_exact_phrases
+from fuzzy_search.search import rust_backend
 from fuzzy_search.search.batch import find_matches_batch
 from fuzzy_search.search.searcher import FuzzySearcher
 from fuzzy_search.search.token_searcher import FuzzyTokenSearcher
@@ -173,6 +174,12 @@ class FuzzyPhraseSearcher(FuzzySearcher):
             print(f'PhraseSearcher.filter_phrase_candidates - returning {len(candidates)} candidates')
         return candidates
 
+    def __getstate__(self):
+        # the compiled matcher cannot be pickled; it is rebuilt on first use
+        state = self.__dict__.copy()
+        state.pop('_rust_matcher', None)
+        return state
+
     def find_candidates(self, text: dict, use_word_boundaries: bool,
                         include_variants: Union[None, bool] = None,
                         known_word_start_offset: Dict[int, Dict[str, any]] = None,
@@ -192,18 +199,26 @@ class FuzzyPhraseSearcher(FuzzySearcher):
         :return: a list of candidate matches
         :rtype: List[Candidate]
         """
+        use_word_boundaries = use_word_boundaries if use_word_boundaries is not None else self.use_word_boundaries
+        matcher = rust_backend.get_matcher(self) if debug == 0 else None
+        if matcher is not None:
+            # the Rust backend runs the skipgram scan, candidate building and candidate filtering
+            if include_variants is None:
+                include_variants = self.include_variants
+            return matcher.filtered_candidates(text, include_variants, known_word_start_offset,
+                                               use_word_boundaries, self.punctuation)
         skip_matches = self.find_skipgram_matches(text, include_variants=include_variants,
                                                   known_word_start_offset=known_word_start_offset)
-        phrase_candidates = get_skipmatch_candidates(text, skip_matches, self.skipgram_threshold, self.phrase_model,
-                                              max_length_variance=self.max_length_variance,
-                                              ignorecase=self.ignorecase, debug=debug)
+        phrase_candidates = get_skipmatch_candidates(text, skip_matches, self.skipgram_threshold,
+                                                     self.phrase_model,
+                                                     max_length_variance=self.max_length_variance,
+                                                     ignorecase=self.ignorecase, debug=debug)
         if debug > 1:
             print('find_candidates - phrase_candidates:')
             for phrase in phrase_candidates:
                 print(f"    phrase: {phrase}")
                 for candidate in phrase_candidates[phrase]:
                     print(f"\t{candidate.phrase}\t-\t{candidate.match_string}")
-        use_word_boundaries = use_word_boundaries if use_word_boundaries is not None else self.use_word_boundaries
         filtered = self.filter_phrase_candidates(phrase_candidates, text,
                                                  use_word_boundaries=use_word_boundaries, debug=debug)
         if debug > 1:
@@ -294,9 +309,48 @@ class FuzzyPhraseSearcher(FuzzySearcher):
             print('find_matches - getting text dict')
         if self.phrase_model is None:
             raise ValueError("No phrase model indexed")
-        text = get_text_dict(text, ignorecase=self.ignorecase)
         if use_word_boundaries is None:
             use_word_boundaries = self.use_word_boundaries
+        text, exact_matches, known_word_start_offset = self._prepare_text(
+            text, use_word_boundaries, include_variants, skip_exact_matching, debug=debug, time_step=time_step)
+        if debug > 0:
+            time_step()
+            print('find_matches - number of exact matches:', len(exact_matches))
+        matcher = rust_backend.get_matcher(self) if debug == 0 else None
+        if matcher is not None:
+            # Rust runs candidate finding, filtering and scoring; only matches above threshold are built
+            filtered_matches = matcher.scored_matches(
+                self, text, self.include_variants if include_variants is None else include_variants,
+                known_word_start_offset, use_word_boundaries)
+        else:
+            candidates = self.find_candidates(text, use_word_boundaries=use_word_boundaries,
+                                              include_variants=include_variants,
+                                              known_word_start_offset=known_word_start_offset, debug=debug)
+            if debug > 0:
+                print('find_matches - number of candidates received from find_candidates:', len(candidates))
+            if debug > 0:
+                time_step()
+            if debug > 2:
+                for candidate in candidates:
+                    print(f"\t{candidate.phrase.phrase_string}\t-\t{candidate.match_string}")
+            matches = candidates_to_matches(candidates, text, self.phrase_model, ignorecase=self.ignorecase)
+            if debug > 0:
+                time_step()
+                print('find_macthes - number of matches:', len(matches))
+            if debug > 2:
+                print('find_macthes - matches:')
+                for match in matches:
+                    print(f"\tmatch phrase_string: {match.phrase.phrase_string}\tmatch_string: {match.string}")
+            filtered_matches = self.filter_matches_by_threshold(matches)
+        return self._finish_matches(filtered_matches, exact_matches, filter_distractors=filter_distractors,
+                                    allow_overlapping_matches=allow_overlapping_matches, first_best=first_best,
+                                    debug=debug, time_step=time_step)
+
+    def _prepare_text(self, text: Union[str, Dict[str, str], Doc], use_word_boundaries: bool,
+                      include_variants: Union[None, bool], skip_exact_matching: Union[None, bool],
+                      debug: int = 0, time_step=None):
+        """The first steps of find_matches: the text dict, exact matches and the known words they give."""
+        text = get_text_dict(text, ignorecase=self.ignorecase)
         if skip_exact_matching is None:
             skip_exact_matching = self.skip_exact_matching
         if not skip_exact_matching:
@@ -312,28 +366,15 @@ class FuzzyPhraseSearcher(FuzzySearcher):
                 print("find_matches - skipping exact matching")
             exact_matches = []
             known_word_start_offset = {}
-        if debug > 0:
-            time_step()
-            print('find_matches - number of exact matches:', len(exact_matches))
-        candidates = self.find_candidates(text, use_word_boundaries=use_word_boundaries,
-                                          include_variants=include_variants,
-                                          known_word_start_offset=known_word_start_offset, debug=debug)
-        if debug > 0:
-            print('find_matches - number of candidates received from find_candidates:', len(candidates))
-        if debug > 0:
-            time_step()
-        if debug > 2:
-            for candidate in candidates:
-                print(f"\t{candidate.phrase.phrase_string}\t-\t{candidate.match_string}")
-        matches = candidates_to_matches(candidates, text, self.phrase_model, ignorecase=self.ignorecase)
-        if debug > 0:
-            time_step()
-            print('find_macthes - number of matches:', len(matches))
-        if debug > 2:
-            print('find_macthes - matches:')
-            for match in matches:
-                print(f"\tmatch phrase_string: {match.phrase.phrase_string}\tmatch_string: {match.string}")
-        filtered_matches = self.filter_matches_by_threshold(matches)
+        return text, exact_matches, known_word_start_offset
+
+    def _finish_matches(self, filtered_matches: List[PhraseMatch], exact_matches: List[PhraseMatch],
+                        filter_distractors: Union[None, bool] = None,
+                        allow_overlapping_matches: Union[None, bool] = None, first_best: bool = False,
+                        debug: int = 0, time_step=None) -> List[PhraseMatch]:
+        """The last steps of find_matches, after scoring and the threshold filter: distractors,
+        combining with exact matches, offset thresholds and overlap filtering."""
+        matches = filtered_matches
         if filter_distractors is None:
             filter_distractors = self.filter_distractors
         if filter_distractors:
@@ -359,7 +400,7 @@ class FuzzyPhraseSearcher(FuzzySearcher):
             if debug > 1:
                 print('find_macthes - number of matches after filtering by overlap:', len(filtered_matches))
         # print(exact_matches)
-        if debug > 0:
+        if debug > 0 and time_step is not None:
             time_step()
             print('find_matches - filtered_matches:', filtered_matches)
         return sorted(filtered_matches, key=lambda x: (x.text_id, x.offset, x.offset + len(x.string)))
@@ -369,13 +410,22 @@ class FuzzyPhraseSearcher(FuzzySearcher):
         """Find matches in many texts, optionally in parallel worker processes.
 
         Returns the same as ``[self.find_matches(text, **kwargs) for text in texts]``, in input order.
-        With ``workers`` > 1, scripts need an ``if __name__ == '__main__':`` guard (workers are spawned).
+
+        With the Rust backend active, ``workers`` is the number of threads: the Rust stages of all
+        texts run in parallel without the GIL, and no processes are started. With the Python backend,
+        ``workers`` is the number of worker processes, and scripts need an
+        ``if __name__ == '__main__':`` guard (workers are spawned).
 
         :param texts: the texts to search
-        :param workers: number of worker processes; None or 1 runs serially, 0 uses one per CPU
+        :param workers: number of threads (Rust) or processes (Python); None or 1 runs serially,
+            0 uses one per CPU
         :param chunk_size: number of texts sent to a worker per task
         :param kwargs: keyword arguments for find_matches
         """
+        if workers is not None and workers != 1 and kwargs.get('debug', 0) == 0:
+            matcher = rust_backend.get_matcher(self)
+            if matcher is not None:
+                return matcher.find_matches_threaded(self, list(texts), threads=workers, **kwargs)
         return find_matches_batch(self, texts, workers=workers, chunk_size=chunk_size, **kwargs)
 
     def find_exact_matches(self, text: Union[str, Dict[str, str]],

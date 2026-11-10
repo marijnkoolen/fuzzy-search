@@ -1,3 +1,6 @@
 __pycache__
 *//__pycache__
 Makefile
+
+# Rust backend build output
+rust/target/

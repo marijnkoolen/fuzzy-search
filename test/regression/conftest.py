@@ -3,3 +3,5 @@ def pytest_addoption(parser):
                      help='check every regression fixture case, not only the quick subset (about 8 minutes)')
     parser.addoption('--regression-exact', action='store_true', default=False,
                      help='also fail when matches are found that the regression fixture does not contain')
+    parser.addoption('--regression-backend', default='auto', choices=['python', 'rust', 'auto'],
+                     help='FuzzyPhraseSearcher backend to test (rust needs the fuzzy_search_rs extension)')

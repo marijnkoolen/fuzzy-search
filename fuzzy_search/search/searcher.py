@@ -88,6 +88,9 @@ class FuzzySearcher(object):
         self.phrase_model: Union[None, PhraseModel] = None
         self.debug = False
         self.punctuation = string.punctuation
+        # 'python', 'rust' or 'auto': which implementation runs the skipgram scan and candidate
+        # building in FuzzyPhraseSearcher (see fuzzy_search.search.rust_backend)
+        self.backend = 'auto'
         # non-default configuration
         if config:
             for key in config:

@@ -67,7 +67,8 @@ def test_matches_cover_fixture(key, request):
     """Every stored match must still be found with the same scores. New matches are allowed (the stored
     set is a lower bound) but are reported; --regression-exact also fails on them."""
     metadata = load_metadata()
-    searcher = FuzzyPhraseSearcher(phrase_model=metadata['phrase_model'], config=metadata['configs'][key])
+    config = {**metadata['configs'][key], 'backend': request.config.getoption('--regression-backend')}
+    searcher = FuzzyPhraseSearcher(phrase_model=metadata['phrase_model'], config=config)
     cases = load_cases()
     if not request.config.getoption('--regression-full'):
         cases = cases[::QUICK_STRIDE]

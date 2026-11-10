@@ -555,6 +555,10 @@ Other configurable properties:
 - `max_length_variance`: the maximum number of characters that a phrase and a matching occurrence in the text can vary in length.
 - `include_variants`: Boolean to ignore or include phrase variants.
 - `filter_distractors`: Boolean to ignore or include distractor phrases to filter out matches that are closer to distractors than to the registered phrases and variants.
+- `backend`: `'auto'` (default), `'python'` or `'rust'`. With `'auto'`, the optional Rust backend
+  (`fuzzy_search_rs`, see [rust/README.md](rust/README.md)) is used when it is installed and supports
+  the settings, otherwise the Python code. Both return the same matches; Rust is about 35 times faster,
+  and `find_matches_batch(texts, workers=0)` then runs on all CPU cores.
 
 ### The Impact of Ngram Size and Skipgram Size
 
